@@ -38,7 +38,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
         int index = layer.ordinal();
         BufferBuilder buffer = this.layerBuffers[index];
         if (buffer == null) {
-            buffer = new BufferBuilder(8192);
+            buffer = new BufferBuilder(getInitialBufferSize(layer) * 1024 / Integer.BYTES);
             this.layerBuffers[index] = buffer;
         }
         if (!this.usedLayerBuffers[index]) {
@@ -66,6 +66,15 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
                 buffer.offset(0, 0, 0);
             }
         }
+    }
+
+    // what size should the buffer for this layer be? in kib
+    private static int getInitialBufferSize(BlockLayer layer) {
+		return switch(layer) {
+		    case SOLID, CUTOUT_MIPPED -> 512;
+		    case TRANSLUCENT -> 128;
+		    default -> 32;
+	    };
     }
 
     private final ChunkVertexEncoder.Vertex[] vertices = ChunkVertexEncoder.Vertex.uninitializedQuad();
