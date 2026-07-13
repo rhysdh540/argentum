@@ -57,7 +57,7 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
         var blockPos = new BlockPos.Mutable(minX, minY, minZ);
         var renderBlocks = net.minecraft.client.Minecraft.getInstance().getBlockRenderDispatcher();
 
-        buildContext.beginSection(minX, minY, minZ);
+        buildContext.beginSection(this.renderContext, minX, minY, minZ);
 
         try {
             for (int y = minY; y < maxY; y++) {
@@ -88,7 +88,12 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
 
                         var pass = block.getRenderLayer();
 
-                        renderBlocks.render(blockState, blockPos, this.renderContext, buildContext.getBuffer(pass));
+                        if (block.getRenderType() == 3) {
+                            buildContext.getBlockRenderer().render(blockState, blockPos, this.renderContext, pass,
+                                    buffers, renderData);
+                        } else {
+                            renderBlocks.render(blockState, blockPos, this.renderContext, buildContext.getBuffer(pass));
+                        }
 
 						if (block.isOpaque()) {
                             occluder.markClosed(blockPos.getX(), blockPos.getY(), blockPos.getZ());

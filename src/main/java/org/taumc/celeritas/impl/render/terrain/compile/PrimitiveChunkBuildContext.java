@@ -19,6 +19,9 @@ import net.minecraft.client.render.vertex.DefaultVertexFormat;
 import java.nio.IntBuffer;
 import org.taumc.celeritas.impl.extensions.TextureAtlasExtension;
 import org.taumc.celeritas.impl.Celeritas;
+import org.taumc.celeritas.impl.render.terrain.compile.light.PrimitiveLightDataCache;
+import org.taumc.celeritas.impl.render.terrain.compile.pipeline.FastBlockRenderer;
+import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 
 public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     private static final BlockLayer[] LAYERS = BlockLayer.values();
@@ -27,6 +30,8 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     private final boolean[] usedLayerBuffers = new boolean[LAYERS.length];
     private final TextureAtlasExtension textureAtlas;
     private final RenderPassConfiguration<?> renderPassConfiguration;
+    private final PrimitiveLightDataCache lightCache = new PrimitiveLightDataCache();
+    private final FastBlockRenderer blockRenderer = new FastBlockRenderer(this, this.lightCache);
     private int originX;
     private int originY;
     private int originZ;
@@ -37,10 +42,16 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
         this.textureAtlas = (TextureAtlasExtension)Minecraft.getInstance().getBlocksAtlas();
     }
 
-    public void beginSection(int x, int y, int z) {
+    public void beginSection(ChunkRenderContext world, int x, int y, int z) {
         this.originX = x;
         this.originY = y;
         this.originZ = z;
+        this.lightCache.reset(world, x, y, z);
+        this.blockRenderer.beginSection();
+    }
+
+    public FastBlockRenderer getBlockRenderer() {
+        return this.blockRenderer;
     }
 
     public BufferBuilder getBuffer(BlockLayer layer) {
@@ -140,7 +151,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
         }
     }
 
-    private Material selectMaterial(Material material, TextureAtlasSprite sprite) {
+    public Material selectMaterial(Material material, TextureAtlasSprite sprite) {
         if (sprite == null || sprite.getClass() != TextureAtlasSprite.class || sprite.isAnimated()
                 || Celeritas.CONFIG.renderPassDowngradeDenylist.contains(sprite.getName())) {
             return material;
