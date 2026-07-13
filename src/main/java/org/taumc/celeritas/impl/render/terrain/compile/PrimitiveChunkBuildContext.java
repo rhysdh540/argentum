@@ -11,20 +11,15 @@ import org.embeddedt.embeddium.impl.util.QuadUtil;
 import org.taumc.celeritas.impl.render.terrain.PrimitiveRenderPassConfigurationBuilder;
 
 import net.minecraft.client.render.vertex.BufferBuilder;
-import net.minecraft.world.World;
-
 import java.nio.IntBuffer;
 
 public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     public static final int NUM_PASSES = 2;
 
-    public final World world;
-
     public final BufferBuilder tesselator;
 
-    public PrimitiveChunkBuildContext(World world, RenderPassConfiguration renderPassConfiguration) {
+    public PrimitiveChunkBuildContext(RenderPassConfiguration renderPassConfiguration) {
         super(renderPassConfiguration);
-        this.world = world;
         this.tesselator = new BufferBuilder(8192);
     }
 

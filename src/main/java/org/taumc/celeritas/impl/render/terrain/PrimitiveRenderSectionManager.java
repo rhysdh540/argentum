@@ -21,20 +21,22 @@ import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSecti
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import org.taumc.celeritas.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
 import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
+import org.taumc.celeritas.impl.world.cloned.ClonedChunkSectionCache;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.WorldChunk;
 
 import java.util.Collection;
 
 public class PrimitiveRenderSectionManager extends RenderSectionManager {
     private final World world;
+    private final ClonedChunkSectionCache sectionCache;
     private final ReferenceOpenHashSet<RenderSection> sectionsWithSkyLight = new ReferenceOpenHashSet<>();
 
     public PrimitiveRenderSectionManager(RenderPassConfiguration<?> configuration, World world, int renderDistance, CommandList commandList, int minSection, int maxSection, int requestedThreads) {
-        super(configuration, () -> new PrimitiveChunkBuildContext(world, configuration), ChunkRenderer::new, renderDistance, commandList, minSection, maxSection, requestedThreads);
+        super(configuration, () -> new PrimitiveChunkBuildContext(configuration), ChunkRenderer::new, renderDistance, commandList, minSection, maxSection, requestedThreads);
         this.world = world;
+        this.sectionCache = new ClonedChunkSectionCache(world);
     }
 
     public static PrimitiveRenderSectionManager create(ChunkVertexType vertexType, World world, int renderDistance, CommandList commandList) {
@@ -72,53 +74,23 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected boolean isSectionVisuallyEmpty(int x, int y, int z) {
-        var chunk = this.world.getChunkAt(x, z);
-        return chunk.isEmpty();
-    }
-
-    private void populateTileEntities(WorldChunk chunk, int sectionY) {
-        if (chunk.isEmpty()) {
-            return;
-        }
-        var sections = chunk.getSections();
-        if (sectionY < 0 || sectionY > sections.length) {
-            return;
-        }
-
-        var section = sections[sectionY];
-
-        if (section == null || section.isEmpty()) {
-            return;
-        }
-
-        int sectionBlockY = sectionY * 16;
-        int chunkBlockX = chunk.chunkX * 16;
-        int chunkBlockZ = chunk.chunkZ * 16;
-        for (int y = 0; y < 16; y++) {
-            for (int z = 0; z < 16; z++) {
-                for (int x = 0; x < 16; x++) {
-                    var block = section.getBlock(x, y, z);
-                    if (block.hasBlockEntity()) {
-                        var pos = new BlockPos(chunkBlockX + x, sectionBlockY + y, chunkBlockZ + z);
-                        chunk.getBlockEntity(pos, WorldChunk.BlockEntityCreationType.IMMEDIATE);
-                    }
-                }
-            }
-        }
+        return ChunkRenderContext.isSectionEmpty(this.world, x, y, z);
     }
 
     @Override
     protected @Nullable ChunkBuilderTask<ChunkBuildOutput> createRebuildTask(RenderSection render, int frame) {
-        if (isSectionVisuallyEmpty(render.getChunkX(), render.getChunkY(), render.getChunkZ())) {
+        ChunkRenderContext context = ChunkRenderContext.prepare(this.world,
+                new SectionPos(render.getChunkX(), render.getChunkY(), render.getChunkZ()), this.sectionCache);
+        if (context == null) {
             return null;
         }
 
-        ChunkRenderContext context = new ChunkRenderContext(new SectionPos(render.getChunkX(), render.getChunkY(), render.getChunkZ()));
-
-        // TODO: This is a workaround until we properly snapshot chunk sections as is done in 1.12
-        populateTileEntities(this.world.getChunkAt(render.getChunkX(), render.getChunkZ()), render.getChunkY());
-
         return new ChunkBuilderMeshingTask(render, context, frame, this.cameraPosition);
+    }
+
+    @Override
+    protected void invalidateCachedSectionData(RenderSection section) {
+        this.sectionCache.invalidate(section.getChunkX(), section.getChunkY(), section.getChunkZ());
     }
 
     @Override

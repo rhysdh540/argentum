@@ -24,8 +24,6 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.client.render.vertex.DefaultVertexFormat;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.WorldRegion;
-import net.minecraft.world.chunk.WorldChunk;
 
 public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> {
     private final RenderSection render;
@@ -59,12 +57,9 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
 
         // Initialise with minX/minY/minZ so initial getBlockState crash context is correct
 
-        var world = buildContext.world;
-        var chunk = world.getChunkAt(this.render.getChunkX(), this.render.getChunkZ());
         var tesselator = buildContext.tesselator;
 
         var blockPos = new BlockPos.Mutable(minX, minY, minZ);
-        var region = new WorldRegion(world, new BlockPos(minX, minY, minZ), new BlockPos(maxX, maxY, maxZ), 1);
         var renderBlocks = net.minecraft.client.Minecraft.getInstance().getBlockRenderDispatcher();
 
         tesselator.offset(-this.render.getOriginX(), -this.render.getOriginY(), -this.render.getOriginZ());
@@ -81,7 +76,7 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
                     for (int x = minX; x < maxX; x++) {
                         blockPos.set(x, y, z);
 
-                        var blockState = chunk.getBlockState(blockPos);
+                        var blockState = this.renderContext.getBlockState(blockPos);
                         var block = blockState.getBlock();
 
                         if (block == net.minecraft.block.Blocks.AIR) {
@@ -89,16 +84,19 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
                         }
 
 						if (block.hasBlockEntity()) {
-                            BlockEntity tileEntity = chunk.getBlockEntity(blockPos, WorldChunk.BlockEntityCreationType.CHECK);
-                            if (BlockEntityRenderDispatcher.INSTANCE.getRenderer(tileEntity) != null) {
-                                renderData.globalBlockEntities.add(tileEntity);
+                            BlockEntity blockEntity = this.renderContext.getBlockEntity(blockPos);
+                            if (blockEntity != null) {
+                                var renderer = BlockEntityRenderDispatcher.INSTANCE.getRenderer(blockEntity);
+                                if (renderer != null) {
+                                    (renderer.shouldRenderOffScreen() ? renderData.globalBlockEntities : renderData.culledBlockEntities).add(blockEntity);
+                                }
                             }
                         }
 
                         var pass = block.getRenderLayer();
 
                         tesselator.begin(GL11C.GL_QUADS, DefaultVertexFormat.BLOCK);
-                        renderBlocks.render(blockState, blockPos, region, tesselator);
+                        renderBlocks.render(blockState, blockPos, this.renderContext, tesselator);
                         tesselator.end();
                         buildContext.copyRawBuffer(tesselator.getBuffer().asIntBuffer(), tesselator.getVertexCount(), buffers, buffers.getRenderPassConfiguration().getMaterialForRenderType(pass));
                         tesselator.clear();
