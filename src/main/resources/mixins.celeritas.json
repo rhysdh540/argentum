@@ -5,7 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "client": [
     "core.BufferBuilderMixin", "core.ClientChunkCacheAccessor", "core.DebugOverlayMixin", "core.FrustumCullerMixin", "core.GameRendererMixin", "core.GlStateManagerMixin",
-    "core.MinecraftMixin", "core.MultiplayerChunkCacheMixin", "core.ParticleManagerMixin", "core.ParticleMixin", "core.TextRendererMixin", "core.WorldRendererMixin"
+    "core.MinecraftMixin", "core.MultiplayerChunkCacheMixin", "core.ParticleManagerMixin", "core.ParticleMixin", "core.TextRendererMixin", "core.TextureManagerMixin", "core.WorldRendererMixin"
   ],
   "mixins": ["core.ChunkCacheMixin", "core.TypeInstanceMultimapMixin", "core.WorldChunkAccessor", "core.WorldMixin"],
   "injectors": {
