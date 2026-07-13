@@ -10,6 +10,7 @@ import net.minecraft.client.render.vertex.BufferBuilder;
 import net.minecraft.client.render.vertex.BufferUploader;
 import net.minecraft.client.render.vertex.DefaultVertexFormat;
 import net.minecraft.client.render.vertex.Tesselator;
+import net.minecraft.client.render.vertex.VertexBuffer;
 import net.minecraft.client.render.vertex.VertexFormat;
 import net.minecraft.resource.Identifier;
 import org.lwjgl.opengl.GL11;
@@ -23,12 +24,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Mixin(TextRenderer.class)
 public abstract class TextRendererMixin {
     @Unique
     private static final int WIDTH_CACHE_SIZE = 2048;
+
+    @Unique
+    private static final int GEOMETRY_CACHE_SIZE = 1024;
 
     @Unique
     private static final boolean FONT_BATCHING_DISABLED = Boolean.getBoolean("celeritas.disableFontBatching");
@@ -52,6 +57,9 @@ public abstract class TextRendererMixin {
 
     @Shadow
     private float y;
+
+    @Shadow
+    private boolean unicode;
 
     @Shadow
     private Identifier getFontPage(int page) {
@@ -94,6 +102,21 @@ public abstract class TextRendererMixin {
     @Unique
     private Map<String, Integer> celeritas$widthCache;
 
+    @Unique
+    private Map<GeometryKey, Geometry> celeritas$geometryCache;
+
+    @Unique
+    private GeometryKey celeritas$pendingKey;
+
+    @Unique
+    private VertexBuffer celeritas$pendingBuffer;
+
+    @Unique
+    private float celeritas$originX;
+
+    @Unique
+    private float celeritas$originY;
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void celeritas$createBatch(GameOptions options, Identifier fontLocation, TextureManager textureManager,
             boolean unicode, CallbackInfo ci) {
@@ -101,6 +124,7 @@ public abstract class TextRendererMixin {
         this.celeritas$decorationBuffer = new BufferBuilder(4 * 1024 / Integer.BYTES);
         this.celeritas$uploader = new BufferUploader();
         this.celeritas$widthCache = new HashMap<>(256);
+        this.celeritas$geometryCache = new LinkedHashMap<>(256, 0.75F, true);
     }
 
     @Inject(method = "getWidth(Ljava/lang/String;)I", at = @At("HEAD"), cancellable = true)
@@ -128,19 +152,53 @@ public abstract class TextRendererMixin {
     }
 
     @Inject(method = {"reload", "setUnicode"}, at = @At("RETURN"))
-    private void celeritas$clearWidthCache(CallbackInfo ci) {
+    private void celeritas$clearCaches(CallbackInfo ci) {
         this.celeritas$widthCache.clear();
+        this.celeritas$clearGeometryCache();
     }
 
-    @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("HEAD"))
+    @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("HEAD"), cancellable = true)
     private void celeritas$beginBatch(String text, boolean shadow, CallbackInfo ci) {
         this.celeritas$batching = !FONT_BATCHING_DISABLED;
+        this.celeritas$pendingKey = null;
+        this.celeritas$pendingBuffer = null;
+        if (!this.celeritas$batching || !this.celeritas$canCache(text)) {
+            return;
+        }
+
+        GeometryKey key = new GeometryKey(text, shadow,
+                Float.floatToIntBits(this.celeritas$red), Float.floatToIntBits(this.celeritas$green),
+                Float.floatToIntBits(this.celeritas$blue), Float.floatToIntBits(this.celeritas$alpha));
+        Geometry geometry = this.celeritas$geometryCache.get(key);
+        if (geometry != null) {
+            this.textureManager.bind(this.fontLocation);
+            this.celeritas$draw(geometry.buffer(), this.x, this.y);
+            this.x += geometry.advance();
+            this.celeritas$batching = false;
+            ci.cancel();
+            return;
+        }
+
+        this.celeritas$pendingKey = key;
+        this.celeritas$originX = this.x;
+        this.celeritas$originY = this.y;
     }
 
     @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("RETURN"))
     private void celeritas$endBatch(String text, boolean shadow, CallbackInfo ci) {
         this.celeritas$flush();
         this.celeritas$flushDecorations();
+        if (this.celeritas$pendingBuffer != null) {
+            this.celeritas$geometryCache.put(this.celeritas$pendingKey,
+                    new Geometry(this.celeritas$pendingBuffer, this.x - this.celeritas$originX));
+            if (this.celeritas$geometryCache.size() > GEOMETRY_CACHE_SIZE) {
+                var iterator = this.celeritas$geometryCache.entrySet().iterator();
+                iterator.next().getValue().buffer().delete();
+                iterator.remove();
+            }
+        }
+        this.celeritas$pendingKey = null;
+        this.celeritas$pendingBuffer = null;
         this.celeritas$batching = false;
     }
 
@@ -308,6 +366,10 @@ public abstract class TextRendererMixin {
 
     @Unique
     private void celeritas$vertex(float x, float y, float u, float v) {
+        if (this.celeritas$pendingKey != null) {
+            x -= this.celeritas$originX;
+            y -= this.celeritas$originY;
+        }
         this.celeritas$buffer.vertex(x, y, 0.0D).texture(u, v)
                 .color(this.celeritas$red, this.celeritas$green, this.celeritas$blue, this.celeritas$alpha)
                 .nextVertex();
@@ -320,7 +382,13 @@ public abstract class TextRendererMixin {
         }
 
         this.celeritas$buffer.end();
-        this.celeritas$uploader.end(this.celeritas$buffer);
+        if (this.celeritas$pendingKey == null) {
+            this.celeritas$uploader.end(this.celeritas$buffer);
+        } else {
+            this.celeritas$pendingBuffer = new VertexBuffer(DefaultVertexFormat.POSITION_TEX_COLOR);
+            this.celeritas$pendingBuffer.upload(this.celeritas$buffer.getBuffer());
+            this.celeritas$draw(this.celeritas$pendingBuffer, this.celeritas$originX, this.celeritas$originY);
+        }
         this.celeritas$drawing = false;
     }
 
@@ -335,5 +403,60 @@ public abstract class TextRendererMixin {
         this.celeritas$uploader.end(this.celeritas$decorationBuffer);
         GlStateManager.enableTexture();
         this.celeritas$drawingDecorations = false;
+    }
+
+    @Unique
+    private boolean celeritas$canCache(String text) {
+        if (this.unicode || text.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < text.length(); i++) {
+            char character = text.charAt(i);
+            if (character == '\u00a7' && i + 1 < text.length()) {
+                char formatting = Character.toLowerCase(text.charAt(++i));
+                if (formatting == 'k' || formatting == 'm' || formatting == 'n') {
+                    return false;
+                }
+            } else if (character < 32 || character > 126) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Unique
+    private void celeritas$draw(VertexBuffer buffer, float x, float y) {
+        GlStateManager.pushMatrix();
+        GlStateManager.translatef(x, y, 0.0F);
+        buffer.bind();
+        GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+        GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        GL11.glEnableClientState(GL11.GL_COLOR_ARRAY);
+        GL11.glVertexPointer(3, GL11.GL_FLOAT, 24, 0L);
+        GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 24, 12L);
+        GL11.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, 24, 20L);
+        buffer.draw(GL11.GL_QUADS);
+        GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
+        GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+        buffer.unbind();
+        GlStateManager.popMatrix();
+    }
+
+    @Unique
+    private void celeritas$clearGeometryCache() {
+        for (Geometry geometry : this.celeritas$geometryCache.values()) {
+            geometry.buffer().delete();
+        }
+        this.celeritas$geometryCache.clear();
+    }
+
+    @Unique
+    private record GeometryKey(String text, boolean shadow, int red, int green, int blue, int alpha) {
+    }
+
+    @Unique
+    private record Geometry(VertexBuffer buffer, float advance) {
     }
 }
