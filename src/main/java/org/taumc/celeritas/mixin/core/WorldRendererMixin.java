@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.taumc.celeritas.impl.extensions.RenderGlobalExtension;
 import org.taumc.celeritas.impl.render.entity.EntityGatherer;
@@ -30,6 +31,10 @@ import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 @Mixin(value = WorldRenderer.class, priority = 900)
 public abstract class WorldRendererMixin implements RenderGlobalExtension {
@@ -201,6 +206,11 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
         }
     }
 
+    @Redirect(method = "renderEntities", at = @At(value = "INVOKE", target = "Ljava/util/List;iterator()Ljava/util/Iterator;", ordinal = 0))
+    private Iterator<?> celeritas$skipVanillaEntityChunks(List<?> chunks) {
+        return Collections.emptyIterator();
+    }
+
     /**
      * @reason Replace the debug string
      * @author JellySquid
@@ -211,4 +221,3 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
     }
 
 }
-
