@@ -22,6 +22,9 @@ import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.crash.CrashException;
+import net.minecraft.util.crash.CrashReport;
+import net.minecraft.util.crash.CrashReportCategory;
 
 public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> {
     private final RenderSection render;
@@ -60,41 +63,45 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
 
         buildContext.beginSection(minX, minY, minZ);
 
-        for (int y = minY; y < maxY; y++) {
-            if (cancellationToken.isCancelled()) {
-                return null;
-            }
+        try {
+            for (int y = minY; y < maxY; y++) {
+                if (cancellationToken.isCancelled()) {
+                    return null;
+                }
 
-            for (int z = minZ; z < maxZ; z++) {
-                for (int x = minX; x < maxX; x++) {
-                    blockPos.set(x, y, z);
+                for (int z = minZ; z < maxZ; z++) {
+                    for (int x = minX; x < maxX; x++) {
+                        blockPos.set(x, y, z);
 
-                    var blockState = this.renderContext.getBlockState(blockPos);
-                    var block = blockState.getBlock();
+                        var blockState = this.renderContext.getBlockState(blockPos);
+                        var block = blockState.getBlock();
 
-                    if (block == net.minecraft.block.Blocks.AIR) {
-                        continue;
-                    }
+                        if (block == net.minecraft.block.Blocks.AIR) {
+                            continue;
+                        }
 
-					if (block.hasBlockEntity()) {
-                        BlockEntity blockEntity = this.renderContext.getBlockEntity(blockPos);
-                        if (blockEntity != null) {
-                            var renderer = BlockEntityRenderDispatcher.INSTANCE.getRenderer(blockEntity);
-                            if (renderer != null) {
-                                (renderer.shouldRenderOffScreen() ? renderData.globalBlockEntities : renderData.culledBlockEntities).add(blockEntity);
+						if (block.hasBlockEntity()) {
+                            BlockEntity blockEntity = this.renderContext.getBlockEntity(blockPos);
+                            if (blockEntity != null) {
+                                var renderer = BlockEntityRenderDispatcher.INSTANCE.getRenderer(blockEntity);
+                                if (renderer != null) {
+                                    (renderer.shouldRenderOffScreen() ? renderData.globalBlockEntities : renderData.culledBlockEntities).add(blockEntity);
+                                }
                             }
                         }
-                    }
 
-                    var pass = block.getRenderLayer();
+                        var pass = block.getRenderLayer();
 
-                    renderBlocks.render(blockState, blockPos, this.renderContext, buildContext.getBuffer(pass));
+                        renderBlocks.render(blockState, blockPos, this.renderContext, buildContext.getBuffer(pass));
 
-					if (block.isOpaque()) {
-                        occluder.markClosed(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+						if (block.isOpaque()) {
+                            occluder.markClosed(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+                        }
                     }
                 }
             }
+        } catch (Throwable exception) {
+            throw this.addCrashContext(CrashReport.of(exception, "Encountered exception while building chunk meshes"), blockPos);
         }
 
         buildContext.finishSection(buffers);
@@ -108,6 +115,17 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
         encodeVisibilityData(occluder, renderData);
 
         return new ChunkBuildOutput(this.render, renderData, meshes, this.buildTime);
+    }
+
+    private CrashException addCrashContext(CrashReport report, BlockPos pos) {
+        CrashReportCategory category = report.addCategory("Block being rendered");
+        try {
+            CrashReportCategory.addBlockDetails(category, pos, this.renderContext.getBlockState(pos));
+        } catch (Throwable ignored) {
+            category.add("Block location", CrashReportCategory.formatPosition(pos));
+        }
+        category.add("Chunk section", this.render);
+        return new CrashException(report);
     }
 
     private static final Direction[] FACINGS = new Direction[GraphDirection.COUNT];
