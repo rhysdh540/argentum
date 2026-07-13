@@ -17,6 +17,8 @@ import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.chunk.WorldChunkSection;
 import net.minecraft.world.gen.WorldGeneratorType;
 
+import java.util.Arrays;
+
 public final class ChunkRenderContext implements WorldView {
     private static final int SECTION_LENGTH = 3;
     private static final int SECTION_COUNT = SECTION_LENGTH * SECTION_LENGTH * SECTION_LENGTH;
@@ -25,12 +27,17 @@ public final class ChunkRenderContext implements WorldView {
     private final ClonedChunkSection[] sections;
     private final WorldGeneratorType generatorType;
     private final boolean hasSky;
+    private final short[] lightCache = new short[20 * 20 * 20];
+    private int[] grassColors;
+    private int[] foliageColors;
+    private int[] waterColors;
 
     private ChunkRenderContext(World world, SectionPos origin, ClonedChunkSection[] sections) {
         this.origin = origin;
         this.sections = sections;
         this.generatorType = world.getGeneratorType();
         this.hasSky = !world.dimension.hasNoSky();
+        Arrays.fill(this.lightCache, (short)-1);
     }
 
     public static @Nullable ChunkRenderContext prepare(World world, SectionPos origin, ClonedChunkSectionCache cache) {
@@ -66,8 +73,12 @@ public final class ChunkRenderContext implements WorldView {
 
     @Override
     public BlockState getBlockState(BlockPos pos) {
-        ClonedChunkSection section = this.getSection(pos.getX() >> 4, pos.getY() >> 4, pos.getZ() >> 4);
-        return section == null ? Blocks.AIR.defaultState() : section.getBlockState(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15);
+        return this.getBlockState(pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    public BlockState getBlockState(int x, int y, int z) {
+        ClonedChunkSection section = this.getSection(x >> 4, y >> 4, z >> 4);
+        return section == null ? Blocks.AIR.defaultState() : section.getBlockState(x & 15, y & 15, z & 15);
     }
 
     @Override
@@ -78,43 +89,115 @@ public final class ChunkRenderContext implements WorldView {
 
     @Override
     public int getLightColor(BlockPos pos, int ambientLight) {
-        int sky = this.getBrightness(LightType.SKY, pos);
-        int block = Math.max(this.getBrightness(LightType.BLOCK, pos), ambientLight);
+        return this.getLightColor(pos.getX(), pos.getY(), pos.getZ(), ambientLight);
+    }
+
+    public int getLightColor(int x, int y, int z, int ambientLight) {
+        int cached = this.getCachedLight(x, y, z);
+        int sky = cached >> 4;
+        int block = Math.max(cached & 15, ambientLight);
         return sky << 20 | block << 4;
     }
 
-    private int getBrightness(LightType type, BlockPos pos) {
-        if (type == LightType.SKY && !this.hasSky) {
-            return 0;
+    private int getCachedLight(int x, int y, int z) {
+        int index = this.getCacheIndex(x, y, z);
+        if (index < 0) {
+            return this.getBrightness(LightType.SKY, x, y, z) << 4 | this.getBrightness(LightType.BLOCK, x, y, z);
         }
 
-        if (pos.getY() < 0 || pos.getY() >= 256) {
-            return type.defaultValue;
-        }
-
-        if (!this.getBlockState(pos).getBlock().usesNeighborLight()) {
-            return this.getLight(type, pos);
-        }
-
-        int light = 0;
-        for (Direction direction : Direction.values()) {
-            light = Math.max(light, this.getLight(type, pos.offset(direction)));
-            if (light == 15) {
-                break;
-            }
+        int light = this.lightCache[index];
+        if (light < 0) {
+            light = this.getBrightness(LightType.SKY, x, y, z) << 4 | this.getBrightness(LightType.BLOCK, x, y, z);
+            this.lightCache[index] = (short)light;
         }
         return light;
     }
 
-    private int getLight(LightType type, BlockPos pos) {
-        ClonedChunkSection section = this.getSection(pos.getX() >> 4, pos.getY() >> 4, pos.getZ() >> 4);
-        return section == null ? type.defaultValue : section.getLight(type, pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15);
+    private int getBrightness(LightType type, int x, int y, int z) {
+        if (type == LightType.SKY && !this.hasSky) {
+            return 0;
+        }
+
+        if (y < 0 || y >= 256) {
+            return type.defaultValue;
+        }
+
+        if (!this.getBlockState(x, y, z).getBlock().usesNeighborLight()) {
+            return this.getLight(type, x, y, z);
+        }
+
+        int light = this.getLight(type, x - 1, y, z);
+        light = Math.max(light, this.getLight(type, x + 1, y, z));
+        light = Math.max(light, this.getLight(type, x, y - 1, z));
+        light = Math.max(light, this.getLight(type, x, y + 1, z));
+        light = Math.max(light, this.getLight(type, x, y, z - 1));
+        return Math.max(light, this.getLight(type, x, y, z + 1));
+    }
+
+    private int getLight(LightType type, int x, int y, int z) {
+        ClonedChunkSection section = this.getSection(x >> 4, y >> 4, z >> 4);
+        return section == null ? type.defaultValue : section.getLight(type, x & 15, y & 15, z & 15);
     }
 
     @Override
     public Biome getBiome(BlockPos pos) {
-        ClonedChunkSection section = this.getSection(pos.getX() >> 4, this.origin.y(), pos.getZ() >> 4);
-        return section == null ? Biome.DEFAULT : section.getBiome(pos.getX() & 15, pos.getZ() & 15);
+        return this.getBiome(pos.getX(), pos.getZ());
+    }
+
+    private Biome getBiome(int x, int z) {
+        ClonedChunkSection section = this.getSection(x >> 4, this.origin.y(), z >> 4);
+        return section == null ? Biome.DEFAULT : section.getBiome(x & 15, z & 15);
+    }
+
+    public int getGrassColor(BlockPos pos) {
+        return this.getBiomeColor(pos, 0);
+    }
+
+    public int getFoliageColor(BlockPos pos) {
+        return this.getBiomeColor(pos, 1);
+    }
+
+    public int getWaterColor(BlockPos pos) {
+        return this.getBiomeColor(pos, 2);
+    }
+
+    private int getBiomeColor(BlockPos pos, int type) {
+        int index = this.getBlockIndex(pos.getX(), pos.getY(), pos.getZ());
+        if (index < 0) {
+            return -1;
+        }
+
+        int[] colors = switch (type) {
+            case 0 -> this.grassColors = prepareColorCache(this.grassColors);
+            case 1 -> this.foliageColors = prepareColorCache(this.foliageColors);
+            default -> this.waterColors = prepareColorCache(this.waterColors);
+        };
+        if (colors[index] >= 0) {
+            return colors[index];
+        }
+
+        int red = 0;
+        int green = 0;
+        int blue = 0;
+        BlockPos.Mutable sample = new BlockPos.Mutable();
+        for (int dz = -1; dz <= 1; dz++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                int x = pos.getX() + dx;
+                int z = pos.getZ() + dz;
+                sample.set(x, pos.getY(), z);
+                Biome biome = this.getBiome(x, z);
+                int color = switch (type) {
+                    case 0 -> biome.getGrassColor(sample);
+                    case 1 -> biome.getFoliageColor(sample);
+                    default -> biome.waterFogColor;
+                };
+                red += color >> 16 & 255;
+                green += color >> 8 & 255;
+                blue += color & 255;
+            }
+        }
+
+        return colors[index] = red / 9 << 16 | green / 9 << 8 | blue / 9;
     }
 
     @Override
@@ -146,6 +229,30 @@ public final class ChunkRenderContext implements WorldView {
             return null;
         }
         return this.sections[getSectionIndex(localX, localY, localZ)];
+    }
+
+    private int getCacheIndex(int x, int y, int z) {
+        int localX = x - this.origin.minX() + 2;
+        int localY = y - this.origin.minY() + 2;
+        int localZ = z - this.origin.minZ() + 2;
+        return (localX | localY | localZ) < 0 || localX >= 20 || localY >= 20 || localZ >= 20
+                ? -1 : (localY * 20 + localZ) * 20 + localX;
+    }
+
+    private int getBlockIndex(int x, int y, int z) {
+        int localX = x - this.origin.minX();
+        int localY = y - this.origin.minY();
+        int localZ = z - this.origin.minZ();
+        return (localX | localY | localZ) < 0 || localX >= 16 || localY >= 16 || localZ >= 16
+                ? -1 : (localY << 8) | (localZ << 4) | localX;
+    }
+
+    private static int[] prepareColorCache(int[] colors) {
+        if (colors == null) {
+            colors = new int[16 * 16 * 16];
+            Arrays.fill(colors, -1);
+        }
+        return colors;
     }
 
     private static int getSectionIndex(int x, int y, int z) {
