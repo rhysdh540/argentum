@@ -5,6 +5,7 @@ import org.embeddedt.embeddium.impl.render.chunk.ChunkRenderMatrices;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderFogComponent;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkMeshFormats;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexType;
+import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTrackerHolder;
 import org.embeddedt.embeddium.impl.render.terrain.SimpleWorldRenderer;
 import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.extensions.RenderGlobalExtension;
@@ -55,6 +56,7 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
 
     @Override
     protected void loadWorld(World world) {
+        ChunkTrackerHolder.get(world).setRequiredNeighborRadius(Celeritas.CONFIG.safeChunkEdges ? 1 : 0);
         super.loadWorld(world);
     }
 

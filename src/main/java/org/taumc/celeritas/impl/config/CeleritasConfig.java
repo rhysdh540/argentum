@@ -30,6 +30,7 @@ public class CeleritasConfig {
     public int entityOcclusionIntervalMs = 50;
     public boolean particleCulling = true;
     public boolean translucencySorting = true;
+    public boolean safeChunkEdges = true;
     public boolean compactVertexFormat;
     public boolean checkGlErrors;
 
