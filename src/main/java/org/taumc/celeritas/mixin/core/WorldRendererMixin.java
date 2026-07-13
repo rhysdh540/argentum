@@ -182,7 +182,8 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
         BlockPos.Mutable entityBlockPos = new BlockPos.Mutable();
 
         for (Entity entity : entityList) {
-            if (!this.entityRenderDispatcher.shouldRender(entity, culler, d, e, g) && entity.rider != this.minecraft.player) {
+            if ((!this.entityRenderDispatcher.shouldRender(entity, culler, d, e, g) || !this.renderer.isEntityVisible(entity))
+                    && entity.rider != this.minecraft.player) {
                 if (entity instanceof WitherSkullEntity) {
                     this.minecraft.getEntityRenderDispatcher().renderNameTag(entity, tickDelta);
                 }

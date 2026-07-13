@@ -6,7 +6,6 @@ import org.embeddedt.embeddium.impl.render.chunk.compile.sorting.QuadPrimitiveTy
 import org.embeddedt.embeddium.impl.render.chunk.terrain.TerrainRenderPass;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.material.Material;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.material.parameters.AlphaCutoffParameter;
-import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkMeshFormats;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexType;
 import org.lwjgl.opengl.GL11;
 
@@ -17,9 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 public class PrimitiveRenderPassConfigurationBuilder {
-    public static final TerrainRenderPass SOLID_PASS, CUTOUT_MIPPED_PASS, TRANSLUCENT_PASS;
-    public static final Material SOLID_MATERIAL, CUTOUT_MATERIAL, CUTOUT_MIPPED_MATERIAL, TRANSLUCENT_MATERIAL;
-
     private record PrimitivePipelineState(int pass, boolean disableBlend) implements TerrainRenderPass.PipelineState {
         @Override
         public void setup() {
@@ -36,51 +32,49 @@ public class PrimitiveRenderPassConfigurationBuilder {
         }
     }
 
-    private static TerrainRenderPass.TerrainRenderPassBuilder builderForRenderType(int pass, boolean disableBlend) {
+    private static TerrainRenderPass.TerrainRenderPassBuilder builderForRenderType(int pass, boolean disableBlend, ChunkVertexType vertexType) {
         var builder = TerrainRenderPass.builder();
         builder.pipelineState(new PrimitivePipelineState(pass, disableBlend));
-        builder.vertexType(ChunkMeshFormats.VANILLA_LIKE).primitiveType(QuadPrimitiveType.TRIANGULATED);
+        builder.vertexType(vertexType).primitiveType(QuadPrimitiveType.TRIANGULATED);
         return builder;
     }
 
-    static {
-        SOLID_PASS =  builderForRenderType(0, true)
+    public static RenderPassConfiguration<?> build(ChunkVertexType vertexType, boolean translucencySorting) {
+        TerrainRenderPass solidPass = builderForRenderType(0, true, vertexType)
                 .name("solid")
                 .fragmentDiscard(false)
                 .useReverseOrder(false)
                 .build();
-        CUTOUT_MIPPED_PASS = builderForRenderType(0, false)
+        TerrainRenderPass cutoutMippedPass = builderForRenderType(0, false, vertexType)
                 .name("cutout_mipped")
                 .fragmentDiscard(true)
                 .useReverseOrder(false)
                 .build();
-        TRANSLUCENT_PASS = builderForRenderType(1, false)
+        TerrainRenderPass translucentPass = builderForRenderType(1, false, vertexType)
                 .name("translucent")
                 .fragmentDiscard(false)
                 .useReverseOrder(true)
-                .useTranslucencySorting(true) // TODO allow disabling
+                .useTranslucencySorting(translucencySorting)
                 .build();
-        TRANSLUCENT_MATERIAL = new Material(TRANSLUCENT_PASS, AlphaCutoffParameter.ZERO, true);
-        SOLID_MATERIAL = new Material(SOLID_PASS, AlphaCutoffParameter.ZERO, true);
-        CUTOUT_MIPPED_MATERIAL = new Material(CUTOUT_MIPPED_PASS, AlphaCutoffParameter.ONE_TENTH, true);
-        CUTOUT_MATERIAL = new Material(CUTOUT_MIPPED_PASS, AlphaCutoffParameter.ONE_TENTH, false);
-    }
+        Material translucentMaterial = new Material(translucentPass, AlphaCutoffParameter.ZERO, true);
+        Material solidMaterial = new Material(solidPass, AlphaCutoffParameter.ZERO, true);
+        Material cutoutMippedMaterial = new Material(cutoutMippedPass, AlphaCutoffParameter.ONE_TENTH, true);
+        Material cutoutMaterial = new Material(cutoutMippedPass, AlphaCutoffParameter.ONE_TENTH, false);
 
-    public static RenderPassConfiguration<?> build(ChunkVertexType vertexType) {
         Map<BlockLayer, Collection<TerrainRenderPass>> vanillaRenderStages = new Reference2ReferenceOpenHashMap<>();
-        vanillaRenderStages.put(BlockLayer.SOLID, List.of(SOLID_PASS, CUTOUT_MIPPED_PASS));
-        vanillaRenderStages.put(BlockLayer.TRANSLUCENT, List.of(TRANSLUCENT_PASS));
+        vanillaRenderStages.put(BlockLayer.SOLID, List.of(solidPass, cutoutMippedPass));
+        vanillaRenderStages.put(BlockLayer.TRANSLUCENT, List.of(translucentPass));
 
         Map<BlockLayer, Material> renderTypeToMaterialMap = new Reference2ReferenceOpenHashMap<>();
-        renderTypeToMaterialMap.put(BlockLayer.SOLID, SOLID_MATERIAL);
-        renderTypeToMaterialMap.put(BlockLayer.CUTOUT, CUTOUT_MATERIAL);
-        renderTypeToMaterialMap.put(BlockLayer.CUTOUT_MIPPED, CUTOUT_MIPPED_MATERIAL);
-        renderTypeToMaterialMap.put(BlockLayer.TRANSLUCENT, TRANSLUCENT_MATERIAL);
+        renderTypeToMaterialMap.put(BlockLayer.SOLID, solidMaterial);
+        renderTypeToMaterialMap.put(BlockLayer.CUTOUT, cutoutMaterial);
+        renderTypeToMaterialMap.put(BlockLayer.CUTOUT_MIPPED, cutoutMippedMaterial);
+        renderTypeToMaterialMap.put(BlockLayer.TRANSLUCENT, translucentMaterial);
 
         return new RenderPassConfiguration<>(renderTypeToMaterialMap,
                 vanillaRenderStages,
-                CUTOUT_MIPPED_MATERIAL,
-                CUTOUT_MIPPED_MATERIAL,
-                TRANSLUCENT_MATERIAL);
+                cutoutMippedMaterial,
+                cutoutMippedMaterial,
+                translucentMaterial);
     }
 }

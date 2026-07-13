@@ -17,6 +17,7 @@ import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexType;
 import org.embeddedt.embeddium.impl.render.viewport.Viewport;
 import org.embeddedt.embeddium.impl.util.position.SectionPos;
 import org.jetbrains.annotations.Nullable;
+import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import org.taumc.celeritas.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
@@ -40,17 +41,15 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
     }
 
     public static PrimitiveRenderSectionManager create(ChunkVertexType vertexType, World world, int renderDistance, CommandList commandList) {
-        // TODO support thread option
-        int idealThreadCount = 0;
         int maxSection = world.getHeight() / 16;
-        return new PrimitiveRenderSectionManager(PrimitiveRenderPassConfigurationBuilder.build(vertexType), world, renderDistance, commandList,
+        return new PrimitiveRenderSectionManager(PrimitiveRenderPassConfigurationBuilder.build(vertexType, Celeritas.CONFIG.translucencySorting), world, renderDistance, commandList,
                 0, maxSection,
-                idealThreadCount);
+                Celeritas.CONFIG.chunkBuilderThreads);
     }
 
     @Override
     protected AsyncOcclusionMode getAsyncOcclusionMode() {
-        return AsyncOcclusionMode.EVERYTHING;
+        return Celeritas.CONFIG.asyncOcclusion;
     }
 
     @Override
@@ -60,7 +59,7 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected boolean useFogOcclusion() {
-        return true;
+        return Celeritas.CONFIG.fogCulling;
     }
 
     @Override
@@ -95,7 +94,7 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected boolean allowImportantRebuilds() {
-        return false;
+        return !Celeritas.CONFIG.deferChunkUpdates;
     }
 
     @Override

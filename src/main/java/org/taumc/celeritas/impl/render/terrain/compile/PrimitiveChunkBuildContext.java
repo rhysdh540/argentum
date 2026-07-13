@@ -4,12 +4,10 @@ import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFacing;
 import org.embeddedt.embeddium.impl.render.chunk.RenderPassConfiguration;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildBuffers;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildContext;
-import org.embeddedt.embeddium.impl.render.chunk.sprite.SpriteTransparencyLevel;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.material.Material;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexEncoder;
 import org.embeddedt.embeddium.impl.util.QuadUtil;
 import org.lwjgl.opengl.GL11C;
-import org.taumc.celeritas.impl.render.terrain.PrimitiveRenderPassConfigurationBuilder;
 
 import net.minecraft.client.render.block.BlockLayer;
 import net.minecraft.client.render.vertex.BufferBuilder;
@@ -71,17 +69,6 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     }
 
     private final ChunkVertexEncoder.Vertex[] vertices = ChunkVertexEncoder.Vertex.uninitializedQuad();
-
-    private Material selectMaterial(Material material, SpriteTransparencyLevel transparencyLevel) {
-        if (transparencyLevel == SpriteTransparencyLevel.OPAQUE && material == PrimitiveRenderPassConfigurationBuilder.CUTOUT_MIPPED_MATERIAL) {
-            // Downgrade to solid
-            return PrimitiveRenderPassConfigurationBuilder.SOLID_MATERIAL;
-        } else if (material == PrimitiveRenderPassConfigurationBuilder.TRANSLUCENT_MATERIAL && transparencyLevel != SpriteTransparencyLevel.TRANSLUCENT) {
-            // Downgrade to cutout
-            return PrimitiveRenderPassConfigurationBuilder.CUTOUT_MIPPED_MATERIAL;
-        }
-        return material;
-    }
 
     private static final int[] NORMAL_WINDING = new int[] {0, 1, 2, 3};
     private static final int[] BACKFACE_WINDING = new int[] {3, 2, 1, 0};
