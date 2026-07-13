@@ -19,8 +19,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 @Mixin(TextRenderer.class)
 public abstract class TextRendererMixin {
+    @Unique
+    private static final int WIDTH_CACHE_SIZE = 2048;
+
     @Shadow
     private int[] characterWidths;
 
@@ -71,16 +77,49 @@ public abstract class TextRendererMixin {
     @Unique
     private float celeritas$alpha = 1.0F;
 
+    @Unique
+    private Map<String, Integer> celeritas$widthCache;
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void celeritas$createBatch(GameOptions options, Identifier fontLocation, TextureManager textureManager,
             boolean unicode, CallbackInfo ci) {
         this.celeritas$buffer = new BufferBuilder(64 * 1024 / Integer.BYTES);
         this.celeritas$uploader = new BufferUploader();
+        this.celeritas$widthCache = new LinkedHashMap<>(256, 0.75F, true);
+    }
+
+    @Inject(method = "getWidth", at = @At("HEAD"), cancellable = true)
+    private void celeritas$getCachedWidth(String text, CallbackInfoReturnable<Integer> cir) {
+        if (text == null) {
+            return;
+        }
+
+        Integer width = this.celeritas$widthCache.get(text);
+        if (width != null) {
+            cir.setReturnValue(width);
+        }
+    }
+
+    @Inject(method = "getWidth", at = @At("RETURN"))
+    private void celeritas$cacheWidth(String text, CallbackInfoReturnable<Integer> cir) {
+        if (text == null) {
+            return;
+        }
+
+        this.celeritas$widthCache.put(text, cir.getReturnValue());
+        if (this.celeritas$widthCache.size() > WIDTH_CACHE_SIZE) {
+            this.celeritas$widthCache.remove(this.celeritas$widthCache.keySet().iterator().next());
+        }
+    }
+
+    @Inject(method = {"reload", "setUnicode"}, at = @At("RETURN"))
+    private void celeritas$clearWidthCache(CallbackInfo ci) {
+        this.celeritas$widthCache.clear();
     }
 
     @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("HEAD"))
     private void celeritas$beginBatch(String text, boolean shadow, CallbackInfo ci) {
-        this.celeritas$batching = true;
+        this.celeritas$batching = !Boolean.getBoolean("celeritas.disableFontBatching");
     }
 
     @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("RETURN"))
