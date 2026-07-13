@@ -11,6 +11,8 @@ import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildOutput;
 import org.embeddedt.embeddium.impl.render.chunk.compile.tasks.ChunkBuilderTask;
 import org.embeddedt.embeddium.impl.render.chunk.data.BuiltRenderSectionData;
 import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
+import org.embeddedt.embeddium.impl.render.chunk.lists.SectionTicker;
+import org.embeddedt.embeddium.impl.render.chunk.sprite.GenericSectionSpriteTicker;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderInterface;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderTextureSlot;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexType;
@@ -21,6 +23,7 @@ import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import org.taumc.celeritas.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
+import org.taumc.celeritas.impl.render.terrain.sprite.SpriteUtil;
 import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 import org.taumc.celeritas.impl.world.cloned.ClonedChunkSectionCache;
 
@@ -50,6 +53,11 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
     @Override
     protected AsyncOcclusionMode getAsyncOcclusionMode() {
         return Celeritas.CONFIG.asyncOcclusion;
+    }
+
+    @Override
+    protected @Nullable SectionTicker createSectionTicker() {
+        return new GenericSectionSpriteTicker<>(SpriteUtil::markActive);
     }
 
     @Override

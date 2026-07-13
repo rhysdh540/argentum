@@ -13,6 +13,8 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CeleritasConfig {
     private static final Logger LOGGER = LogManager.getLogger("CeleritasConfig");
@@ -30,6 +32,8 @@ public class CeleritasConfig {
     public int entityOcclusionIntervalMs = 50;
     public boolean particleCulling = true;
     public boolean translucencySorting = true;
+    public boolean animateOnlyVisibleTextures = true;
+    public Set<String> renderPassDowngradeDenylist = new HashSet<>();
     public boolean safeChunkEdges = true;
     public boolean compactVertexFormat;
     public boolean checkGlErrors;
@@ -69,6 +73,9 @@ public class CeleritasConfig {
         this.entityOcclusionIntervalMs = Math.max(0, this.entityOcclusionIntervalMs);
         if (this.asyncOcclusion == null) {
             this.asyncOcclusion = AsyncOcclusionMode.EVERYTHING;
+        }
+        if (this.renderPassDowngradeDenylist == null) {
+            this.renderPassDowngradeDenylist = new HashSet<>();
         }
     }
 }

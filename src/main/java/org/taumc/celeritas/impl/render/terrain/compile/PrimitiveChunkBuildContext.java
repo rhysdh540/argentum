@@ -5,27 +5,36 @@ import org.embeddedt.embeddium.impl.render.chunk.RenderPassConfiguration;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildBuffers;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildContext;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.material.Material;
+import org.embeddedt.embeddium.impl.render.chunk.sprite.SpriteTransparencyLevel;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexEncoder;
 import org.embeddedt.embeddium.impl.util.QuadUtil;
 import org.lwjgl.opengl.GL11C;
 
 import net.minecraft.client.render.block.BlockLayer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.render.vertex.BufferBuilder;
 import net.minecraft.client.render.vertex.DefaultVertexFormat;
 
 import java.nio.IntBuffer;
+import org.taumc.celeritas.impl.extensions.TextureAtlasExtension;
+import org.taumc.celeritas.impl.Celeritas;
 
 public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     private static final BlockLayer[] LAYERS = BlockLayer.values();
 
     private final BufferBuilder[] layerBuffers = new BufferBuilder[LAYERS.length];
     private final boolean[] usedLayerBuffers = new boolean[LAYERS.length];
+    private final TextureAtlasExtension textureAtlas;
+    private final RenderPassConfiguration<?> renderPassConfiguration;
     private int originX;
     private int originY;
     private int originZ;
 
     public PrimitiveChunkBuildContext(RenderPassConfiguration renderPassConfiguration) {
         super(renderPassConfiguration);
+        this.renderPassConfiguration = renderPassConfiguration;
+        this.textureAtlas = (TextureAtlasExtension)Minecraft.getInstance().getBlocksAtlas();
     }
 
     public void beginSection(int x, int y, int z) {
@@ -121,9 +130,32 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
                 celeritasVertices[winding[vIdx]].trueNormal = trueNormal;
             }
             ModelQuadFacing facing = QuadUtil.findNormalFace(trueNormal);
-            // TODO implement render pass downgrading for 1.5+
-			buffers.get(material).getVertexBuffer(facing).push(celeritasVertices, material);
+            TextureAtlasSprite sprite = this.textureAtlas.celeritas$findFromUV(uSum * 0.25F, vSum * 0.25F);
+            if (sprite != null && sprite.isAnimated()
+                    && buffers.getSectionContextBundle() instanceof PrimitiveBuiltRenderSectionData renderData) {
+                renderData.animatedSprites.add(sprite);
+            }
+            Material selectedMaterial = this.selectMaterial(material, sprite);
+            buffers.get(selectedMaterial).getVertexBuffer(facing).push(celeritasVertices, selectedMaterial);
         }
+    }
+
+    private Material selectMaterial(Material material, TextureAtlasSprite sprite) {
+        if (sprite == null || sprite.getClass() != TextureAtlasSprite.class || sprite.isAnimated()
+                || Celeritas.CONFIG.renderPassDowngradeDenylist.contains(sprite.getName())) {
+            return material;
+        }
+
+        SpriteTransparencyLevel transparency = ((SpriteTransparencyLevel.Holder)sprite).embeddium$getTransparencyLevel();
+        if (material == this.renderPassConfiguration.defaultTranslucentMaterial()
+                && transparency != SpriteTransparencyLevel.TRANSLUCENT) {
+            return this.renderPassConfiguration.defaultCutoutMippedMaterial();
+        }
+        if (transparency == SpriteTransparencyLevel.OPAQUE
+                && material != this.renderPassConfiguration.defaultSolidMaterial()) {
+            return this.renderPassConfiguration.defaultSolidMaterial();
+        }
+        return material;
     }
 
     @Override

@@ -3,10 +3,11 @@ package org.taumc.celeritas.impl.render.terrain.compile;
 import org.embeddedt.embeddium.impl.render.chunk.data.MinecraftBuiltRenderSectionData;
 
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.render.texture.TextureAtlasSprite;
 
 import java.util.Objects;
 
-public class PrimitiveBuiltRenderSectionData extends MinecraftBuiltRenderSectionData<Object, BlockEntity> {
+public class PrimitiveBuiltRenderSectionData extends MinecraftBuiltRenderSectionData<TextureAtlasSprite, BlockEntity> {
     public boolean hasSkyLight;
 
     @Override
