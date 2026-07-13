@@ -178,6 +178,7 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
     private void celeritas$renderEntities(Entity camera, Culler culler, float tickDelta, CallbackInfo ci, @Local(ordinal = 0) double d, @Local(ordinal = 1) double e, @Local(ordinal = 2) double g) {
         celeritas$entityGatherer.clear();
         var entityList = celeritas$entityGatherer.getLoadedEntityList(this.world);
+        this.renderer.prepareEntityCulling(entityList, camera, d, e, g);
 
         BlockPos.Mutable entityBlockPos = new BlockPos.Mutable();
 

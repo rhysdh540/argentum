@@ -8,6 +8,7 @@ import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexType;
 import org.embeddedt.embeddium.impl.render.terrain.SimpleWorldRenderer;
 import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.extensions.RenderGlobalExtension;
+import org.taumc.celeritas.impl.render.entity.EntityOcclusionCuller;
 import org.taumc.celeritas.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
 
 import net.minecraft.block.entity.BlockEntity;
@@ -24,6 +25,7 @@ import java.util.Objects;
  * Provides an extension to vanilla's world renderer.
  */
 public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, PrimitiveRenderSectionManager, Object, BlockEntity, Float> {
+    private final EntityOcclusionCuller entityOcclusionCuller = new EntityOcclusionCuller(this);
 
     /**
      * @return The CeleritasWorldRenderer based on the current dimension
@@ -54,6 +56,12 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
     @Override
     protected void loadWorld(World world) {
         super.loadWorld(world);
+    }
+
+    @Override
+    protected void unloadWorld() {
+        this.entityOcclusionCuller.clear();
+        super.unloadWorld();
     }
 
     public static CameraState captureCameraState(double ticks) {
@@ -114,7 +122,18 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
             return true;
         }
 
-        return this.isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
+        return this.isEntitySectionVisible(box) && this.entityOcclusionCuller.isVisible(entity);
+    }
+
+    public boolean isEntitySectionVisible(net.minecraft.util.math.Box box) {
+        return (this.getLastViewport() == null || this.getLastViewport().isBoxVisible(
+                box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ))
+                && this.isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
+    }
+
+    public void prepareEntityCulling(List<Entity> entities, Entity camera,
+            double cameraX, double cameraY, double cameraZ) {
+        this.entityOcclusionCuller.prepare(entities, camera, cameraX, cameraY, cameraZ);
     }
 
     public boolean isParticleVisible(Particle particle) {

@@ -26,6 +26,8 @@ public class CeleritasConfig {
     public AsyncOcclusionMode asyncOcclusion = AsyncOcclusionMode.EVERYTHING;
     public boolean fogCulling = true;
     public boolean entityCulling = true;
+    public boolean entityOcclusionCulling;
+    public int entityOcclusionIntervalMs = 50;
     public boolean particleCulling = true;
     public boolean translucencySorting = true;
     public boolean compactVertexFormat;
@@ -63,6 +65,7 @@ public class CeleritasConfig {
 
     private void validate() {
         this.chunkBuilderThreads = Math.max(0, this.chunkBuilderThreads);
+        this.entityOcclusionIntervalMs = Math.max(0, this.entityOcclusionIntervalMs);
         if (this.asyncOcclusion == null) {
             this.asyncOcclusion = AsyncOcclusionMode.EVERYTHING;
         }
