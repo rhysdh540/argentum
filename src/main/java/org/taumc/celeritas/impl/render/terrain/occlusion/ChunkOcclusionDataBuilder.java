@@ -1,162 +1,107 @@
 package org.taumc.celeritas.impl.render.terrain.occlusion;
 
-import it.unimi.dsi.fastutil.ints.IntArrayFIFOQueue;
-import it.unimi.dsi.fastutil.ints.IntPriorityQueue;
-import org.joml.Vector3i;
-import org.taumc.celeritas.impl.render.util.Direction;
+import org.embeddedt.embeddium.impl.render.chunk.occlusion.GraphDirection;
+import org.embeddedt.embeddium.impl.render.chunk.occlusion.VisibilityEncoding;
 
 import java.util.BitSet;
-import java.util.EnumSet;
-import java.util.Set;
 
-/**
- * WARNING: Minecraft 1.16 code rip!!
- */
+public final class ChunkOcclusionDataBuilder {
+    private static final int BLOCK_COUNT = 16 * 16 * 16;
+    private static final int[] EDGE_POINTS = createEdgePoints();
 
-public class ChunkOcclusionDataBuilder {
-    private static final int STEP_X = (int)Math.pow(16.0, 0.0);
-    private static final int STEP_Z = (int)Math.pow(16.0, 1.0);
-    private static final int STEP_Y = (int)Math.pow(16.0, 2.0);
+    private final BitSet closed = new BitSet(BLOCK_COUNT);
+    private final int[] queue = new int[BLOCK_COUNT];
 
-    private static final Direction[] DIRECTIONS = Direction.values();
+    public void markClosed(int x, int y, int z) {
+        this.closed.set(pack(x, y, z));
+    }
 
-    private final BitSet closed = new BitSet(4096);
-    private static final int[] EDGE_POINTS = new int[1352];
+    public long computeVisibilityEncoding() {
+        int closedCount = this.closed.cardinality();
+        if (closedCount < 256) {
+            return VisibilityEncoding.EVERYTHING;
+        }
+        if (closedCount == BLOCK_COUNT) {
+            return VisibilityEncoding.NULL;
+        }
 
-    static {
-        int k = 0;
+        long visibility = 0L;
+        for (int point : EDGE_POINTS) {
+            if (!this.closed.get(point)) {
+                visibility |= encodeFaces(this.findOpenFaces(point));
+            }
+        }
+        return visibility;
+    }
 
-        for(int l = 0; l < 16; ++l) {
-            for(int m = 0; m < 16; ++m) {
-                for(int n = 0; n < 16; ++n) {
-                    if (l == 0 || l == 15 || m == 0 || m == 15 || n == 0 || n == 15) {
-                        EDGE_POINTS[k++] = pack(l, m, n);
+    private int findOpenFaces(int start) {
+        int read = 0;
+        int write = 0;
+        int faces = 0;
+        this.queue[write++] = start;
+        this.closed.set(start);
+
+        while (read < write) {
+            int pos = this.queue[read++];
+            int x = pos & 15;
+            int z = pos >> 4 & 15;
+            int y = pos >> 8 & 15;
+
+            if (y == 0) faces |= 1 << GraphDirection.DOWN;
+            if (y == 15) faces |= 1 << GraphDirection.UP;
+            if (z == 0) faces |= 1 << GraphDirection.NORTH;
+            if (z == 15) faces |= 1 << GraphDirection.SOUTH;
+            if (x == 0) faces |= 1 << GraphDirection.WEST;
+            if (x == 15) faces |= 1 << GraphDirection.EAST;
+
+            if (y > 0) write = this.enqueue(pos - 256, write);
+            if (y < 15) write = this.enqueue(pos + 256, write);
+            if (z > 0) write = this.enqueue(pos - 16, write);
+            if (z < 15) write = this.enqueue(pos + 16, write);
+            if (x > 0) write = this.enqueue(pos - 1, write);
+            if (x < 15) write = this.enqueue(pos + 1, write);
+        }
+
+        return faces;
+    }
+
+    private int enqueue(int pos, int write) {
+        if (!this.closed.get(pos)) {
+            this.closed.set(pos);
+            this.queue[write++] = pos;
+        }
+        return write;
+    }
+
+    private static long encodeFaces(int faces) {
+        long encoding = 0L;
+        for (int from = 0; from < GraphDirection.COUNT; from++) {
+            if ((faces & 1 << from) == 0) continue;
+            for (int to = 0; to < GraphDirection.COUNT; to++) {
+                if ((faces & 1 << to) != 0) {
+                    encoding |= 1L << (from * 8 + to);
+                }
+            }
+        }
+        return encoding;
+    }
+
+    private static int[] createEdgePoints() {
+        int[] points = new int[1352];
+        int index = 0;
+        for (int y = 0; y < 16; y++) {
+            for (int z = 0; z < 16; z++) {
+                for (int x = 0; x < 16; x++) {
+                    if (x == 0 || x == 15 || y == 0 || y == 15 || z == 0 || z == 15) {
+                        points[index++] = pack(x, y, z);
                     }
                 }
             }
         }
-    }
-    private int openCount = 4096;
-
-    public void markClosed(Vector3i pos) {
-        this.closed.set(pack(pos), true);
-        --this.openCount;
-    }
-
-    public void markClosed(int x, int y, int z) {
-        this.closed.set(pack(x, y, z), true);
-        --this.openCount;
-    }
-
-    private static int pack(Vector3i pos) {
-        return pack(pos.x(), pos.y(), pos.z());
+        return points;
     }
 
     private static int pack(int x, int y, int z) {
-        return (x & 15) << 0 | (y & 15) << 8 | (z & 15) << 4;
-    }
-
-    public ChunkOcclusionData build() {
-        final ChunkOcclusionData lv = new ChunkOcclusionData();
-        if (4096 - this.openCount < 256) {
-            lv.fill(true);
-        } else if (this.openCount == 0) {
-            lv.fill(false);
-        } else {
-            for(int i : EDGE_POINTS) {
-                if (!this.closed.get(i)) {
-                    lv.addOpenEdgeFaces(this.getOpenFaces(i));
-                }
-            }
-        }
-
-        return lv;
-    }
-
-    private Set<Direction> getOpenFaces(int pos) {
-        final Set<Direction> set = EnumSet.noneOf(Direction.class);
-        final IntPriorityQueue intPriorityQueue = new IntArrayFIFOQueue();
-        intPriorityQueue.enqueue(pos);
-        this.closed.set(pos, true);
-
-        while(!intPriorityQueue.isEmpty()) {
-            final int j = intPriorityQueue.dequeueInt();
-            this.addEdgeFaces(j, set);
-
-            for(Direction lv : DIRECTIONS) {
-                final int k = this.offset(j, lv);
-                if (k >= 0 && !this.closed.get(k)) {
-                    this.closed.set(k, true);
-                    intPriorityQueue.enqueue(k);
-                }
-            }
-        }
-
-        return set;
-    }
-
-    private void addEdgeFaces(int pos, Set<Direction> openFaces) {
-        final int j = pos >> 0 & 15;
-        if (j == 0) {
-            openFaces.add(Direction.WEST);
-        } else if (j == 15) {
-            openFaces.add(Direction.EAST);
-        }
-
-        final int k = pos >> 8 & 15;
-        if (k == 0) {
-            openFaces.add(Direction.DOWN);
-        } else if (k == 15) {
-            openFaces.add(Direction.UP);
-        }
-
-        final int l = pos >> 4 & 15;
-        if (l == 0) {
-            openFaces.add(Direction.NORTH);
-        } else if (l == 15) {
-            openFaces.add(Direction.SOUTH);
-        }
-    }
-
-    private int offset(int pos, Direction arg) {
-        return switch (arg) {
-            case DOWN -> {
-                if ((pos >> 8 & 15) == 0) {
-                    yield -1;
-                }
-                yield pos - STEP_Y;
-            }
-            case UP -> {
-                if ((pos >> 8 & 15) == 15) {
-                    yield -1;
-                }
-                yield pos + STEP_Y;
-            }
-            case NORTH -> {
-                if ((pos >> 4 & 15) == 0) {
-                    yield -1;
-                }
-                yield pos - STEP_Z;
-            }
-            case SOUTH -> {
-                if ((pos >> 4 & 15) == 15) {
-                    yield -1;
-                }
-                yield pos + STEP_Z;
-            }
-            case WEST -> {
-                if ((pos >> 0 & 15) == 0) {
-                    yield -1;
-                }
-                yield pos - STEP_X;
-            }
-            case EAST -> {
-                if ((pos >> 0 & 15) == 15) {
-                    yield -1;
-                }
-                yield pos + STEP_X;
-            }
-            default -> -1;
-        };
+        return (x & 15) | (z & 15) << 4 | (y & 15) << 8;
     }
 }

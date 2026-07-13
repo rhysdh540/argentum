@@ -6,17 +6,13 @@ import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildBuffers;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildContext;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildOutput;
 import org.embeddedt.embeddium.impl.render.chunk.compile.tasks.ChunkBuilderTask;
-import org.embeddedt.embeddium.impl.render.chunk.data.BuiltRenderSectionData;
 import org.embeddedt.embeddium.impl.render.chunk.data.BuiltSectionMeshParts;
-import org.embeddedt.embeddium.impl.render.chunk.occlusion.GraphDirection;
-import org.embeddedt.embeddium.impl.render.chunk.occlusion.VisibilityEncoding;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.TerrainRenderPass;
 import org.embeddedt.embeddium.impl.util.task.CancellationToken;
 import org.joml.Vector3d;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import org.taumc.celeritas.impl.render.terrain.occlusion.ChunkOcclusionDataBuilder;
-import org.taumc.celeritas.impl.render.util.Direction;
 import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 
 import net.minecraft.block.entity.BlockEntity;
@@ -112,7 +108,7 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
             renderData.hasBlockGeometry = true;
         }
 
-        encodeVisibilityData(occluder, renderData);
+        renderData.visibilityData = occluder.computeVisibilityEncoding();
 
         return new ChunkBuildOutput(this.render, renderData, meshes, this.buildTime);
     }
@@ -126,22 +122,6 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
         }
         category.add("Chunk section", this.render);
         return new CrashException(report);
-    }
-
-    private static final Direction[] FACINGS = new Direction[GraphDirection.COUNT];
-
-    static {
-        FACINGS[GraphDirection.UP] = Direction.UP;
-        FACINGS[GraphDirection.DOWN] = Direction.DOWN;
-        FACINGS[GraphDirection.WEST] = Direction.WEST;
-        FACINGS[GraphDirection.EAST] = Direction.EAST;
-        FACINGS[GraphDirection.NORTH] = Direction.NORTH;
-        FACINGS[GraphDirection.SOUTH] = Direction.SOUTH;
-    }
-
-    private static void encodeVisibilityData(ChunkOcclusionDataBuilder occluder, BuiltRenderSectionData renderData) {
-        var data = occluder.build();
-        renderData.visibilityData = VisibilityEncoding.encode((from, to) -> data.isVisibleThrough(FACINGS[from], FACINGS[to]));
     }
 
 }
