@@ -13,16 +13,16 @@ object Versions {
     val legacy_lwjgl3 = "1.4.0"
 }
 
-val testmod = sourceSets.create("testmod")
-testmod.compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
-testmod.runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
-
 group = "dev.rdh"
-version = "0.1"
+version = "2.4.0-dev.5"
 
 java.toolchain {
     languageVersion = JavaLanguageVersion.of(25)
 }
+
+val testmod = sourceSets.create("testmod")
+testmod.compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+testmod.runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 
 repositories {
     exclusiveContent {
@@ -98,7 +98,7 @@ dependencies {
     include(implementation("org.joml:joml:1.10.5")!!)
     implementation("it.unimi.dsi:fastutil:8.5.15")
 
-    include(implementation("org.embeddedt.celeritas:celeritas-common:2.4.0-dev.5")!!)
+    include(implementation("org.embeddedt.celeritas:celeritas-common:${version}")!!)
 
     implementation("org.apache.logging.log4j:log4j-api:2.0-beta9")
     modImplementation("io.github.moehreag:legacy-lwjgl3:${Versions.legacy_lwjgl3}")
