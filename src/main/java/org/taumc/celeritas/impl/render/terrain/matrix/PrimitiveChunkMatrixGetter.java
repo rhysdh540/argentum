@@ -2,22 +2,17 @@ package org.taumc.celeritas.impl.render.terrain.matrix;
 
 import org.embeddedt.embeddium.impl.render.chunk.ChunkRenderMatrices;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
-import net.minecraft.client.render.platform.MemoryTracker;
-
-import java.nio.FloatBuffer;
+import java.util.Objects;
 
 public class PrimitiveChunkMatrixGetter {
-    private static final FloatBuffer PROJECTION = MemoryTracker.createFloatBuffer(16);
-    private static final FloatBuffer MODELVIEW = MemoryTracker.createFloatBuffer(16);
+    private static ChunkRenderMatrices matrices;
+
+    public static void update(float[] projection, float[] modelView) {
+        matrices = new ChunkRenderMatrices(new Matrix4f().set(projection), new Matrix4f().set(modelView));
+    }
 
     public static ChunkRenderMatrices getMatrices() {
-        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, PROJECTION);
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, MODELVIEW);
-        return new ChunkRenderMatrices(
-                new Matrix4f(PROJECTION),
-                new Matrix4f(MODELVIEW)
-        );
+        return Objects.requireNonNull(matrices, "Render matrices have not been captured");
     }
 }

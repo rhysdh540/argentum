@@ -7,6 +7,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.taumc.celeritas.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
 
 import net.minecraft.client.render.FrustumCuller;
 import net.minecraft.client.render.FrustumData;
@@ -21,6 +22,8 @@ public class FrustumCullerMixin implements ViewportProvider {
 
     @Override
     public Viewport sodium$createViewport() {
+        PrimitiveChunkMatrixGetter.update(this.frustum.projectionMatrix, this.frustum.modelMatrix);
+
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.set(frustum.modelMatrix);
         modelMatrix.invert();
@@ -31,4 +34,3 @@ public class FrustumCullerMixin implements ViewportProvider {
                 new org.joml.Vector3d(this.offsetX + offset.x, this.offsetY + offset.y, this.offsetZ + offset.z));
     }
 }
-
