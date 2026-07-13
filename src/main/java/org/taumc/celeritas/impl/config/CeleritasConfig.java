@@ -29,6 +29,7 @@ public class CeleritasConfig {
     public boolean particleCulling = true;
     public boolean translucencySorting = true;
     public boolean compactVertexFormat;
+    public boolean checkGlErrors;
 
     public static CeleritasConfig load(Path path) {
         CeleritasConfig config = new CeleritasConfig();
