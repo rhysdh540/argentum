@@ -1,4 +1,4 @@
-package org.taumc.celeritas.mixin.core;
+package org.taumc.celeritas.mixin.core.world;
 
 import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTracker;
 import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTrackerHolder;

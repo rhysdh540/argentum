@@ -1,4 +1,4 @@
-package org.taumc.celeritas.mixin.core;
+package org.taumc.celeritas.mixin.features.model;
 
 import net.minecraft.client.render.model.ModelPart;
 import net.minecraft.client.render.vertex.DefaultVertexFormat;

@@ -1,4 +1,4 @@
-package org.taumc.celeritas.mixin.core;
+package org.taumc.celeritas.mixin.core.render;
 
 import java.nio.IntBuffer;
 

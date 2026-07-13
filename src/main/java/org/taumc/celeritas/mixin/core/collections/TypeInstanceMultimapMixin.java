@@ -1,4 +1,4 @@
-package org.taumc.celeritas.mixin.core;
+package org.taumc.celeritas.mixin.core.collections;
 
 
 import org.spongepowered.asm.mixin.Final;

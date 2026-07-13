@@ -1,4 +1,4 @@
-package org.taumc.celeritas.mixin.core;
+package org.taumc.celeritas.mixin.core.world;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;

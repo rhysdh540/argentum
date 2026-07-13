@@ -1,8 +1,8 @@
 package org.taumc.celeritas.impl.render.entity;
 
 
-import org.taumc.celeritas.mixin.core.ClientChunkCacheAccessor;
-import org.taumc.celeritas.mixin.core.WorldChunkAccessor;
+import org.taumc.celeritas.mixin.core.world.ClientChunkCacheAccessor;
+import org.taumc.celeritas.mixin.core.world.WorldChunkAccessor;
 
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;

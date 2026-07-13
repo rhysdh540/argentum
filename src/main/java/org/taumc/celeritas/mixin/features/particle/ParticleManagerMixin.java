@@ -1,4 +1,4 @@
-package org.taumc.celeritas.mixin.core;
+package org.taumc.celeritas.mixin.features.particle;
 
 import net.minecraft.client.ParticleManager;
 import net.minecraft.client.entity.particle.Particle;

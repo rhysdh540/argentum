@@ -4,12 +4,15 @@
   "package": "org.taumc.celeritas.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "core.BufferBuilderAccessor", "core.BufferBuilderMixin", "core.ClientChunkCacheAccessor", "core.DebugOverlayMixin",
-    "core.FrustumCullerMixin", "core.GameRendererMixin", "core.GlStateManagerMixin", "core.MinecraftMixin",
-    "core.ModelPartMixin", "core.MultiplayerChunkCacheMixin", "core.ParticleManagerMixin", "core.ParticleMixin",
-    "core.PolygonMixin", "core.TextRendererMixin", "core.TextureManagerMixin", "core.WorldRendererMixin"
+    "core.MinecraftMixin", "core.render.BufferBuilderMixin", "core.render.DebugOverlayMixin",
+    "core.render.FrustumCullerMixin", "core.render.GameRendererMixin", "core.render.GlStateManagerMixin",
+    "core.render.WorldRendererMixin", "core.world.ClientChunkCacheAccessor", "core.world.MultiplayerChunkCacheMixin",
+    "features.font.TextRendererMixin", "features.model.BufferBuilderAccessor", "features.model.ModelPartMixin",
+    "features.model.PolygonMixin", "features.particle.ParticleManagerMixin", "features.particle.ParticleMixin",
+    "features.texture.TextureManagerMixin"
   ],
-  "mixins": ["core.ChunkCacheMixin", "core.TypeInstanceMultimapMixin", "core.WorldChunkAccessor", "core.WorldMixin"],
+  "mixins": ["core.collections.TypeInstanceMultimapMixin", "core.world.ChunkCacheMixin",
+    "core.world.WorldChunkAccessor", "core.world.WorldMixin"],
   "injectors": {
     "defaultRequire": 1
   }

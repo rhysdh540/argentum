@@ -1,4 +1,4 @@
-package org.taumc.celeritas.mixin.core;
+package org.taumc.celeritas.mixin.features.texture;
 
 import net.minecraft.client.render.texture.Texture;
 import net.minecraft.client.render.texture.TextureManager;

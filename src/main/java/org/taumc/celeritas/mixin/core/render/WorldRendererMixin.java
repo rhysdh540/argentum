@@ -1,4 +1,4 @@
-package org.taumc.celeritas.mixin.core;
+package org.taumc.celeritas.mixin.core.render;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import org.embeddedt.embeddium.impl.gl.device.RenderDevice;
