@@ -6,16 +6,9 @@
   "environment": "*",
   "description": "An open-source client performance mod for Minecraft",
   "authors": ["embeddedt"],
-  "contributors": ["JellySquid","IMS212"],
+  "contributors": ["JellySquid", "IMS212", "rdh"],
   "entrypoints": {
-    "client": [
-      "org.taumc.celeritas.impl.Celeritas::onInitializeClient"
-    ]
+    "client": ["org.taumc.celeritas.impl.Celeritas::onInitializeClient"]
   },
-  "depends": {
-  },
-  "mixins": [
-    "mixins.celeritas.json"
-  ],
-  "custom": {}
+  "mixins": ["mixins.celeritas.json"]
 }
