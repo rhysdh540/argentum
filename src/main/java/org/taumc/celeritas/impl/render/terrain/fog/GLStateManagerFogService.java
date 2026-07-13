@@ -6,20 +6,25 @@ import org.lwjgl.opengl.GL11;
 
 public class GLStateManagerFogService implements FogService {
     public static float fogColorRed, fogColorGreen, fogColorBlue;
+    public static boolean fogEnabled;
+    public static int fogMode = GL11.GL_EXP;
+    public static float fogDensity = 1.0F;
+    public static float fogStart;
+    public static float fogEnd = 1.0F;
 
     @Override
     public float getFogEnd() {
-        return GL11.glGetInteger(GL11.GL_FOG_END);
+        return fogEnd;
     }
 
     @Override
     public float getFogStart() {
-        return GL11.glGetInteger(GL11.GL_FOG_START);
+        return fogStart;
     }
 
     @Override
     public float getFogDensity() {
-        return GL11.glGetFloat(GL11.GL_FOG_DENSITY);
+        return fogDensity;
     }
 
     @Override
@@ -39,9 +44,9 @@ public class GLStateManagerFogService implements FogService {
 
     @Override
     public ChunkFogMode getFogMode() {
-        if (!GL11.glGetBoolean(GL11.GL_FOG)) {
+        if (!fogEnabled) {
             return ChunkFogMode.NONE;
         }
-        return ChunkFogMode.fromGLMode(GL11.glGetInteger(GL11.GL_FOG_MODE));
+        return ChunkFogMode.fromGLMode(fogMode);
     }
 }
