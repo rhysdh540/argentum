@@ -12,6 +12,7 @@ import org.taumc.celeritas.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.particle.Particle;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
@@ -114,6 +115,21 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
         }
 
         return this.isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
+    }
+
+    public boolean isParticleVisible(Particle particle) {
+        if (!Celeritas.CONFIG.particleCulling || this.getLastViewport() == null) {
+            return true;
+        }
+
+        var box = particle.getShape();
+        if (!Double.isFinite(box.minX) || !Double.isFinite(box.minY) || !Double.isFinite(box.minZ)
+                || !Double.isFinite(box.maxX) || !Double.isFinite(box.maxY) || !Double.isFinite(box.maxZ)) {
+            return true;
+        }
+
+        return this.getLastViewport().isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ)
+                && this.isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
     }
 
     @Override
