@@ -13,7 +13,6 @@ import org.embeddedt.embeddium.impl.render.chunk.occlusion.VisibilityEncoding;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.TerrainRenderPass;
 import org.embeddedt.embeddium.impl.util.task.CancellationToken;
 import org.joml.Vector3d;
-import org.lwjgl.opengl.GL11C;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import org.taumc.celeritas.impl.render.terrain.occlusion.ChunkOcclusionDataBuilder;
@@ -22,7 +21,6 @@ import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
-import net.minecraft.client.render.vertex.DefaultVertexFormat;
 import net.minecraft.util.math.BlockPos;
 
 public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> {
@@ -57,60 +55,49 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
 
         // Initialise with minX/minY/minZ so initial getBlockState crash context is correct
 
-        var tesselator = buildContext.tesselator;
-
         var blockPos = new BlockPos.Mutable(minX, minY, minZ);
         var renderBlocks = net.minecraft.client.Minecraft.getInstance().getBlockRenderDispatcher();
 
-        tesselator.offset(-this.render.getOriginX(), -this.render.getOriginY(), -this.render.getOriginZ());
+        buildContext.beginSection(minX, minY, minZ);
 
+        for (int y = minY; y < maxY; y++) {
+            if (cancellationToken.isCancelled()) {
+                return null;
+            }
 
-        // Beta is insane and updates the matrix inside the tessellation logic
-        try {
-            for (int y = minY; y < maxY; y++) {
-                if (cancellationToken.isCancelled()) {
-                    return null;
-                }
+            for (int z = minZ; z < maxZ; z++) {
+                for (int x = minX; x < maxX; x++) {
+                    blockPos.set(x, y, z);
 
-                for (int z = minZ; z < maxZ; z++) {
-                    for (int x = minX; x < maxX; x++) {
-                        blockPos.set(x, y, z);
+                    var blockState = this.renderContext.getBlockState(blockPos);
+                    var block = blockState.getBlock();
 
-                        var blockState = this.renderContext.getBlockState(blockPos);
-                        var block = blockState.getBlock();
+                    if (block == net.minecraft.block.Blocks.AIR) {
+                        continue;
+                    }
 
-                        if (block == net.minecraft.block.Blocks.AIR) {
-                            continue;
-                        }
-
-						if (block.hasBlockEntity()) {
-                            BlockEntity blockEntity = this.renderContext.getBlockEntity(blockPos);
-                            if (blockEntity != null) {
-                                var renderer = BlockEntityRenderDispatcher.INSTANCE.getRenderer(blockEntity);
-                                if (renderer != null) {
-                                    (renderer.shouldRenderOffScreen() ? renderData.globalBlockEntities : renderData.culledBlockEntities).add(blockEntity);
-                                }
+					if (block.hasBlockEntity()) {
+                        BlockEntity blockEntity = this.renderContext.getBlockEntity(blockPos);
+                        if (blockEntity != null) {
+                            var renderer = BlockEntityRenderDispatcher.INSTANCE.getRenderer(blockEntity);
+                            if (renderer != null) {
+                                (renderer.shouldRenderOffScreen() ? renderData.globalBlockEntities : renderData.culledBlockEntities).add(blockEntity);
                             }
                         }
+                    }
 
-                        var pass = block.getRenderLayer();
+                    var pass = block.getRenderLayer();
 
-                        tesselator.begin(GL11C.GL_QUADS, DefaultVertexFormat.BLOCK);
-                        renderBlocks.render(blockState, blockPos, this.renderContext, tesselator);
-                        tesselator.end();
-                        buildContext.copyRawBuffer(tesselator.getBuffer().asIntBuffer(), tesselator.getVertexCount(), buffers, buffers.getRenderPassConfiguration().getMaterialForRenderType(pass));
-                        tesselator.clear();
+                    renderBlocks.render(blockState, blockPos, this.renderContext, buildContext.getBuffer(pass));
 
-						if (block.isOpaque()) {
-                            occluder.markClosed(blockPos.getX(), blockPos.getY(), blockPos.getZ());
-                        }
+					if (block.isOpaque()) {
+                        occluder.markClosed(blockPos.getX(), blockPos.getY(), blockPos.getZ());
                     }
                 }
             }
-        } finally {
-            tesselator.offset(0, 0, 0);
         }
 
+        buildContext.finishSection(buffers);
 
         Reference2ReferenceMap<TerrainRenderPass, BuiltSectionMeshParts> meshes = BuiltSectionMeshParts.groupFromBuildBuffers(buffers,(float)camera.x - minX, (float)camera.y - minY, (float)camera.z - minZ);
 

@@ -8,19 +8,66 @@ import org.embeddedt.embeddium.impl.render.chunk.sprite.SpriteTransparencyLevel;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.material.Material;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexEncoder;
 import org.embeddedt.embeddium.impl.util.QuadUtil;
+import org.lwjgl.opengl.GL11C;
 import org.taumc.celeritas.impl.render.terrain.PrimitiveRenderPassConfigurationBuilder;
 
+import net.minecraft.client.render.block.BlockLayer;
 import net.minecraft.client.render.vertex.BufferBuilder;
+import net.minecraft.client.render.vertex.DefaultVertexFormat;
+
 import java.nio.IntBuffer;
 
 public class PrimitiveChunkBuildContext extends ChunkBuildContext {
-    public static final int NUM_PASSES = 2;
+    private static final BlockLayer[] LAYERS = BlockLayer.values();
 
-    public final BufferBuilder tesselator;
+    private final BufferBuilder[] layerBuffers = new BufferBuilder[LAYERS.length];
+    private final boolean[] usedLayerBuffers = new boolean[LAYERS.length];
+    private int originX;
+    private int originY;
+    private int originZ;
 
     public PrimitiveChunkBuildContext(RenderPassConfiguration renderPassConfiguration) {
         super(renderPassConfiguration);
-        this.tesselator = new BufferBuilder(8192);
+    }
+
+    public void beginSection(int x, int y, int z) {
+        this.originX = x;
+        this.originY = y;
+        this.originZ = z;
+    }
+
+    public BufferBuilder getBuffer(BlockLayer layer) {
+        int index = layer.ordinal();
+        BufferBuilder buffer = this.layerBuffers[index];
+        if (buffer == null) {
+            buffer = new BufferBuilder(8192);
+            this.layerBuffers[index] = buffer;
+        }
+        if (!this.usedLayerBuffers[index]) {
+            buffer.begin(GL11C.GL_QUADS, DefaultVertexFormat.BLOCK);
+            buffer.offset(-this.originX, -this.originY, -this.originZ);
+            this.usedLayerBuffers[index] = true;
+        }
+        return buffer;
+    }
+
+    public void finishSection(ChunkBuildBuffers buffers) {
+        for (int i = 0; i < this.layerBuffers.length; i++) {
+            if (!this.usedLayerBuffers[i]) {
+                continue;
+            }
+
+            BufferBuilder buffer = this.layerBuffers[i];
+            buffer.end();
+            this.usedLayerBuffers[i] = false;
+            try {
+                this.copyRawBuffer(buffer.getBuffer().asIntBuffer(), buffer.getVertexCount(), buffers,
+                        buffers.getRenderPassConfiguration().getMaterialForRenderType(LAYERS[i]));
+            } finally {
+                buffer.clear();
+                buffer.offset(0, 0, 0);
+            }
+        }
     }
 
     private final ChunkVertexEncoder.Vertex[] vertices = ChunkVertexEncoder.Vertex.uninitializedQuad();
@@ -95,6 +142,18 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
 
     @Override
     public void cleanup() {
+        for (int i = 0; i < this.layerBuffers.length; i++) {
+            if (this.usedLayerBuffers[i]) {
+                BufferBuilder buffer = this.layerBuffers[i];
+                try {
+                    buffer.end();
+                } finally {
+                    buffer.clear();
+                    buffer.offset(0, 0, 0);
+                    this.usedLayerBuffers[i] = false;
+                }
+            }
+        }
         super.cleanup();
     }
 }
