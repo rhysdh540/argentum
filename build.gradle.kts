@@ -10,7 +10,7 @@ object Versions {
     val feather = "1"
     val osl = "0.20.3"
     val fabric = "0.19.3"
-    val lwjgl = "3.4.1"
+    val legacy_lwjgl3 = "1.4.0"
 }
 
 group = "dev.rdh"
@@ -29,12 +29,26 @@ repositories {
     }
     maven("https://maven.taumc.org/releases")
     maven("https://maven.axolotlclient.com/releases")
+    exclusiveContent {
+        forRepository { maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1") }
+        filter {
+            includeGroup("me.djtheredstoner")
+        }
+    }
 }
 
 loom.runs.named("client") {
     jvmArguments.add("-XstartOnFirstThread")
+
+    jvmArguments.add("-XX:+UseZGC")
+    jvmArguments.add("-XX:MaxGCPauseMillis=50")
+    jvmArguments.add("-XX:+UseCompactObjectHeaders")
+    jvmArguments.add("--enable-native-access=ALL-UNNAMED")
+    jvmArguments.add("--sun-misc-unsafe-memory-access=allow")
+
     systemProperties.put("java.awt.headless", "true")
     systemProperties.put("legacy_lwjgl3.use_sdl", "true")
+    systemProperties.put("devauth.enabled", "true")
 }
 
 ploceus {
@@ -54,20 +68,15 @@ dependencies {
     include(implementation("org.embeddedt.celeritas:celeritas-common:2.4.0-dev.5")!!)
 
     implementation("org.apache.logging.log4j:log4j-api:2.0-beta9")
-    modImplementation("io.github.moehreag:legacy-lwjgl3:1.4.0")
+    modImplementation("io.github.moehreag:legacy-lwjgl3:${Versions.legacy_lwjgl3}")
 
-//    minecraftRuntimeLibraries("org.taumc:legacy-lwjgl3:20ce025")
-//    for (component in arrayOf("lwjgl", "lwjgl-opengl", "lwjgl-openal", "lwjgl-glfw", "lwjgl-stb")) {
-//        minecraftLibraries("org.lwjgl:$component:${Versions.lwjgl}")
-//        minecraftNatives("org.lwjgl:$component:${Versions.lwjgl}:natives-macos-arm64")
-//    }
+    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
 }
 
 configurations.all {
     resolutionStrategy {
         exclude(group = "org.lwjgl.lwjgl")
     }
-    dependencies.removeIf { it.group == "org.lwjgl.lwjgl" }
 }
 
 gradle.taskGraph.whenReady {
