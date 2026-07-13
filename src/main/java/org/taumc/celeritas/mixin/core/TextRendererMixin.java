@@ -9,8 +9,11 @@ import net.minecraft.client.render.texture.TextureManager;
 import net.minecraft.client.render.vertex.BufferBuilder;
 import net.minecraft.client.render.vertex.BufferUploader;
 import net.minecraft.client.render.vertex.DefaultVertexFormat;
+import net.minecraft.client.render.vertex.Tesselator;
+import net.minecraft.client.render.vertex.VertexFormat;
 import net.minecraft.resource.Identifier;
 import org.lwjgl.opengl.GL11;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -19,13 +22,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 @Mixin(TextRenderer.class)
 public abstract class TextRendererMixin {
     @Unique
     private static final int WIDTH_CACHE_SIZE = 2048;
+
+    @Unique
+    private static final boolean FONT_BATCHING_DISABLED = Boolean.getBoolean("celeritas.disableFontBatching");
 
     @Shadow
     private int[] characterWidths;
@@ -34,9 +40,11 @@ public abstract class TextRendererMixin {
     private byte[] glyphSizes;
 
     @Shadow
+    @Final
     private Identifier fontLocation;
 
     @Shadow
+    @Final
     private TextureManager textureManager;
 
     @Shadow
@@ -54,6 +62,9 @@ public abstract class TextRendererMixin {
     private BufferBuilder celeritas$buffer;
 
     @Unique
+    private BufferBuilder celeritas$decorationBuffer;
+
+    @Unique
     private BufferUploader celeritas$uploader;
 
     @Unique
@@ -64,6 +75,9 @@ public abstract class TextRendererMixin {
 
     @Unique
     private boolean celeritas$drawing;
+
+    @Unique
+    private boolean celeritas$drawingDecorations;
 
     @Unique
     private float celeritas$red = 1.0F;
@@ -84,11 +98,12 @@ public abstract class TextRendererMixin {
     private void celeritas$createBatch(GameOptions options, Identifier fontLocation, TextureManager textureManager,
             boolean unicode, CallbackInfo ci) {
         this.celeritas$buffer = new BufferBuilder(64 * 1024 / Integer.BYTES);
+        this.celeritas$decorationBuffer = new BufferBuilder(4 * 1024 / Integer.BYTES);
         this.celeritas$uploader = new BufferUploader();
-        this.celeritas$widthCache = new LinkedHashMap<>(256, 0.75F, true);
+        this.celeritas$widthCache = new HashMap<>(256);
     }
 
-    @Inject(method = "getWidth", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getWidth(Ljava/lang/String;)I", at = @At("HEAD"), cancellable = true)
     private void celeritas$getCachedWidth(String text, CallbackInfoReturnable<Integer> cir) {
         if (text == null) {
             return;
@@ -100,7 +115,7 @@ public abstract class TextRendererMixin {
         }
     }
 
-    @Inject(method = "getWidth", at = @At("RETURN"))
+    @Inject(method = "getWidth(Ljava/lang/String;)I", at = @At("RETURN"))
     private void celeritas$cacheWidth(String text, CallbackInfoReturnable<Integer> cir) {
         if (text == null) {
             return;
@@ -108,7 +123,7 @@ public abstract class TextRendererMixin {
 
         this.celeritas$widthCache.put(text, cir.getReturnValue());
         if (this.celeritas$widthCache.size() > WIDTH_CACHE_SIZE) {
-            this.celeritas$widthCache.remove(this.celeritas$widthCache.keySet().iterator().next());
+            this.celeritas$widthCache.clear();
         }
     }
 
@@ -119,18 +134,18 @@ public abstract class TextRendererMixin {
 
     @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("HEAD"))
     private void celeritas$beginBatch(String text, boolean shadow, CallbackInfo ci) {
-        this.celeritas$batching = !Boolean.getBoolean("celeritas.disableFontBatching");
+        this.celeritas$batching = !FONT_BATCHING_DISABLED;
     }
 
     @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("RETURN"))
     private void celeritas$endBatch(String text, boolean shadow, CallbackInfo ci) {
         this.celeritas$flush();
+        this.celeritas$flushDecorations();
         this.celeritas$batching = false;
     }
 
     @Inject(method = "drawGlyph", at = @At("HEAD"))
-    private void celeritas$flushBeforeCustomGlyph(char character, boolean italic,
-            CallbackInfoReturnable<Float> cir) {
+    private void celeritas$flushBeforeCustomGlyph(char character, boolean italic, CallbackInfoReturnable<Float> cir) {
         if (character == '\u011e') {
             this.celeritas$flush();
         }
@@ -201,11 +216,70 @@ public abstract class TextRendererMixin {
 
     @WrapOperation(
             method = "drawLayer(Ljava/lang/String;Z)V",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;disableTexture()V")
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/Tesselator;getBuffer()Lnet/minecraft/client/render/vertex/BufferBuilder;"),
+            require = 2
     )
-    private void celeritas$flushBeforeDecoration(Operation<Void> original) {
-        this.celeritas$flush();
-        original.call();
+    private BufferBuilder celeritas$getDecorationBuffer(Tesselator tesselator, Operation<BufferBuilder> original) {
+        return this.celeritas$batching ? this.celeritas$decorationBuffer : original.call(tesselator);
+    }
+
+    @WrapOperation(
+            method = "drawLayer(Ljava/lang/String;Z)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/BufferBuilder;begin(ILnet/minecraft/client/render/vertex/VertexFormat;)V"),
+            require = 2
+    )
+    private void celeritas$beginDecorations(BufferBuilder buffer, int mode, VertexFormat format, Operation<Void> original) {
+        if (!this.celeritas$batching) {
+            original.call(buffer, mode, format);
+        } else if (!this.celeritas$drawingDecorations) {
+            buffer.begin(mode, DefaultVertexFormat.POSITION_COLOR);
+            this.celeritas$drawingDecorations = true;
+        }
+    }
+
+    @WrapOperation(
+            method = "drawLayer(Ljava/lang/String;Z)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/BufferBuilder;nextVertex()V"),
+            require = 8
+    )
+    private void celeritas$colorDecoration(BufferBuilder buffer, Operation<Void> original) {
+        if (this.celeritas$batching) {
+            buffer.color(this.celeritas$red, this.celeritas$green, this.celeritas$blue, this.celeritas$alpha);
+        }
+        original.call(buffer);
+    }
+
+    @WrapOperation(
+            method = "drawLayer(Ljava/lang/String;Z)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/Tesselator;end()V"),
+            require = 2
+    )
+    private void celeritas$deferDecorations(Tesselator tesselator, Operation<Void> original) {
+        if (!this.celeritas$batching) {
+            original.call(tesselator);
+        }
+    }
+
+    @WrapOperation(
+            method = "drawLayer(Ljava/lang/String;Z)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;disableTexture()V"),
+            require = 2
+    )
+    private void celeritas$deferDisableTexture(Operation<Void> original) {
+        if (!this.celeritas$batching) {
+            original.call();
+        }
+    }
+
+    @WrapOperation(
+            method = "drawLayer(Ljava/lang/String;Z)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;enableTexture()V"),
+            require = 2
+    )
+    private void celeritas$deferEnableTexture(Operation<Void> original) {
+        if (!this.celeritas$batching) {
+            original.call();
+        }
     }
 
     @Unique
@@ -248,5 +322,18 @@ public abstract class TextRendererMixin {
         this.celeritas$buffer.end();
         this.celeritas$uploader.end(this.celeritas$buffer);
         this.celeritas$drawing = false;
+    }
+
+    @Unique
+    private void celeritas$flushDecorations() {
+        if (!this.celeritas$drawingDecorations) {
+            return;
+        }
+
+        this.celeritas$decorationBuffer.end();
+        GlStateManager.disableTexture();
+        this.celeritas$uploader.end(this.celeritas$decorationBuffer);
+        GlStateManager.enableTexture();
+        this.celeritas$drawingDecorations = false;
     }
 }
