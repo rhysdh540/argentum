@@ -106,7 +106,6 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
                 vertex.z = Float.intBitsToFloat(rawBuffer.get(ptr++));
 
                 // In 1.8+, color comes before all UVs. In 1.7-, texture UV comes before color.
-                //? if >=1.8
                 vertex.color = rawBuffer.get(ptr++);
 
                 float u = Float.intBitsToFloat(rawBuffer.get(ptr++));
@@ -123,15 +122,6 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
             }
             ModelQuadFacing facing = QuadUtil.findNormalFace(trueNormal);
             // TODO implement render pass downgrading for 1.5+
-            //? if <1.5 {
-            /*// Pretend the atlas is 256x256 for the purposes of computing the sprite ID
-            uSum /= 4;
-            vSum /= 4;
-            int spriteX = MathUtil.mojfloor(uSum * 256.0f);
-            int spriteY = MathUtil.mojfloor(vSum * 256.0f);
-            int spriteId = (spriteY / 16) * 16 + spriteX / 16;
-            Material correctMaterial = selectMaterial(material, tracker.getTransparencyLevel(spriteId));
-            *///?} else
 			buffers.get(material).getVertexBuffer(facing).push(celeritasVertices, material);
         }
     }
