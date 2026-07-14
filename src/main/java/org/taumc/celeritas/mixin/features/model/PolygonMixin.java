@@ -1,5 +1,6 @@
 package org.taumc.celeritas.mixin.features.model;
 
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.render.model.Polygon;
@@ -15,24 +16,19 @@ public abstract class PolygonMixin {
     @Unique
     private boolean celeritas$drawOnSelf;
 
-    @WrapOperation(
+    @WrapWithCondition(
             method = "compile",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/BufferBuilder;begin(ILnet/minecraft/client/render/vertex/VertexFormat;)V")
     )
-    private void celeritas$beginIfNeeded(BufferBuilder buffer, int mode, VertexFormat format, Operation<Void> original) {
-        this.celeritas$drawOnSelf = !((BufferBuilderAccessor) buffer).celeritas$isBuilding();
-        if (this.celeritas$drawOnSelf) {
-            original.call(buffer, mode, format);
-        }
+    private boolean celeritas$beginIfNeeded(BufferBuilder buffer, int mode, VertexFormat format) {
+        return this.celeritas$drawOnSelf = !((BufferBuilderAccessor) buffer).celeritas$isBuilding();
     }
 
-    @WrapOperation(
+    @WrapWithCondition(
             method = "compile",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/Tesselator;end()V")
     )
-    private void celeritas$endIfNeeded(Tesselator tesselator, Operation<Void> original) {
-        if (this.celeritas$drawOnSelf) {
-            original.call(tesselator);
-        }
+    private boolean celeritas$endIfNeeded(Tesselator tesselator) {
+        return this.celeritas$drawOnSelf;
     }
 }
