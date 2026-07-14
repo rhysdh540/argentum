@@ -5,10 +5,16 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.taumc.celeritas.impl.debug.RenderMetrics;
 import org.taumc.celeritas.impl.render.terrain.fog.GLStateManagerFogService;
 
 @Mixin(GlStateManager.class)
 public abstract class GlStateManagerMixin {
+    @Inject(method = "callList", at = @At("HEAD"))
+    private static void celeritas$countDisplayListDraw(int list, CallbackInfo ci) {
+        RenderMetrics.recordDraw();
+    }
+
     @Inject(method = "enableFog", at = @At("HEAD"))
     private static void captureFogEnabled(CallbackInfo ci) {
         GLStateManagerFogService.fogEnabled = true;

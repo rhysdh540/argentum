@@ -23,6 +23,8 @@ public class CeleritasDebugStrings {
         var renderer = CeleritasWorldRenderer.instanceNullable();
 
         if (renderer != null) {
+            RenderMetrics.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, -1)));
+            stringsToRender.add(Pair.of("", -1));
             renderer.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, -1)));
         }
 

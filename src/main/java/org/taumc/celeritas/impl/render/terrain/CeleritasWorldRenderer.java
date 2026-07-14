@@ -8,6 +8,7 @@ import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexType;
 import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTrackerHolder;
 import org.embeddedt.embeddium.impl.render.terrain.SimpleWorldRenderer;
 import org.taumc.celeritas.impl.Celeritas;
+import org.taumc.celeritas.impl.debug.RenderMetrics;
 import org.taumc.celeritas.impl.extensions.RenderGlobalExtension;
 import org.taumc.celeritas.impl.render.entity.EntityOcclusionCuller;
 import org.taumc.celeritas.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
@@ -156,16 +157,22 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
     @Override
     protected void renderBlockEntityList(List<BlockEntity> list, Float partialTicksBoxed) {
         float partialTicks = partialTicksBoxed;
-        for (var blockEntity : list) {
-            try {
-                BlockEntityRenderDispatcher.INSTANCE.render(blockEntity, partialTicks, -1);
-            } catch(RuntimeException e) {
-                if(blockEntity.isRemoved()) {
-                    System.err.println("Suppressing crash from invalid tile entity");
-                } else {
-                    throw e;
+        RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.BLOCK_ENTITY);
+        try {
+            for (var blockEntity : list) {
+                try {
+                    RenderMetrics.recordRenderedBlockEntity();
+                    BlockEntityRenderDispatcher.INSTANCE.render(blockEntity, partialTicks, -1);
+                } catch(RuntimeException e) {
+                    if(blockEntity.isRemoved()) {
+                        System.err.println("Suppressing crash from invalid tile entity");
+                    } else {
+                        throw e;
+                    }
                 }
             }
+        } finally {
+            RenderMetrics.setCategory(previous);
         }
     }
 }

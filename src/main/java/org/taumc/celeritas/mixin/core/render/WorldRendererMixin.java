@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.taumc.celeritas.impl.extensions.RenderGlobalExtension;
+import org.taumc.celeritas.impl.debug.RenderMetrics;
 import org.taumc.celeritas.impl.render.entity.EntityGatherer;
 import org.taumc.celeritas.impl.render.terrain.CeleritasWorldRenderer;
 
@@ -183,8 +184,13 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
         BlockPos.Mutable entityBlockPos = new BlockPos.Mutable();
 
         for (Entity entity : entityList) {
-            if ((!this.entityRenderDispatcher.shouldRender(entity, culler, d, e, g) || !this.renderer.isEntityVisible(entity))
-                    && entity.rider != this.minecraft.player) {
+            boolean visible = this.entityRenderDispatcher.shouldRender(entity, culler, d, e, g);
+            if (visible && !this.renderer.isEntityVisible(entity)) {
+                RenderMetrics.recordCulledEntity();
+                visible = false;
+            }
+
+            if (!visible && entity.rider != this.minecraft.player) {
                 if (entity instanceof WitherSkullEntity) {
                     this.minecraft.getEntityRenderDispatcher().renderNameTag(entity, tickDelta);
                 }
@@ -204,7 +210,13 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
             }
 
             this.renderedEntityCount++;
-            this.entityRenderDispatcher.render(entity, tickDelta);
+            RenderMetrics.recordRenderedEntity();
+            RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
+            try {
+                this.entityRenderDispatcher.render(entity, tickDelta);
+            } finally {
+                RenderMetrics.setCategory(previous);
+            }
         }
     }
 

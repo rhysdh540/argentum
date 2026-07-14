@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.taumc.celeritas.impl.debug.RenderMetrics;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -118,6 +119,9 @@ public abstract class TextRendererMixin {
     @Unique
     private float celeritas$originY;
 
+    @Unique
+    private RenderMetrics.Category celeritas$previousCategory;
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void celeritas$createBatch(GameOptions options, Identifier fontLocation, TextureManager textureManager,
             boolean unicode, CallbackInfo ci) {
@@ -160,6 +164,7 @@ public abstract class TextRendererMixin {
 
     @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("HEAD"), cancellable = true)
     private void celeritas$beginBatch(String text, boolean shadow, CallbackInfo ci) {
+        this.celeritas$previousCategory = RenderMetrics.setCategory(RenderMetrics.Category.TEXT);
         this.celeritas$batching = !FONT_BATCHING_DISABLED;
         this.celeritas$pendingKey = null;
         this.celeritas$pendingBuffer = null;
@@ -176,6 +181,7 @@ public abstract class TextRendererMixin {
             this.celeritas$draw(geometry.buffer(), this.x, this.y);
             this.x += geometry.advance();
             this.celeritas$batching = false;
+            RenderMetrics.setCategory(this.celeritas$previousCategory);
             ci.cancel();
             return;
         }
@@ -201,6 +207,7 @@ public abstract class TextRendererMixin {
         this.celeritas$pendingKey = null;
         this.celeritas$pendingBuffer = null;
         this.celeritas$batching = false;
+        RenderMetrics.setCategory(this.celeritas$previousCategory);
     }
 
     @Inject(method = "drawGlyph", at = @At("HEAD"))
@@ -371,6 +378,7 @@ public abstract class TextRendererMixin {
 
         this.celeritas$buffer.end();
         if (this.celeritas$pendingKey == null) {
+            RenderMetrics.recordFontBatch();
             this.celeritas$uploader.end(this.celeritas$buffer);
         } else {
             this.celeritas$pendingBuffer = new VertexBuffer(DefaultVertexFormat.POSITION_TEX_COLOR);
@@ -388,6 +396,7 @@ public abstract class TextRendererMixin {
 
         this.celeritas$decorationBuffer.end();
         GlStateManager.disableTexture();
+        RenderMetrics.recordFontBatch();
         this.celeritas$uploader.end(this.celeritas$decorationBuffer);
         GlStateManager.enableTexture();
         this.celeritas$drawingDecorations = false;
@@ -424,6 +433,7 @@ public abstract class TextRendererMixin {
         GL11.glVertexPointer(3, GL11.GL_FLOAT, 24, 0L);
         GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 24, 12L);
         GL11.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, 24, 20L);
+        RenderMetrics.recordFontBatch();
         buffer.draw(GL11.GL_QUADS);
         GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
         GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);

@@ -3,6 +3,9 @@ package org.taumc.celeritas.impl.render.terrain;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.device.RenderDevice;
+import org.embeddedt.embeddium.impl.gl.functions.MultidrawFunctions;
+import org.embeddedt.embeddium.impl.gl.tessellation.GlPrimitiveType;
+import org.embeddedt.embeddium.impl.gl.tessellation.GlTessellation;
 import org.embeddedt.embeddium.impl.render.chunk.DefaultChunkRenderer;
 import org.embeddedt.embeddium.impl.render.chunk.RenderPassConfiguration;
 import org.embeddedt.embeddium.impl.render.chunk.RenderSection;
@@ -12,6 +15,8 @@ import org.embeddedt.embeddium.impl.render.chunk.compile.tasks.ChunkBuilderTask;
 import org.embeddedt.embeddium.impl.render.chunk.data.BuiltRenderSectionData;
 import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
 import org.embeddedt.embeddium.impl.render.chunk.lists.SectionTicker;
+import org.embeddedt.embeddium.impl.render.chunk.multidraw.DirectMultiDrawEmitter;
+import org.embeddedt.embeddium.impl.render.chunk.multidraw.MultiDrawEmitter;
 import org.embeddedt.embeddium.impl.render.chunk.sprite.GenericSectionSpriteTicker;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderInterface;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderTextureSlot;
@@ -20,6 +25,7 @@ import org.embeddedt.embeddium.impl.render.viewport.Viewport;
 import org.embeddedt.embeddium.impl.util.position.SectionPos;
 import org.jetbrains.annotations.Nullable;
 import org.taumc.celeritas.impl.Celeritas;
+import org.taumc.celeritas.impl.debug.RenderMetrics;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import org.taumc.celeritas.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
@@ -127,13 +133,53 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
     private static class ChunkRenderer extends DefaultChunkRenderer {
 
         public ChunkRenderer(RenderDevice device, RenderPassConfiguration<?> renderPassConfiguration) {
-            super(device, renderPassConfiguration);
+            super(device, renderPassConfiguration, new CountingMultiDrawEmitter(device));
         }
 
         @Override
         protected void configureShaderInterface(ChunkShaderInterface shader) {
             shader.setTextureSlot(ChunkShaderTextureSlot.BLOCK, 0);
             shader.setTextureSlot(ChunkShaderTextureSlot.LIGHT, 1);
+        }
+    }
+
+    private static class CountingMultiDrawEmitter implements MultiDrawEmitter {
+        private final DirectMultiDrawEmitter delegate = new DirectMultiDrawEmitter();
+        private final boolean nativeMultiDraw;
+
+        private CountingMultiDrawEmitter(RenderDevice device) {
+            this.nativeMultiDraw = device.getDeviceFunctions().multidrawFunctions() == MultidrawFunctions.CORE;
+        }
+
+        @Override
+        public void addDrawCommands(long meshData, int facingMask, int indexPointerMask) {
+            this.delegate.addDrawCommands(meshData, facingMask, indexPointerMask);
+        }
+
+        @Override
+        public void executeBatch(CommandList commandList, GlTessellation tessellation, GlPrimitiveType primitiveType) {
+            RenderMetrics.recordTerrainDraws(this.nativeMultiDraw ? 1 : this.delegate.batch().size());
+            this.delegate.executeBatch(commandList, tessellation, primitiveType);
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return this.delegate.isEmpty();
+        }
+
+        @Override
+        public int getIndexBufferSize() {
+            return this.delegate.getIndexBufferSize();
+        }
+
+        @Override
+        public void clear() {
+            this.delegate.clear();
+        }
+
+        @Override
+        public void delete() {
+            this.delegate.delete();
         }
     }
 }

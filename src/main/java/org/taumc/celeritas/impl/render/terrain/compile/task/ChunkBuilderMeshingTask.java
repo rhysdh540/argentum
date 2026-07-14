@@ -10,6 +10,7 @@ import org.embeddedt.embeddium.impl.render.chunk.data.BuiltSectionMeshParts;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.TerrainRenderPass;
 import org.embeddedt.embeddium.impl.util.task.CancellationToken;
 import org.joml.Vector3d;
+import org.taumc.celeritas.impl.debug.RenderMetrics;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import org.taumc.celeritas.impl.render.terrain.occlusion.ChunkOcclusionDataBuilder;
@@ -37,6 +38,15 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
 
     @Override
     public ChunkBuildOutput execute(ChunkBuildContext context, CancellationToken cancellationToken) {
+        long started = System.nanoTime();
+        try {
+            return this.executeTimed(context, cancellationToken);
+        } finally {
+            RenderMetrics.recordChunkBuild(System.nanoTime() - started);
+        }
+    }
+
+    private ChunkBuildOutput executeTimed(ChunkBuildContext context, CancellationToken cancellationToken) {
         PrimitiveChunkBuildContext buildContext = (PrimitiveChunkBuildContext)context;
         var renderData = new PrimitiveBuiltRenderSectionData();
 
