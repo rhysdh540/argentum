@@ -90,7 +90,10 @@ ploceus {
 
 dependencies {
     minecraft("com.mojang:minecraft:${Versions.minecraft}")
-    mappings(ploceus.featherMappings(Versions.feather))
+    mappings(loom.layered {
+        mappings(ploceus.featherMappings(Versions.feather))
+        mappings(file("mappings/feather-overrides.tiny"))
+    })
 
     modImplementation("net.fabricmc:fabric-loader:${Versions.fabric}")
     ploceus.dependOsl(Versions.osl)
