@@ -13,18 +13,17 @@ import org.lwjgl.opengl.GL33C;
 import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.render.terrain.CeleritasWorldRenderer;
 
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class EntityOcclusionCuller {
     private static final double BOX_MARGIN = 0.2D;
     private static final double MAX_BOX_VOLUME = 64.0D * 64.0D * 64.0D;
 
     private final CeleritasWorldRenderer renderer;
-    private final Map<UUID, Query> queries = new HashMap<>();
+    private final Map<Entity, Query> queries = new IdentityHashMap<>();
     private long frame;
 
     public EntityOcclusionCuller(CeleritasWorldRenderer renderer) {
@@ -44,7 +43,7 @@ public class EntityOcclusionCuller {
         boolean queryPass = false;
         try {
             for (Entity entity : entities) {
-                Query query = this.queries.computeIfAbsent(entity.getUuid(), ignored -> new Query());
+                Query query = this.queries.computeIfAbsent(entity, ignored -> new Query());
                 query.lastSeenFrame = this.frame;
                 this.poll(query);
 
@@ -70,7 +69,7 @@ public class EntityOcclusionCuller {
     }
 
     public boolean isVisible(Entity entity) {
-        Query query = this.queries.get(entity.getUuid());
+        Query query = this.queries.get(entity);
         return query == null || !query.occluded;
     }
 
