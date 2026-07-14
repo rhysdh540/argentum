@@ -2,6 +2,7 @@ package org.taumc.celeritas.mixin.features.font;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.render.TextRenderer;
 import net.minecraft.client.render.platform.GlStateManager;
@@ -260,16 +261,16 @@ public abstract class TextRendererMixin {
         cir.setReturnValue((right - left) / 2.0F + 1.0F);
     }
 
-    @WrapOperation(
+    @WrapWithCondition(
             method = {"drawLayer(Ljava/lang/String;FFIZ)I", "drawLayer(Ljava/lang/String;Z)V"},
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;color4f(FFFF)V")
     )
-    private void celeritas$captureColor(float red, float green, float blue, float alpha, Operation<Void> original) {
+    private boolean celeritas$captureColor(float red, float green, float blue, float alpha) {
         this.celeritas$red = red;
         this.celeritas$green = green;
         this.celeritas$blue = blue;
         this.celeritas$alpha = alpha;
-        original.call(red, green, blue, alpha);
+        return true;
     }
 
     @WrapOperation(
@@ -281,63 +282,50 @@ public abstract class TextRendererMixin {
         return this.celeritas$batching ? this.celeritas$decorationBuffer : original.call(tesselator);
     }
 
-    @WrapOperation(
+    @WrapWithCondition(
             method = "drawLayer(Ljava/lang/String;Z)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/BufferBuilder;begin(ILnet/minecraft/client/render/vertex/VertexFormat;)V"),
             require = 2
     )
-    private void celeritas$beginDecorations(BufferBuilder buffer, int mode, VertexFormat format, Operation<Void> original) {
-        if (!this.celeritas$batching) {
-            original.call(buffer, mode, format);
-        } else if (!this.celeritas$drawingDecorations) {
+    private boolean celeritas$beginDecorations(BufferBuilder buffer, int mode, VertexFormat format) {
+        if (this.celeritas$batching && !this.celeritas$drawingDecorations) {
             buffer.begin(mode, DefaultVertexFormat.POSITION_COLOR);
             this.celeritas$drawingDecorations = true;
         }
+        return !this.celeritas$batching;
     }
 
-    @WrapOperation(
+    @WrapWithCondition(
             method = "drawLayer(Ljava/lang/String;Z)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/BufferBuilder;nextVertex()V"),
             require = 8
     )
-    private void celeritas$colorDecoration(BufferBuilder buffer, Operation<Void> original) {
+    private boolean celeritas$colorDecoration(BufferBuilder buffer) {
         if (this.celeritas$batching) {
             buffer.color(this.celeritas$red, this.celeritas$green, this.celeritas$blue, this.celeritas$alpha);
         }
-        original.call(buffer);
+        return true;
     }
 
-    @WrapOperation(
+    @WrapWithCondition(
             method = "drawLayer(Ljava/lang/String;Z)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/Tesselator;end()V"),
             require = 2
     )
-    private void celeritas$deferDecorations(Tesselator tesselator, Operation<Void> original) {
-        if (!this.celeritas$batching) {
-            original.call(tesselator);
-        }
+    private boolean celeritas$deferDecorations(Tesselator tesselator) {
+        return !this.celeritas$batching;
     }
 
-    @WrapOperation(
+    @WrapWithCondition(
             method = "drawLayer(Ljava/lang/String;Z)V",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;disableTexture()V"),
-            require = 2
+            at = {
+                    @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;disableTexture()V"),
+                    @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;enableTexture()V")
+            },
+            require = 4
     )
-    private void celeritas$deferDisableTexture(Operation<Void> original) {
-        if (!this.celeritas$batching) {
-            original.call();
-        }
-    }
-
-    @WrapOperation(
-            method = "drawLayer(Ljava/lang/String;Z)V",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;enableTexture()V"),
-            require = 2
-    )
-    private void celeritas$deferEnableTexture(Operation<Void> original) {
-        if (!this.celeritas$batching) {
-            original.call();
-        }
+    private boolean celeritas$deferTextureState() {
+        return !this.celeritas$batching;
     }
 
     @Unique
