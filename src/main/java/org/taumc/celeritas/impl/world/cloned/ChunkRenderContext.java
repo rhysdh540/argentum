@@ -27,16 +27,21 @@ public final class ChunkRenderContext implements WorldView {
     private final ClonedChunkSection[] sections;
     private final WorldGeneratorType generatorType;
     private final boolean hasSky;
-    private final short[] lightCache = new short[20 * 20 * 20];
-    private int[] grassColors;
-    private int[] foliageColors;
-    private int[] waterColors;
+    private short[] lightCache;
+    private int[][] colorCaches;
+    private int initializedColorCaches;
 
     private ChunkRenderContext(World world, SectionPos origin, ClonedChunkSection[] sections) {
         this.origin = origin;
         this.sections = sections;
         this.generatorType = world.getGeneratorType();
         this.hasSky = !world.dimension.hasNoSky();
+    }
+
+    public void resetCaches(short[] lightCache, int[][] colorCaches) {
+        this.lightCache = lightCache;
+        this.colorCaches = colorCaches;
+        this.initializedColorCaches = 0;
         Arrays.fill(this.lightCache, (short)-1);
     }
 
@@ -167,11 +172,12 @@ public final class ChunkRenderContext implements WorldView {
             return -1;
         }
 
-        int[] colors = switch (type) {
-            case 0 -> this.grassColors = prepareColorCache(this.grassColors);
-            case 1 -> this.foliageColors = prepareColorCache(this.foliageColors);
-            default -> this.waterColors = prepareColorCache(this.waterColors);
-        };
+        int[] colors = this.colorCaches[type];
+        int cacheMask = 1 << type;
+        if ((this.initializedColorCaches & cacheMask) == 0) {
+            Arrays.fill(colors, -1);
+            this.initializedColorCaches |= cacheMask;
+        }
         if (colors[index] >= 0) {
             return colors[index];
         }
@@ -245,14 +251,6 @@ public final class ChunkRenderContext implements WorldView {
         int localZ = z - this.origin.minZ();
         return (localX | localY | localZ) < 0 || localX >= 16 || localY >= 16 || localZ >= 16
                 ? -1 : (localY << 8) | (localZ << 4) | localX;
-    }
-
-    private static int[] prepareColorCache(int[] colors) {
-        if (colors == null) {
-            colors = new int[16 * 16 * 16];
-            Arrays.fill(colors, -1);
-        }
-        return colors;
     }
 
     private static int getSectionIndex(int x, int y, int z) {

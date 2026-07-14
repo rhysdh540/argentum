@@ -31,6 +31,10 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     private final TextureAtlasExtension textureAtlas;
     private final RenderPassConfiguration<?> renderPassConfiguration;
     private final PrimitiveLightDataCache lightCache = new PrimitiveLightDataCache();
+    private final short[] renderLightCache = new short[20 * 20 * 20];
+    private final int[][] biomeColorCaches = {
+            new int[16 * 16 * 16], new int[16 * 16 * 16], new int[16 * 16 * 16]
+    };
     private final FastBlockRenderer blockRenderer = new FastBlockRenderer(this, this.lightCache);
     private int originX;
     private int originY;
@@ -46,6 +50,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
         this.originX = x;
         this.originY = y;
         this.originZ = z;
+        world.resetCaches(this.renderLightCache, this.biomeColorCaches);
         this.lightCache.reset(world, x, y, z);
         this.blockRenderer.beginSection();
     }
