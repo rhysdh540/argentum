@@ -39,7 +39,6 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
     public ChunkBuildOutput execute(ChunkBuildContext context, CancellationToken cancellationToken) {
         PrimitiveChunkBuildContext buildContext = (PrimitiveChunkBuildContext)context;
         var renderData = new PrimitiveBuiltRenderSectionData();
-        ChunkOcclusionDataBuilder occluder = new ChunkOcclusionDataBuilder();
 
         ChunkBuildBuffers buffers = buildContext.buffers;
         buffers.init(renderData, this.render.getSectionIndex());
@@ -58,6 +57,7 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
         var renderBlocks = net.minecraft.client.Minecraft.getInstance().getBlockRenderDispatcher();
 
         buildContext.beginSection(this.renderContext, minX, minY, minZ);
+        ChunkOcclusionDataBuilder occluder = buildContext.getOcclusionBuilder();
 
         try {
             for (int y = minY; y < maxY; y++) {

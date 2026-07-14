@@ -21,6 +21,7 @@ import org.taumc.celeritas.impl.extensions.TextureAtlasExtension;
 import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.render.terrain.compile.light.PrimitiveLightDataCache;
 import org.taumc.celeritas.impl.render.terrain.compile.pipeline.FastBlockRenderer;
+import org.taumc.celeritas.impl.render.terrain.occlusion.ChunkOcclusionDataBuilder;
 import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 
 public class PrimitiveChunkBuildContext extends ChunkBuildContext {
@@ -35,6 +36,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     private final int[][] biomeColorCaches = {
             new int[16 * 16 * 16], new int[16 * 16 * 16], new int[16 * 16 * 16]
     };
+    private final ChunkOcclusionDataBuilder occlusionBuilder = new ChunkOcclusionDataBuilder();
     private final FastBlockRenderer blockRenderer = new FastBlockRenderer(this, this.lightCache);
     private int originX;
     private int originY;
@@ -51,8 +53,13 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
         this.originY = y;
         this.originZ = z;
         world.resetCaches(this.renderLightCache, this.biomeColorCaches);
+        this.occlusionBuilder.reset();
         this.lightCache.reset(world, x, y, z);
         this.blockRenderer.beginSection();
+    }
+
+    public ChunkOcclusionDataBuilder getOcclusionBuilder() {
+        return this.occlusionBuilder;
     }
 
     public FastBlockRenderer getBlockRenderer() {

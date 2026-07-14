@@ -12,6 +12,10 @@ public final class ChunkOcclusionDataBuilder {
     private final BitSet closed = new BitSet(BLOCK_COUNT);
     private final int[] queue = new int[BLOCK_COUNT];
 
+    public void reset() {
+        this.closed.clear();
+    }
+
     public void markClosed(int x, int y, int z) {
         this.closed.set(pack(x, y, z));
     }
