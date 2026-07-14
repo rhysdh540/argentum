@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.shorts.Short2ObjectMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import org.embeddedt.embeddium.impl.util.position.SectionPos;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.state.BlockState;
@@ -20,7 +21,9 @@ import java.util.Map;
 
 final class ClonedChunkSection {
     private final SectionPos position;
-    private final WorldChunkSection data;
+    private final char[] blockStates;
+    private final byte[] blockLight;
+    private final byte[] skyLight;
     private final ChunkNibbleStorage emptySectionSkyLight;
     private final Short2ObjectMap<BlockEntity> blockEntities = new Short2ObjectOpenHashMap<>();
     private final byte[] biomes;
@@ -34,10 +37,14 @@ final class ClonedChunkSection {
         this.hasSky = !world.dimension.hasNoSky();
 
         if (source == null) {
-            this.data = null;
+            this.blockStates = null;
+            this.blockLight = null;
+            this.skyLight = null;
             this.emptySectionSkyLight = createEmptySectionSkyLight(chunk, sectionY, this.hasSky);
         } else {
-            this.data = copy(source, this.hasSky);
+            this.blockStates = Arrays.copyOf(source.getBlockStates(), source.getBlockStates().length);
+            this.blockLight = copy(source.getBlockLightStorage());
+            this.skyLight = this.hasSky && source.getSkyLightStorage() != null ? copy(source.getSkyLightStorage()) : null;
             this.emptySectionSkyLight = null;
         }
 
@@ -50,20 +57,8 @@ final class ClonedChunkSection {
         return sectionY >= 0 && sectionY < sections.length ? sections[sectionY] : null;
     }
 
-    private static WorldChunkSection copy(WorldChunkSection source, boolean hasSky) {
-        WorldChunkSection copy = new WorldChunkSection(source.getOffsetY(), hasSky);
-        copy.setBlockStates(Arrays.copyOf(source.getBlockStates(), source.getBlockStates().length));
-        copy.setBlockLightStorage(copy(source.getBlockLightStorage()));
-
-        if (hasSky && source.getSkyLightStorage() != null) {
-            copy.setSkyLightStorage(copy(source.getSkyLightStorage()));
-        }
-
-        return copy;
-    }
-
-    private static ChunkNibbleStorage copy(ChunkNibbleStorage source) {
-        return new ChunkNibbleStorage(Arrays.copyOf(source.getData(), source.getData().length));
+    private static byte[] copy(ChunkNibbleStorage source) {
+        return Arrays.copyOf(source.getData(), source.getData().length);
     }
 
     private static ChunkNibbleStorage createEmptySectionSkyLight(WorldChunk chunk, int sectionY, boolean hasSky) {
@@ -97,7 +92,11 @@ final class ClonedChunkSection {
     }
 
     BlockState getBlockState(int x, int y, int z) {
-        return this.data == null ? Blocks.AIR.defaultState() : this.data.getBlockState(x, y, z);
+        if (this.blockStates == null) {
+            return Blocks.AIR.defaultState();
+        }
+        BlockState state = Block.STATE_REGISTRY.get(this.blockStates[y << 8 | z << 4 | x]);
+        return state == null ? Blocks.AIR.defaultState() : state;
     }
 
     BlockEntity getBlockEntity(int x, int y, int z) {
@@ -105,8 +104,13 @@ final class ClonedChunkSection {
     }
 
     int getLight(LightType type, int x, int y, int z) {
-        if (this.data != null) {
-            return type == LightType.SKY ? this.data.getSkyLight(x, y, z) : this.data.getBlockLight(x, y, z);
+        if (this.blockStates != null) {
+            byte[] light = type == LightType.SKY ? this.skyLight : this.blockLight;
+            if (light == null) {
+                return 0;
+            }
+            int index = y << 8 | z << 4 | x;
+            return light[index >> 1] >> ((index & 1) << 2) & 15;
         }
 
         if (type != LightType.SKY || !this.hasSky) {
