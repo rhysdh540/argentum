@@ -8,24 +8,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.taumc.celeritas.impl.render.entity.CpuModelBatch;
 
 @Mixin(ModelPart.class)
 public abstract class ModelPartMixin {
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void celeritas$renderBatched(float scale, CallbackInfo ci) {
-        if (CpuModelBatch.render((ModelPart)(Object)this, scale, false)) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(method = "renderForceTransform", at = @At("HEAD"), cancellable = true)
-    private void celeritas$renderBatchedForced(float scale, CallbackInfo ci) {
-        if (CpuModelBatch.render((ModelPart)(Object)this, scale, true)) {
-            ci.cancel();
-        }
-    }
-
     @Inject(
             method = "compile",
             at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/client/render/vertex/Tesselator;getBuffer()Lnet/minecraft/client/render/vertex/BufferBuilder;")
