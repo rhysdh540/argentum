@@ -10,6 +10,7 @@
     "features.cloud.WorldRendererMixin", "features.font.TextRendererMixin", "features.model.BufferBuilderAccessor", "features.model.ModelPartMixin",
     "features.model.PolygonMixin", "features.particle.ParticleManagerMixin", "features.particle.ParticleMixin",
     "features.profiling.BufferUploaderMixin", "features.profiling.VertexBufferMixin", "features.terrain.BakedQuadMixin", "features.terrain.BiomeColorsMixin",
+    "features.terrain.ChunkRenderListMixin", "features.terrain.RenderListManagerMixin", "features.terrain.VisibleChunkCollectorMixin",
     "features.texture.TextureAtlasMixin", "features.texture.TextureAtlasSpriteMixin", "features.texture.TextureManagerMixin"
   ],
   "mixins": ["core.collections.TypeInstanceMultimapMixin", "core.world.ChunkCacheMixin",
