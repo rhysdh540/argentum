@@ -150,6 +150,10 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
 
     @Inject(method = "reload()V", at = @At("RETURN"))
     private void onReload(CallbackInfo ci) {
+        if (!this.renderer.isRenderingWorld(this.world)) {
+            return;
+        }
+
         RenderDevice.enterManagedCode();
 
         try {

@@ -67,6 +67,10 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
         super.unloadWorld();
     }
 
+    public boolean isRenderingWorld(World world) {
+        return this.world == world;
+    }
+
     public static CameraState captureCameraState(double ticks) {
         Entity viewEntity = Minecraft.getInstance().getCamera();
 
