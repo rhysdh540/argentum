@@ -16,6 +16,7 @@ import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.chunk.WorldChunkSection;
 import net.minecraft.world.gen.WorldGeneratorType;
+import org.taumc.celeritas.impl.world.biome.BiomeColorCache;
 
 import java.util.Arrays;
 
@@ -28,8 +29,7 @@ public final class ChunkRenderContext implements WorldView {
     private final WorldGeneratorType generatorType;
     private final boolean hasSky;
     private short[] lightCache;
-    private int[][] colorCaches;
-    private int initializedColorCaches;
+    private BiomeColorCache biomeColorCache;
 
     private ChunkRenderContext(World world, SectionPos origin, ClonedChunkSection[] sections) {
         this.origin = origin;
@@ -38,10 +38,9 @@ public final class ChunkRenderContext implements WorldView {
         this.hasSky = !world.dimension.hasNoSky();
     }
 
-    public void resetCaches(short[] lightCache, int[][] colorCaches) {
+    public void resetCaches(short[] lightCache, BiomeColorCache biomeColorCache) {
         this.lightCache = lightCache;
-        this.colorCaches = colorCaches;
-        this.initializedColorCaches = 0;
+        this.biomeColorCache = biomeColorCache;
         Arrays.fill(this.lightCache, (short)-1);
     }
 
@@ -149,61 +148,13 @@ public final class ChunkRenderContext implements WorldView {
         return this.getBiome(pos.getX(), pos.getZ());
     }
 
-    private Biome getBiome(int x, int z) {
+    public Biome getBiome(int x, int z) {
         ClonedChunkSection section = this.getSection(x >> 4, this.origin.y(), z >> 4);
         return section == null ? Biome.DEFAULT : section.getBiome(x & 15, z & 15);
     }
 
-    public int getGrassColor(BlockPos pos) {
-        return this.getBiomeColor(pos, 0);
-    }
-
-    public int getFoliageColor(BlockPos pos) {
-        return this.getBiomeColor(pos, 1);
-    }
-
-    public int getWaterColor(BlockPos pos) {
-        return this.getBiomeColor(pos, 2);
-    }
-
-    private int getBiomeColor(BlockPos pos, int type) {
-        int index = this.getBlockIndex(pos.getX(), pos.getY(), pos.getZ());
-        if (index < 0) {
-            return -1;
-        }
-
-        int[] colors = this.colorCaches[type];
-        int cacheMask = 1 << type;
-        if ((this.initializedColorCaches & cacheMask) == 0) {
-            Arrays.fill(colors, -1);
-            this.initializedColorCaches |= cacheMask;
-        }
-        if (colors[index] >= 0) {
-            return colors[index];
-        }
-
-        int red = 0;
-        int green = 0;
-        int blue = 0;
-        BlockPos.Mutable sample = new BlockPos.Mutable();
-        for (int dz = -1; dz <= 1; dz++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                int x = pos.getX() + dx;
-                int z = pos.getZ() + dz;
-                sample.set(x, pos.getY(), z);
-                Biome biome = this.getBiome(x, z);
-                int color = switch (type) {
-                    case 0 -> biome.getGrassColor(sample);
-                    case 1 -> biome.getFoliageColor(sample);
-                    default -> biome.waterFogColor;
-                };
-                red += color >> 16 & 255;
-                green += color >> 8 & 255;
-                blue += color & 255;
-            }
-        }
-
-        return colors[index] = red / 9 << 16 | green / 9 << 8 | blue / 9;
+    public int getBiomeColor(BlockPos pos, BiomeColorCache.ColorType type) {
+        return this.biomeColorCache.getColor(type, pos.getX(), pos.getY(), pos.getZ());
     }
 
     @Override
@@ -243,14 +194,6 @@ public final class ChunkRenderContext implements WorldView {
         int localZ = z - this.origin.minZ() + 2;
         return (localX | localY | localZ) < 0 || localX >= 20 || localY >= 20 || localZ >= 20
                 ? -1 : (localY * 20 + localZ) * 20 + localX;
-    }
-
-    private int getBlockIndex(int x, int y, int z) {
-        int localX = x - this.origin.minX();
-        int localY = y - this.origin.minY();
-        int localZ = z - this.origin.minZ();
-        return (localX | localY | localZ) < 0 || localX >= 16 || localY >= 16 || localZ >= 16
-                ? -1 : (localY << 8) | (localZ << 4) | localX;
     }
 
     private static int getSectionIndex(int x, int y, int z) {
