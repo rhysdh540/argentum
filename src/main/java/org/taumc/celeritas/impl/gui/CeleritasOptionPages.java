@@ -219,9 +219,6 @@ final class CeleritasOptionPages {
                         (config, value) -> config.fogCulling = value, config -> config.fogCulling))
                 .add(toggle("entity_culling",
                         (config, value) -> config.entityCulling = value, config -> config.entityCulling))
-                .add(toggle("entity_occlusion_culling",
-                        (config, value) -> config.entityOcclusionCulling = value,
-                        config -> config.entityOcclusionCulling))
                 .add(OptionImpl.createBuilder(int.class, CONFIG)
                         .setId(id("entity_occlusion_interval"))
                         .setName(text("entity_occlusion_interval.name"))
@@ -230,7 +227,7 @@ final class CeleritasOptionPages {
                                 value -> text("value.milliseconds", value)))
                         .setBinding((config, value) -> config.entityOcclusionIntervalMs = value,
                                 config -> config.entityOcclusionIntervalMs)
-                        .setEnabledPredicate(() -> CONFIG.entityOcclusionCulling)
+                        .setEnabledPredicate(() -> CONFIG.entityCulling)
                         .build())
                 .add(toggle("particle_culling",
                         (config, value) -> config.particleCulling = value, config -> config.particleCulling))

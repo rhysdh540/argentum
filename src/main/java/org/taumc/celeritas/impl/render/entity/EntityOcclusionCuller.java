@@ -31,8 +31,7 @@ public class EntityOcclusionCuller {
     }
 
     public void prepare(List<Entity> entities, Entity camera, double cameraX, double cameraY, double cameraZ) {
-        if (!Celeritas.CONFIG.entityCulling || !Celeritas.CONFIG.entityOcclusionCulling
-                || !GL.getCapabilities().OpenGL15) {
+        if (!Celeritas.CONFIG.entityCulling || !GL.getCapabilities().OpenGL15) {
             this.clear();
             return;
         }

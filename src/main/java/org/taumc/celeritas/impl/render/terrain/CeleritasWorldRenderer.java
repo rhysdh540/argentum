@@ -134,9 +134,7 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
     }
 
     public boolean isEntitySectionVisible(net.minecraft.util.math.Box box) {
-        return (this.getLastViewport() == null || this.getLastViewport().isBoxVisible(
-                box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ))
-                && this.isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
+        return this.isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
     }
 
     public void prepareEntityCulling(List<Entity> entities, Entity camera,
