@@ -1,5 +1,5 @@
 plugins {
-    java
+    `java-library`
     id("net.fabricmc.fabric-loom-remap") version("1.17.+")
     id("ploceus") version("1.17.+")
 }
@@ -24,20 +24,40 @@ val testmod = sourceSets.create("testmod")
 testmod.compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
 testmod.runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 
-repositories {
-    exclusiveContent {
-        forRepository { mavenCentral() }
-        filter {
-            includeGroup("org.lwjgl")
+allprojects {
+    apply(plugin = "java")
+
+    repositories {
+        exclusiveContent {
+            forRepository { mavenCentral() }
+            filter {
+                includeGroup("org.lwjgl")
+            }
+        }
+        maven("https://maven.taumc.org/releases")
+        maven("https://maven.axolotlclient.com/releases")
+        exclusiveContent {
+            forRepository { maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1") }
+            filter {
+                includeGroup("me.djtheredstoner")
+            }
         }
     }
-    maven("https://maven.taumc.org/releases")
-    maven("https://maven.axolotlclient.com/releases")
-    exclusiveContent {
-        forRepository { maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1") }
-        filter {
-            includeGroup("me.djtheredstoner")
+
+    configurations.all {
+        resolutionStrategy {
+            exclude(group = "org.lwjgl.lwjgl")
         }
+    }
+
+    gradle.taskGraph.whenReady {
+        allTasks.filter { it.name == "net.fabricmc.devlaunchinjector.Main.main()" }.forEach {
+            it.notCompatibleWithConfigurationCache("loom weird?")
+        }
+    }
+
+    tasks.assemble {
+        dependsOn("remapJar")
     }
 }
 
@@ -101,28 +121,12 @@ dependencies {
     include(implementation("org.joml:joml:1.10.5")!!)
     implementation("it.unimi.dsi:fastutil:8.5.15")
 
-    include(implementation("org.embeddedt.celeritas:celeritas-common:${version}")!!)
+    include(api("org.embeddedt.celeritas:celeritas-common:${version}")!!)
 
     implementation("org.apache.logging.log4j:log4j-api:2.0-beta9")
     modImplementation("io.github.moehreag:legacy-lwjgl3:${Versions.legacy_lwjgl3}")
 
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
-}
-
-configurations.all {
-    resolutionStrategy {
-        exclude(group = "org.lwjgl.lwjgl")
-    }
-}
-
-gradle.taskGraph.whenReady {
-    allTasks.filter { it.name == "net.fabricmc.devlaunchinjector.Main.main()" }.forEach {
-        it.notCompatibleWithConfigurationCache("loom weird?")
-    }
-}
-
-tasks.assemble {
-    dependsOn("remapJar")
 }
 
 tasks.named("runFontTestClient") {
