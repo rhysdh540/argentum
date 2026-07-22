@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
+import org.taumc.celeritas.api.options.structure.OptionStorage;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -16,7 +17,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CeleritasConfig {
+public class CeleritasConfig implements OptionStorage<CeleritasConfig> {
     private static final Logger LOGGER = LogManager.getLogger("CeleritasConfig");
     private static final Gson GSON = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -38,6 +39,7 @@ public class CeleritasConfig {
     public boolean safeChunkEdges = true;
     public boolean compactVertexFormat;
     public boolean checkGlErrors;
+    private transient Path path;
 
     public static CeleritasConfig load(Path path) {
         CeleritasConfig config = new CeleritasConfig();
@@ -51,22 +53,34 @@ public class CeleritasConfig {
                 config = loaded;
             } catch (Exception e) {
                 LOGGER.error("Could not load configuration from {}", path, e);
+                config.path = path;
                 return config;
             }
         }
 
+        config.path = path;
         config.validate();
-
-        try {
-            Files.createDirectories(path.getParent());
-            try (Writer writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
-                GSON.toJson(config, writer);
-            }
-        } catch (IOException e) {
-            LOGGER.error("Could not save configuration to {}", path, e);
-        }
+        config.save();
 
         return config;
+    }
+
+    @Override
+    public CeleritasConfig getData() {
+        return this;
+    }
+
+    @Override
+    public void save() {
+        this.validate();
+        try {
+            Files.createDirectories(this.path.getParent());
+            try (Writer writer = Files.newBufferedWriter(this.path, StandardCharsets.UTF_8)) {
+                GSON.toJson(this, writer);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Could not save configuration to {}", this.path, e);
+        }
     }
 
     private void validate() {

@@ -5,6 +5,7 @@
   "version": "${version}",
   "environment": "*",
   "description": "An open-source client performance mod for Minecraft",
+  "icon": "assets/celeritas/textures/gui/icon.png",
   "authors": ["embeddedt"],
   "contributors": ["JellySquid", "IMS212", "rdh"],
   "entrypoints": {
