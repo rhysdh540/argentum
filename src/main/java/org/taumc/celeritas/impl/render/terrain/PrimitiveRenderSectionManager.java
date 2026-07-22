@@ -44,7 +44,7 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
     private final ReferenceOpenHashSet<RenderSection> sectionsWithSkyLight = new ReferenceOpenHashSet<>();
 
     public PrimitiveRenderSectionManager(RenderPassConfiguration<?> configuration, World world, int renderDistance, CommandList commandList, int minSection, int maxSection, int requestedThreads) {
-        super(configuration, () -> new PrimitiveChunkBuildContext(configuration), ChunkRenderer::new, renderDistance, commandList, minSection, maxSection, requestedThreads);
+        super(configuration, () -> new PrimitiveChunkBuildContext(configuration), ChunkRenderer::new, renderDistance, commandList, minSection, maxSection, requestedThreads, false);
         this.world = world;
         this.sectionCache = new ClonedChunkSectionCache(world);
     }

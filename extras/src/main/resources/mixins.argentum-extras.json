@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.rdh.argentum.extras.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "DebugOverlayMixin",
+    "ParticleManagerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

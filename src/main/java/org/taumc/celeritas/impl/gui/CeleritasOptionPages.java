@@ -20,12 +20,14 @@ import org.taumc.celeritas.api.options.structure.OptionPage;
 import org.taumc.celeritas.api.options.structure.StandardOptions;
 import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.config.CeleritasConfig;
+import org.taumc.celeritas.impl.config.JsonOptionStorage;
 
 import java.util.List;
 
 final class CeleritasOptionPages {
     private static final GameOptionsStorage VANILLA = new GameOptionsStorage();
     private static final CeleritasConfig CONFIG = Celeritas.CONFIG;
+    private static final JsonOptionStorage<CeleritasConfig> CONFIG_STORAGE = Celeritas.CONFIG_STORAGE;
 
     private CeleritasOptionPages() {
     }
@@ -35,17 +37,17 @@ final class CeleritasOptionPages {
                 .setId(StandardOptions.Group.RENDERING)
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.RENDER_DISTANCE.cast())
-                        .setName(text("render_distance.name"))
+                        .setName(vanilla("options.renderDistance"))
                         .setTooltip(text("render_distance.tooltip"))
                         .setControl(option -> new SliderControl(option, 2, 32, 1,
-                                value -> text("value.chunks", value)))
+                                value -> vanilla("options.chunks", value)))
                         .setBinding((options, value) -> options.viewDistance = value, options -> options.viewDistance)
                         .setImpact(OptionImpact.HIGH)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.BRIGHTNESS.cast())
-                        .setName(text("brightness.name"))
+                        .setName(vanilla("options.gamma"))
                         .setTooltip(text("brightness.tooltip"))
                         .setControl(option -> new SliderControl(option, 0, 100, 1, ControlValueFormatter.brightness()))
                         .setBinding((options, value) -> options.gamma = value / 100.0F,
@@ -57,7 +59,7 @@ final class CeleritasOptionPages {
                 .setId(StandardOptions.Group.WINDOW)
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.GUI_SCALE.cast())
-                        .setName(text("gui_scale.name"))
+                        .setName(vanilla("options.guiScale"))
                         .setTooltip(text("gui_scale.tooltip"))
                         .setControl(option -> new SliderControl(option, 0, 4, 1, ControlValueFormatter.guiScale()))
                         .setBinding((options, value) -> {
@@ -69,7 +71,7 @@ final class CeleritasOptionPages {
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, VANILLA)
                         .setId(StandardOptions.Option.FULLSCREEN.cast())
-                        .setName(text("fullscreen.name"))
+                        .setName(vanilla("options.fullscreen"))
                         .setTooltip(text("fullscreen.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((options, value) -> {
@@ -83,7 +85,7 @@ final class CeleritasOptionPages {
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, VANILLA)
                         .setId(StandardOptions.Option.VSYNC.cast())
-                        .setName(text("vsync.name"))
+                        .setName(vanilla("options.vsync"))
                         .setTooltip(text("vsync.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((options, value) -> {
@@ -94,7 +96,7 @@ final class CeleritasOptionPages {
                         .build())
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.MAX_FRAMERATE.cast())
-                        .setName(text("framerate_limit.name"))
+                        .setName(vanilla("options.framerateLimit"))
                         .setTooltip(text("framerate_limit.tooltip"))
                         .setControl(option -> new SliderControl(option, 10, 260, 10, ControlValueFormatter.fpsLimit()))
                         .setBinding((options, value) -> options.fpsLimit = value, options -> options.fpsLimit)
@@ -105,7 +107,7 @@ final class CeleritasOptionPages {
                 .setId(StandardOptions.Group.INDICATORS)
                 .add(OptionImpl.createBuilder(boolean.class, VANILLA)
                         .setId(StandardOptions.Option.VIEW_BOBBING.cast())
-                        .setName(text("view_bobbing.name"))
+                        .setName(vanilla("options.viewBobbing"))
                         .setTooltip(text("view_bobbing.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((options, value) -> options.viewBobbing = value, options -> options.viewBobbing)
@@ -121,7 +123,7 @@ final class CeleritasOptionPages {
                 .setId(StandardOptions.Group.GRAPHICS)
                 .add(OptionImpl.createBuilder(boolean.class, VANILLA)
                         .setId(StandardOptions.Option.GRAPHICS_MODE.cast())
-                        .setName(text("graphics.name"))
+                        .setName(vanilla("options.graphics"))
                         .setTooltip(text("graphics.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((options, value) -> options.fancyGraphics = value, options -> options.fancyGraphics)
@@ -130,7 +132,7 @@ final class CeleritasOptionPages {
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, VANILLA)
                         .setId(OptionIdentifier.create("minecraft", "anaglyph", boolean.class))
-                        .setName(text("anaglyph.name"))
+                        .setName(vanilla("options.anaglyph"))
                         .setTooltip(text("anaglyph.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((options, value) -> options.anaglyph = value, options -> options.anaglyph)
@@ -142,29 +144,29 @@ final class CeleritasOptionPages {
                 .setId(StandardOptions.Group.DETAILS)
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.CLOUDS.cast())
-                        .setName(text("clouds.name"))
+                        .setName(vanilla("options.renderClouds"))
                         .setTooltip(text("clouds.tooltip"))
                         .setControl(option -> new CyclingControl<>(option,
-                                new Integer[]{0, 1, 2}, values("off", "fast", "fancy")))
+                                new Integer[]{0, 1, 2}, vanillaValues("options.off", "options.clouds.fast", "options.clouds.fancy")))
                         .setBinding((options, value) -> options.cloudRenderMode = value,
                                 options -> options.cloudRenderMode)
                         .setImpact(OptionImpact.LOW)
                         .build())
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.PARTICLES.cast())
-                        .setName(text("particles.name"))
+                        .setName(vanilla("options.particles"))
                         .setTooltip(text("particles.tooltip"))
                         .setControl(option -> new CyclingControl<>(option,
-                                new Integer[]{0, 1, 2}, values("all", "decreased", "minimal")))
+                                new Integer[]{0, 1, 2}, vanillaValues("options.particles.all", "options.particles.decreased", "options.particles.minimal")))
                         .setBinding((options, value) -> options.particles = value, options -> options.particles)
                         .setImpact(OptionImpact.MEDIUM)
                         .build())
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.SMOOTH_LIGHT.cast())
-                        .setName(text("smooth_lighting.name"))
+                        .setName(vanilla("options.ao"))
                         .setTooltip(text("smooth_lighting.tooltip"))
                         .setControl(option -> new CyclingControl<>(option,
-                                new Integer[]{0, 1, 2}, values("off", "minimum", "maximum")))
+                                new Integer[]{0, 1, 2}, vanillaValues("options.ao.off", "options.ao.min", "options.ao.max")))
                         .setBinding((options, value) -> options.ambientOcclusion = value,
                                 options -> options.ambientOcclusion)
                         .setImpact(OptionImpact.LOW)
@@ -172,7 +174,7 @@ final class CeleritasOptionPages {
                         .build())
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.MIPMAP_LEVEL.cast())
-                        .setName(text("mipmap_levels.name"))
+                        .setName(vanilla("options.mipmapLevels"))
                         .setTooltip(text("mipmap_levels.tooltip"))
                         .setControl(option -> new SliderControl(option, 0, 4, 1, ControlValueFormatter.number()))
                         .setBinding((options, value) -> options.mipmapLevels = value, options -> options.mipmapLevels)
@@ -188,7 +190,7 @@ final class CeleritasOptionPages {
     static OptionPage performance() {
         OptionGroup chunkUpdates = OptionGroup.createBuilder()
                 .setId(StandardOptions.Group.CHUNK_UPDATES)
-                .add(OptionImpl.createBuilder(int.class, CONFIG)
+                .add(OptionImpl.createBuilder(int.class, CONFIG_STORAGE)
                         .setId(StandardOptions.Option.CHUNK_UPDATE_THREADS.cast())
                         .setName(text("chunk_builder_threads.name"))
                         .setTooltip(text("chunk_builder_threads.tooltip"))
@@ -201,7 +203,7 @@ final class CeleritasOptionPages {
                         .build())
                 .add(toggle("defer_chunk_updates",
                         (config, value) -> config.deferChunkUpdates = value, config -> config.deferChunkUpdates))
-                .add(OptionImpl.createBuilder(AsyncOcclusionMode.class, CONFIG)
+                .add(OptionImpl.createBuilder(AsyncOcclusionMode.class, CONFIG_STORAGE)
                         .setId(StandardOptions.Option.ASYNC_GRAPH_SEARCH.cast())
                         .setName(text("async_occlusion.name"))
                         .setTooltip(text("async_occlusion.tooltip"))
@@ -219,7 +221,7 @@ final class CeleritasOptionPages {
                         (config, value) -> config.fogCulling = value, config -> config.fogCulling))
                 .add(toggle("entity_culling",
                         (config, value) -> config.entityCulling = value, config -> config.entityCulling))
-                .add(OptionImpl.createBuilder(int.class, CONFIG)
+                .add(OptionImpl.createBuilder(int.class, CONFIG_STORAGE)
                         .setId(id("entity_occlusion_interval"))
                         .setName(text("entity_occlusion_interval.name"))
                         .setTooltip(text("entity_occlusion_interval.tooltip"))
@@ -269,7 +271,7 @@ final class CeleritasOptionPages {
     private static OptionImpl<CeleritasConfig, Boolean> toggle(String id,
             java.util.function.BiConsumer<CeleritasConfig, Boolean> setter,
             java.util.function.Function<CeleritasConfig, Boolean> getter, OptionFlag... flags) {
-        return OptionImpl.createBuilder(boolean.class, CONFIG)
+        return OptionImpl.createBuilder(boolean.class, CONFIG_STORAGE)
                 .setId(id(id))
                 .setName(text(id + ".name"))
                 .setTooltip(text(id + ".tooltip"))
@@ -287,10 +289,22 @@ final class CeleritasOptionPages {
         return TextComponent.translatable("celeritas.options." + path, args);
     }
 
+    private static TextComponent vanilla(String key, Object... args) {
+        return TextComponent.translatable(key, args);
+    }
+
     private static TextComponent[] values(String... names) {
         TextComponent[] components = new TextComponent[names.length];
         for (int i = 0; i < names.length; i++) {
             components[i] = text("value." + names[i]);
+        }
+        return components;
+    }
+
+    private static TextComponent[] vanillaValues(String... keys) {
+        TextComponent[] components = new TextComponent[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            components[i] = vanilla(keys[i]);
         }
         return components;
     }

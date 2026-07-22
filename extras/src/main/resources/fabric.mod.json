@@ -9,6 +9,7 @@
   "entrypoints": {
     "client": ["dev.rdh.argentum.extras.ArgentumExtras"]
   },
+  "mixins": ["mixins.argentum-extras.json"],
   "depends": {
     "celeritas": "*"
   }

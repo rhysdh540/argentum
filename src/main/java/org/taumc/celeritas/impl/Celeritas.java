@@ -5,11 +5,13 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.embeddedt.embeddium.impl.gl.device.GLRenderDevice;
 import org.lwjgl.opengl.GL15C;
 import org.taumc.celeritas.impl.config.CeleritasConfig;
+import org.taumc.celeritas.impl.config.JsonOptionStorage;
 
 public class Celeritas implements ClientModInitializer {
     public static final String MODID = "celeritas";
     public static String VERSION;
     public static CeleritasConfig CONFIG = new CeleritasConfig();
+    public static JsonOptionStorage<CeleritasConfig> CONFIG_STORAGE;
 
     @Override
     public void onInitializeClient() {
@@ -18,6 +20,8 @@ public class Celeritas implements ClientModInitializer {
         };
         FabricLoader loader = FabricLoader.getInstance();
         VERSION = loader.getModContainer(MODID).orElseThrow().getMetadata().getVersion().toString();
-        CONFIG = CeleritasConfig.load(loader.getConfigDir().resolve("celeritas.json"));
+        CONFIG_STORAGE = JsonOptionStorage.load(loader.getConfigDir().resolve("celeritas.json"),
+                CeleritasConfig.class, CeleritasConfig::new, CeleritasConfig::validate);
+        CONFIG = CONFIG_STORAGE.getData();
     }
 }

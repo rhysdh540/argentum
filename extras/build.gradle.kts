@@ -21,7 +21,7 @@ dependencies {
     for (c in arrayOf("minecraft", "mappings", "modImplementation")) {
         rootProject.configurations[c].dependencies.forEach { add(c, it) }
     }
-    modImplementation(project(":"))
+    modImplementation(project(path = ":", configuration = "namedElements"))
 }
 
 loom.runs.named("client") {
@@ -36,6 +36,8 @@ loom.runs.named("client") {
     systemProperties.put("java.awt.headless", "true")
     systemProperties.put("legacy_lwjgl3.use_sdl", "true")
     systemProperties.put("devauth.enabled", "true")
+
+    runDirectory = rootProject.rootDir.resolve("run")
 }
 
 tasks.processResources {
