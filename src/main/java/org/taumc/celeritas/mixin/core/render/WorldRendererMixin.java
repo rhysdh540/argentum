@@ -59,6 +59,10 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
     @Shadow
     private int renderedEntityCount;
 
+    @Shadow
+    private boolean viewChanged;
+
+    @Unique
     private CeleritasWorldRenderer renderer;
 
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -122,6 +126,11 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
     public void setupRender(Entity camera, double tickDelta, Culler culler, int frame, boolean loadChunks) {
         if (this.minecraft.options.viewDistance != this.lastViewDistance) {
             this.reload();
+        }
+
+        if (this.viewChanged) {
+            this.renderer.getRenderSectionManager().markGraphDirty();
+            this.viewChanged = false;
         }
 
         updateFrustums(culler, (float)tickDelta);

@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.taumc.celeritas.impl.render.entity.instancing.EntityInstancingRenderer;
 
 import java.util.Map;
 
@@ -17,6 +18,11 @@ public abstract class TextureManagerMixin {
     @Shadow
     @Final
     private Map<Identifier, Texture> textures;
+
+    @Inject(method = "bind", at = @At("HEAD"))
+    private void celeritas$captureEntityTexture(Identifier identifier, CallbackInfo ci) {
+        EntityInstancingRenderer.setTexture(identifier);
+    }
 
     @Inject(
             method = "close",

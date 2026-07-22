@@ -28,6 +28,7 @@ public class CeleritasConfig {
     public AsyncOcclusionMode asyncOcclusion = AsyncOcclusionMode.EVERYTHING;
     public boolean fogCulling = true;
     public boolean entityCulling = true;
+    public boolean entityInstancing = true;
     public boolean entityOcclusionCulling;
     public int entityOcclusionIntervalMs = 50;
     public boolean particleCulling = true;

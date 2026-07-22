@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.Pair;
 import org.embeddedt.embeddium.impl.common.util.MathUtil;
 import org.embeddedt.embeddium.impl.common.util.NativeBuffer;
 import org.taumc.celeritas.impl.Celeritas;
+import org.taumc.celeritas.impl.render.entity.instancing.EntityInstancingRenderer;
 import org.taumc.celeritas.impl.render.terrain.CeleritasWorldRenderer;
 
 import java.lang.management.ManagementFactory;
@@ -24,6 +25,7 @@ public class CeleritasDebugStrings {
 
         if (renderer != null) {
             RenderMetrics.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, -1)));
+            stringsToRender.add(Pair.of(EntityInstancingRenderer.getDebugString(), -1));
             stringsToRender.add(Pair.of("", -1));
             renderer.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, -1)));
         }

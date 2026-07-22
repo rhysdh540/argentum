@@ -16,6 +16,7 @@ import org.taumc.celeritas.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.particle.Particle;
+import net.minecraft.client.render.block.BlockLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
@@ -26,7 +27,7 @@ import java.util.Objects;
 /**
  * Provides an extension to vanilla's world renderer.
  */
-public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, PrimitiveRenderSectionManager, Object, BlockEntity, Float> {
+public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, PrimitiveRenderSectionManager, BlockLayer, BlockEntity, Float> {
     private final EntityOcclusionCuller entityOcclusionCuller = new EntityOcclusionCuller(this);
 
     /**
