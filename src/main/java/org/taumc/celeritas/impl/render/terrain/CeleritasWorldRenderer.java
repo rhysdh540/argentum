@@ -57,12 +57,6 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
     }
 
     @Override
-    protected void loadWorld(World world) {
-        ChunkTrackerHolder.get(world).setRequiredNeighborRadius(Celeritas.CONFIG.safeChunkEdges ? 1 : 0);
-        super.loadWorld(world);
-    }
-
-    @Override
     protected void unloadWorld() {
         this.entityOcclusionCuller.clear();
         super.unloadWorld();
@@ -115,6 +109,7 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<World, Primitive
 
     @Override
     protected PrimitiveRenderSectionManager createRenderSectionManager(CommandList commandList) {
+        ChunkTrackerHolder.get(this.world).setRequiredNeighborRadius(Celeritas.CONFIG.safeChunkEdges ? 1 : 0);
         ChunkVertexType vertexType = Celeritas.CONFIG.compactVertexFormat ? ChunkMeshFormats.COMPACT : ChunkMeshFormats.VANILLA_LIKE;
         return PrimitiveRenderSectionManager.create(vertexType, this.world, this.renderDistance, commandList);
     }
