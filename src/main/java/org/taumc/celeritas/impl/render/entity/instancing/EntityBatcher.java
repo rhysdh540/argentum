@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.model.Model;
 import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.resource.Identifier;
+import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -38,6 +39,13 @@ final class EntityBatcher {
         return this.models.computeIfAbsent(model, ignored -> new ModelBatch());
     }
 
+    void delete(CommandList commandList) {
+        this.models.values().forEach(model -> model.delete(commandList));
+        this.models.clear();
+        this.textures.values().forEach(Map::clear);
+        this.arrayTextures.values().forEach(Map::clear);
+    }
+
     TextureBatch texture(Identifier texture, EntityRenderPass pass) {
         return this.textures.get(pass).computeIfAbsent(texture, TextureBatch::new);
     }
@@ -46,16 +54,16 @@ final class EntityBatcher {
         return this.arrayTextures.get(pass).computeIfAbsent(pool, ignored -> new TextureBatch(null));
     }
 
-    Stats render(GlProgram<EntityShader> program) {
+    Stats render(CommandList commandList, GlProgram<EntityShader> program) {
         int draws = 0;
         int textureCount = 0;
-        Stats normal = this.renderPass(program, EntityRenderPass.NORMAL);
+        Stats normal = this.renderPass(commandList, program, EntityRenderPass.NORMAL);
         draws += normal.draws;
         textureCount += normal.textures;
         if (this.has(EntityRenderPass.CULL_FRONT)) {
             GlStateManager.enableCull();
             GlStateManager.cullFace(GL11.GL_FRONT);
-            Stats culled = this.renderPass(program, EntityRenderPass.CULL_FRONT);
+            Stats culled = this.renderPass(commandList, program, EntityRenderPass.CULL_FRONT);
             draws += culled.draws;
             textureCount += culled.textures;
             GlStateManager.cullFace(GL11.GL_BACK);
@@ -64,24 +72,24 @@ final class EntityBatcher {
         if (this.has(EntityRenderPass.CULL_BACK)) {
             GlStateManager.enableCull();
             GlStateManager.cullFace(GL11.GL_BACK);
-            Stats culled = this.renderPass(program, EntityRenderPass.CULL_BACK);
+            Stats culled = this.renderPass(commandList, program, EntityRenderPass.CULL_BACK);
             draws += culled.draws;
             textureCount += culled.textures;
             GlStateManager.disableCull();
         }
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        Stats translucent = this.renderPass(program, EntityRenderPass.TRANSLUCENT);
+        Stats translucent = this.renderPass(commandList, program, EntityRenderPass.TRANSLUCENT);
         draws += translucent.draws;
         textureCount += translucent.textures;
         GlStateManager.blendFunc(1, 1);
-        Stats emissive = this.renderPass(program, EntityRenderPass.EMISSIVE);
+        Stats emissive = this.renderPass(commandList, program, EntityRenderPass.EMISSIVE);
         draws += emissive.draws;
         textureCount += emissive.textures;
-        Stats charge = this.renderPass(program, EntityRenderPass.CREEPER_CHARGE);
+        Stats charge = this.renderPass(commandList, program, EntityRenderPass.CREEPER_CHARGE);
         draws += charge.draws;
         textureCount += charge.textures;
-        charge = this.renderPass(program, EntityRenderPass.WITHER_CHARGE);
+        charge = this.renderPass(commandList, program, EntityRenderPass.WITHER_CHARGE);
         draws += charge.draws;
         textureCount += charge.textures;
         GlStateManager.disableBlend();
@@ -94,20 +102,20 @@ final class EntityBatcher {
             GlStateManager.depthMask(false);
             GlStateManager.blendFunc(GL11.GL_SRC_COLOR, GL11.GL_ONE);
             program.getInterface().setGlintPass(0);
-            Stats glint = this.renderPass(program, EntityRenderPass.GLINT);
+            Stats glint = this.renderPass(commandList, program, EntityRenderPass.GLINT);
             draws += glint.draws;
             textureCount += glint.textures;
             program.getInterface().setGlintPass(1);
-            glint = this.renderPass(program, EntityRenderPass.GLINT);
+            glint = this.renderPass(commandList, program, EntityRenderPass.GLINT);
             draws += glint.draws;
             textureCount += glint.textures;
             program.getInterface().setGlintPass(-1);
             program.getInterface().setItemGlintPass(0);
-            glint = this.renderPass(program, EntityRenderPass.ITEM_GLINT_0);
+            glint = this.renderPass(commandList, program, EntityRenderPass.ITEM_GLINT_0);
             draws += glint.draws;
             textureCount += glint.textures;
             program.getInterface().setItemGlintPass(1);
-            glint = this.renderPass(program, EntityRenderPass.ITEM_GLINT_1);
+            glint = this.renderPass(commandList, program, EntityRenderPass.ITEM_GLINT_1);
             draws += glint.draws;
             textureCount += glint.textures;
             program.getInterface().setItemGlintPass(-1);
@@ -124,7 +132,7 @@ final class EntityBatcher {
                 || this.arrayTextures.get(pass).values().stream().anyMatch(batch -> batch.count != 0);
     }
 
-    private Stats renderPass(GlProgram<EntityShader> program, EntityRenderPass pass) {
+    private Stats renderPass(CommandList commandList, GlProgram<EntityShader> program, EntityRenderPass pass) {
         int draws = 0;
         int textureCount = 0;
         program.getInterface().setEmissive(pass != EntityRenderPass.NORMAL
@@ -136,14 +144,14 @@ final class EntityBatcher {
             if (texture.count == 0) continue;
             Minecraft.getInstance().getTextureManager().bind(texture.texture);
             program.getInterface().setTextureArray(false);
-            draws += texture.render(pass == EntityRenderPass.TRANSLUCENT);
+            draws += texture.render(commandList, pass == EntityRenderPass.TRANSLUCENT);
             textureCount++;
         }
         for (Map.Entry<TextureArrayManager.Pool, TextureBatch> entry : this.arrayTextures.get(pass).entrySet()) {
             if (entry.getValue().count == 0) continue;
             int previous = entry.getKey().bind();
             program.getInterface().setTextureArray(true);
-            draws += entry.getValue().render(pass == EntityRenderPass.TRANSLUCENT);
+            draws += entry.getValue().render(commandList, pass == EntityRenderPass.TRANSLUCENT);
             entry.getKey().restore(previous);
             textureCount++;
         }
@@ -176,14 +184,14 @@ final class EntityBatcher {
             this.count++;
         }
 
-        private int render(boolean sort) {
+        private int render(CommandList commandList, boolean sort) {
             int draws = 0;
             for (var entry : this.parts.reference2ObjectEntrySet()) {
                 if (entry.getValue().count() != 0) {
                     if (sort) {
                         entry.getValue().sortBackToFront();
                     }
-                    entry.getKey().render(entry.getValue());
+                    entry.getKey().render(commandList, entry.getValue());
                     RenderMetrics.recordDraw();
                     draws++;
                 }
