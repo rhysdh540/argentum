@@ -26,13 +26,14 @@ import org.embeddedt.embeddium.impl.util.position.SectionPos;
 import org.jetbrains.annotations.Nullable;
 import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.debug.RenderMetrics;
+import org.taumc.celeritas.impl.extensions.SpriteExtension;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import org.taumc.celeritas.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
-import org.taumc.celeritas.impl.render.terrain.sprite.SpriteUtil;
 import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 import org.taumc.celeritas.impl.world.cloned.ClonedChunkSectionCache;
 
+import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -63,7 +64,7 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected @Nullable SectionTicker createSectionTicker() {
-        return new GenericSectionSpriteTicker<>(SpriteUtil::markActive);
+        return new GenericSectionSpriteTicker<>(s -> ((SpriteExtension) s).celeritas$markActive());
     }
 
     @Override
