@@ -59,4 +59,4 @@ celeritas.options.value.milliseconds=%s ms
 sodium.options.biome_blend.value=%s blocks
 
 options.chunks=%s Chunks
-options.framerate=%s fos
+options.framerate=%s fps
