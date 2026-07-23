@@ -14,16 +14,6 @@ public abstract class GlStateManagerMixin {
         EntityInstancingRenderer.setMatrixMode(mode);
     }
 
-    @Inject(method = "enableBlend", at = @At("HEAD"))
-    private static void celeritas$enableEntityBlend(CallbackInfo ci) {
-        EntityInstancingRenderer.setBlend(true);
-    }
-
-    @Inject(method = "disableBlend", at = @At("HEAD"))
-    private static void celeritas$disableEntityBlend(CallbackInfo ci) {
-        EntityInstancingRenderer.setBlend(false);
-    }
-
     @Inject(method = "color4f", at = @At("HEAD"))
     private static void celeritas$captureEntityColor(float red, float green, float blue, float alpha, CallbackInfo ci) {
         EntityInstancingRenderer.setColor(red, green, blue, alpha);

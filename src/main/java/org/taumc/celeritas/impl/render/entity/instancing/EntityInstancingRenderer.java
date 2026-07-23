@@ -37,6 +37,8 @@ import java.util.Set;
 
 public final class EntityInstancingRenderer {
     private static final Logger LOGGER = LogManager.getLogger();
+    private static final Identifier ENCHANTMENT_GLINT_TEXTURE =
+            new Identifier("textures/misc/enchanted_item_glint.png");
     private static final int MATRIX_STACK_SIZE = 64;
     private static final Matrix4f[] MATRICES = new Matrix4f[MATRIX_STACK_SIZE];
     private static final Matrix4f ARROW_MATRIX = new Matrix4f();
@@ -392,13 +394,6 @@ public final class EntityInstancingRenderer {
         matrixMode = mode;
     }
 
-    public static void setBlend(boolean enabled) {
-        if (modelActive && armorLayer) {
-            currentPass = enabled ? EntityRenderPass.GLINT : EntityRenderPass.NORMAL;
-            selectTexture(currentBoundTexture);
-        }
-    }
-
     private static boolean tracksModelView() {
         return entityActive && matrixMode == GL11.GL_MODELVIEW;
     }
@@ -414,6 +409,11 @@ public final class EntityInstancingRenderer {
 
     public static void setTexture(Identifier texture) {
         if (entityActive && texture != null) {
+            if (modelActive && armorLayer) {
+                currentPass = ENCHANTMENT_GLINT_TEXTURE.equals(texture)
+                        ? EntityRenderPass.GLINT
+                        : EntityRenderPass.NORMAL;
+            }
             selectTexture(texture);
         }
     }
@@ -483,13 +483,13 @@ public final class EntityInstancingRenderer {
     }
 
     private static void recordPart(ModelPart part, float scale) {
+        if (part.invisible || !part.visible) {
+            return;
+        }
         if (currentPass == EntityRenderPass.GLINT && !GLINT_PARTS.add(part)) {
             return;
         }
         PartGeometry geometry = currentModel.getGeometry(part, scale);
-        if (part.invisible || !part.visible) {
-            return;
-        }
 
         pushMatrix();
         translate(part.translateX, part.translateY, part.translateZ);
