@@ -3,13 +3,14 @@
   "id": "celeritas",
   "name": "Celeritas",
   "version": "${version}",
-  "environment": "*",
+  "environment": "client",
   "description": "An open-source client performance mod for Minecraft",
   "icon": "assets/celeritas/textures/gui/icon.png",
-  "authors": ["embeddedt"],
-  "contributors": ["JellySquid", "IMS212", "rdh"],
+  "authors": ["embeddedt", "rdh"],
+  "license": "LGPL-3.0-only",
+  "contributors": ["JellySquid", "IMS212"],
   "entrypoints": {
-    "client": ["org.taumc.celeritas.impl.Celeritas::onInitializeClient"]
+    "client": ["org.taumc.celeritas.impl.Celeritas"]
   },
   "mixins": ["mixins.celeritas.json"]
 }
