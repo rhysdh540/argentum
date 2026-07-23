@@ -147,7 +147,7 @@ final class CeleritasOptionPages {
                         .setName(vanilla("options.renderClouds"))
                         .setTooltip(text("clouds.tooltip"))
                         .setControl(option -> new CyclingControl<>(option,
-                                new Integer[]{0, 1, 2}, vanillaValues("options.off", "options.clouds.fast", "options.clouds.fancy")))
+                                new Integer[]{0, 1, 2}, vanillaValues("options.off", "options.graphics.fast", "options.graphics.fancy")))
                         .setBinding((options, value) -> options.cloudRenderMode = value,
                                 options -> options.cloudRenderMode)
                         .setImpact(OptionImpact.LOW)
@@ -210,7 +210,7 @@ final class CeleritasOptionPages {
                         .setImpact(OptionImpact.HIGH)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
-                .add(toggle("defer_chunk_updates",
+                .add(toggle("defer_chunk_updates", OptionImpact.VARIES,
                         (config, value) -> config.deferChunkUpdates = value, config -> config.deferChunkUpdates))
                 .add(OptionImpl.createBuilder(AsyncOcclusionMode.class, CONFIG_STORAGE)
                         .setId(StandardOptions.Option.ASYNC_GRAPH_SEARCH.cast())
@@ -226,9 +226,9 @@ final class CeleritasOptionPages {
 
         OptionGroup culling = OptionGroup.createBuilder()
                 .setId(StandardOptions.Group.RENDERING_CULLING)
-                .add(toggle("fog_culling",
+                .add(toggle("fog_culling", OptionImpact.LOW,
                         (config, value) -> config.fogCulling = value, config -> config.fogCulling))
-                .add(toggle("entity_culling",
+                .add(toggle("entity_culling", OptionImpact.MEDIUM,
                         (config, value) -> config.entityCulling = value, config -> config.entityCulling))
                 .add(OptionImpl.createBuilder(int.class, CONFIG_STORAGE)
                         .setId(id("entity_occlusion_interval"))
@@ -239,25 +239,26 @@ final class CeleritasOptionPages {
                         .setBinding((config, value) -> config.entityOcclusionIntervalMs = value,
                                 config -> config.entityOcclusionIntervalMs)
                         .setEnabledPredicate(() -> CONFIG.entityCulling)
+                        .setImpact(OptionImpact.VARIES)
                         .build())
-                .add(toggle("particle_culling",
+                .add(toggle("particle_culling", OptionImpact.LOW,
                         (config, value) -> config.particleCulling = value, config -> config.particleCulling))
                 .build();
 
         OptionGroup rendering = OptionGroup.createBuilder()
                 .setId(OptionIdentifier.create("celeritas", "rendering"))
-                .add(toggle("entity_instancing",
+                .add(toggle("entity_instancing", OptionImpact.HIGH,
                         (config, value) -> config.entityInstancing = value, config -> config.entityInstancing))
-                .add(toggle("animate_visible_textures",
+                .add(toggle("animate_visible_textures", OptionImpact.MEDIUM,
                         (config, value) -> config.animateOnlyVisibleTextures = value,
                         config -> config.animateOnlyVisibleTextures))
-                .add(toggle("translucency_sorting",
+                .add(toggle("translucency_sorting", OptionImpact.VARIES,
                         (config, value) -> config.translucencySorting = value,
                         config -> config.translucencySorting, OptionFlag.REQUIRES_RENDERER_RELOAD))
-                .add(toggle("safe_chunk_edges",
+                .add(toggle("safe_chunk_edges", OptionImpact.LOW,
                         (config, value) -> config.safeChunkEdges = value, config -> config.safeChunkEdges,
                         OptionFlag.REQUIRES_RENDERER_RELOAD))
-                .add(toggle("compact_vertex_format",
+                .add(toggle("compact_vertex_format", OptionImpact.MEDIUM,
                         (config, value) -> config.compactVertexFormat = value, config -> config.compactVertexFormat,
                         OptionFlag.REQUIRES_RENDERER_RELOAD))
                 .build();
@@ -269,7 +270,7 @@ final class CeleritasOptionPages {
     static OptionPage advanced() {
         OptionGroup diagnostics = OptionGroup.createBuilder()
                 .setId(OptionIdentifier.create("celeritas", "diagnostics"))
-                .add(toggle("check_gl_errors",
+                .add(toggle("check_gl_errors", OptionImpact.LOW,
                         (config, value) -> config.checkGlErrors = value, config -> config.checkGlErrors,
                         OptionFlag.REQUIRES_GAME_RESTART))
                 .build();
@@ -277,7 +278,7 @@ final class CeleritasOptionPages {
                 List.of(diagnostics));
     }
 
-    private static OptionImpl<CeleritasConfig, Boolean> toggle(String id,
+    private static OptionImpl<CeleritasConfig, Boolean> toggle(String id, OptionImpact impact,
             java.util.function.BiConsumer<CeleritasConfig, Boolean> setter,
             java.util.function.Function<CeleritasConfig, Boolean> getter, OptionFlag... flags) {
         return OptionImpl.createBuilder(boolean.class, CONFIG_STORAGE)
@@ -286,6 +287,7 @@ final class CeleritasOptionPages {
                 .setTooltip(text(id + ".tooltip"))
                 .setControl(TickBoxControl::new)
                 .setBinding(setter, getter)
+                .setImpact(impact)
                 .setFlags(flags)
                 .build();
     }
