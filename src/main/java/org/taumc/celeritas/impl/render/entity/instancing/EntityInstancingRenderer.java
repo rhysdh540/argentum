@@ -18,16 +18,14 @@ import net.minecraft.resource.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
+import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.shader.GlShader;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderConstants;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderType;
 import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.ARBInstancedArrays;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15C;
-import org.lwjgl.opengl.GL20C;
 import org.taumc.celeritas.impl.debug.RenderMetrics;
 import org.taumc.celeritas.impl.Celeritas;
 import java.util.List;
@@ -431,7 +429,7 @@ public final class EntityInstancingRenderer {
         TEXTURE_ARRAYS.invalidate(texture);
     }
 
-    public static void flush() {
+    public static void flush(CommandList commandList) {
         if (!frameActive) {
             return;
         }
@@ -449,37 +447,52 @@ public final class EntityInstancingRenderer {
         program.getInterface().setUniforms();
         int previousArray = textureArraysSupported ? TEXTURE_ARRAYS.bindFallback() : 0;
 
+        boolean failed = false;
         RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
         try {
-            EntityBatcher.Stats stats = BATCHER.render(program);
+            EntityBatcher.Stats stats = BATCHER.render(commandList, program);
             drawCount = stats.draws();
             textureCount = stats.textures();
+        } catch (RuntimeException exception) {
+            failed = true;
+            supported = false;
+            LOGGER.error("Entity instancing disabled after a geometry failure", exception);
         } finally {
             RenderMetrics.setCategory(previous);
             if (textureArraysSupported) {
                 TEXTURE_ARRAYS.restore(previousArray);
             }
+            if (failed) {
+                GlStateManager.depthMask(true);
+                GlStateManager.depthFunc(GL11.GL_LEQUAL);
+                GlStateManager.disableBlend();
+                GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            }
+            program.unbind();
+            GlStateManager.enableCull();
+            GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
         }
 
-        for (int i = 0; i < 12; i++) {
-            GL20C.glDisableVertexAttribArray(i);
-        }
-        for (int i = 3; i < 9; i++) {
-            ARBInstancedArrays.glVertexAttribDivisorARB(i, 0);
-        }
-        ARBInstancedArrays.glVertexAttribDivisorARB(10, 0);
-        ARBInstancedArrays.glVertexAttribDivisorARB(11, 0);
-        GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
-        program.unbind();
-        GlStateManager.enableCull();
-        GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
         debugString = "Entity instancing: %d entities (%d players, %d array/%d fallback) | %d parts | %d draws | %d textures".formatted(
                 entityCount, playerCount, arrayPlayerCount, fallbackPlayerCount, instanceCount, drawCount, textureCount);
         NAME_TAGS.render();
     }
 
+    public static void deleteGeometry(CommandList commandList) {
+        BATCHER.delete(commandList);
+        ITEM_GEOMETRY.delete(commandList);
+        if (arrowGeometry != null) {
+            arrowGeometry.delete(commandList);
+            arrowGeometry = null;
+        }
+    }
+
     public static String getDebugString() {
         return debugString;
+    }
+
+    public static boolean isInitialized() {
+        return initialized;
     }
 
     private static void recordPart(ModelPart part, float scale) {

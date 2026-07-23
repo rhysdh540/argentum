@@ -4,13 +4,9 @@ import net.minecraft.client.render.model.Box;
 import net.minecraft.client.render.model.ModelPart;
 import net.minecraft.client.render.model.Polygon;
 import net.minecraft.client.render.model.Vertex;
+import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.ARBDrawInstanced;
-import org.lwjgl.opengl.ARBInstancedArrays;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15C;
-import org.lwjgl.opengl.GL20C;
 import org.taumc.celeritas.mixin.features.model.instancing.BoxAccessor;
 import org.taumc.celeritas.mixin.features.model.instancing.PolygonAccessor;
 
@@ -45,16 +41,18 @@ final class ModelBatch {
         this.parts.add(geometry);
         return geometry;
     }
+
+    void delete(CommandList commandList) {
+        this.parts.forEach(geometry -> geometry.delete(commandList));
+        this.parts.clear();
+    }
 }
 
 final class PartGeometry implements EntityGeometry {
-    private static final int VERTEX_STRIDE = 12 * Float.BYTES;
     private static final int INSTANCE_FLOATS = 28;
-    private static final int INSTANCE_STRIDE = INSTANCE_FLOATS * Float.BYTES;
 
     private final ModelPart part;
-    private final int vertexBuffer;
-    private final int instanceBuffer;
+    private final InstancedGeometryBuffer buffers;
     private final int vertexCount;
 
     PartGeometry(ModelPart part, float scale) {
@@ -67,44 +65,21 @@ final class PartGeometry implements EntityGeometry {
             }
         }
         vertices.flip();
-        this.vertexBuffer = GL15C.glGenBuffers();
-        GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, this.vertexBuffer);
-        GL15C.glBufferData(GL15C.GL_ARRAY_BUFFER, vertices, GL15C.GL_STATIC_DRAW);
-        this.instanceBuffer = GL15C.glGenBuffers();
-        GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
+        this.buffers = new InstancedGeometryBuffer(vertices, InstancedVertexFormats.ENTITY_VERTEX,
+                InstancedVertexFormats.ENTITY_INSTANCE);
     }
 
     ModelPart part() {
         return this.part;
     }
 
-    public void render(Instances instances) {
-        GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, this.vertexBuffer);
-        attribute(0, 3, VERTEX_STRIDE, 0);
-        attribute(1, 2, VERTEX_STRIDE, 3L * Float.BYTES);
-        attribute(2, 3, VERTEX_STRIDE, 5L * Float.BYTES);
-        attribute(9, 4, VERTEX_STRIDE, 8L * Float.BYTES);
-        GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, this.instanceBuffer);
-        GL15C.glBufferData(GL15C.GL_ARRAY_BUFFER, instances.upload(), GL15C.GL_STREAM_DRAW);
-        attribute(3, 4, INSTANCE_STRIDE, 0);
-        attribute(4, 4, INSTANCE_STRIDE, 4L * Float.BYTES);
-        attribute(5, 4, INSTANCE_STRIDE, 8L * Float.BYTES);
-        attribute(6, 4, INSTANCE_STRIDE, 12L * Float.BYTES);
-        attribute(7, 3, INSTANCE_STRIDE, 16L * Float.BYTES);
-        attribute(8, 4, INSTANCE_STRIDE, 19L * Float.BYTES);
-        attribute(10, 1, INSTANCE_STRIDE, 23L * Float.BYTES);
-        attribute(11, 4, INSTANCE_STRIDE, 24L * Float.BYTES);
-        for (int i = 3; i < 9; i++) {
-            ARBInstancedArrays.glVertexAttribDivisorARB(i, 1);
-        }
-        ARBInstancedArrays.glVertexAttribDivisorARB(10, 1);
-        ARBInstancedArrays.glVertexAttribDivisorARB(11, 1);
-        ARBDrawInstanced.glDrawArraysInstancedARB(GL11.GL_QUADS, 0, this.vertexCount, instances.count());
+    public void render(CommandList commandList, Instances instances) {
+        this.buffers.draw(commandList, instances.upload(), this.vertexCount, instances.count());
     }
 
-    private static void attribute(int index, int size, int stride, long offset) {
-        GL20C.glEnableVertexAttribArray(index);
-        GL20C.glVertexAttribPointer(index, size, GL11.GL_FLOAT, false, stride, offset);
+    @Override
+    public void delete(CommandList commandList) {
+        this.buffers.delete(commandList);
     }
 
     private static void putPolygon(FloatBuffer output, Polygon polygon, float scale) {
@@ -134,7 +109,9 @@ final class PartGeometry implements EntityGeometry {
 }
 
 interface EntityGeometry {
-    void render(Instances instances);
+    void render(CommandList commandList, Instances instances);
+
+    void delete(CommandList commandList);
 }
 
 final class Instances {

@@ -15,6 +15,7 @@ import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
+import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.shader.GlShader;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderBindingContext;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderConstants;
@@ -24,13 +25,11 @@ import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat4v;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformInt;
 import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.ARBDrawInstanced;
-import org.lwjgl.opengl.ARBInstancedArrays;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15C;
-import org.lwjgl.opengl.GL20C;
 import org.taumc.celeritas.impl.debug.RenderMetrics;
+import org.taumc.celeritas.impl.render.entity.instancing.InstancedGeometryBuffer;
+import org.taumc.celeritas.impl.render.entity.instancing.InstancedVertexFormats;
 import org.taumc.celeritas.impl.render.terrain.fog.GLStateManagerFogService;
 
 import java.nio.FloatBuffer;
@@ -41,7 +40,6 @@ public final class EntityShadowBatch {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Identifier SHADOW_TEXTURE = new Identifier("textures/misc/shadow.png");
     private static final int INSTANCE_FLOATS = 10;
-    private static final int INSTANCE_STRIDE = INSTANCE_FLOATS * Float.BYTES;
     private static final Long2ReferenceOpenHashMap<Block> BLOCKS = new Long2ReferenceOpenHashMap<>();
     private static final Long2LongOpenHashMap LIGHT = new Long2LongOpenHashMap();
     private static final BlockPos.Mutable POS = new BlockPos.Mutable();
@@ -54,8 +52,7 @@ public final class EntityShadowBatch {
     private static boolean initialized;
     private static boolean supported;
     private static boolean active;
-    private static int vertexBuffer;
-    private static int instanceBuffer;
+    private static InstancedGeometryBuffer geometry;
     private static int size;
     private static int quads;
     private static GlProgram<ShadowShader> program;
@@ -113,12 +110,15 @@ public final class EntityShadowBatch {
         return true;
     }
 
-    public static void flush() {
+    public static void flush(CommandList commandList) {
         if (!active) {
             return;
         }
         active = false;
         if (quads == 0) {
+            return;
+        }
+        if (!initializeGeometry(commandList)) {
             return;
         }
 
@@ -130,41 +130,24 @@ public final class EntityShadowBatch {
         program.bind();
         program.getInterface().setUniforms();
 
-        GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, vertexBuffer);
-        attribute(0, 2, 2 * Float.BYTES, 0);
-
         if (upload.capacity() < size) {
             upload = BufferUtils.createFloatBuffer(instances.length);
         }
         upload.clear().put(instances, 0, size).flip();
-        GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, instanceBuffer);
-        GL15C.glBufferData(GL15C.GL_ARRAY_BUFFER, upload, GL15C.GL_STREAM_DRAW);
-        attribute(1, 4, INSTANCE_STRIDE, 0);
-        attribute(2, 4, INSTANCE_STRIDE, 4L * Float.BYTES);
-        attribute(3, 2, INSTANCE_STRIDE, 8L * Float.BYTES);
-        for (int i = 1; i < 4; i++) {
-            ARBInstancedArrays.glVertexAttribDivisorARB(i, 1);
-        }
-
         RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
         try {
-            ARBDrawInstanced.glDrawArraysInstancedARB(GL11.GL_QUADS, 0, 4, quads);
+            geometry.draw(commandList, upload, 4, quads);
             RenderMetrics.recordDraw();
+        } catch (RuntimeException exception) {
+            supported = false;
+            LOGGER.error("Instanced entity shadows disabled after a draw failure", exception);
         } finally {
             RenderMetrics.setCategory(previous);
+            program.unbind();
+            GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.disableBlend();
+            GlStateManager.depthMask(true);
         }
-
-        for (int i = 0; i < 4; i++) {
-            GL20C.glDisableVertexAttribArray(i);
-        }
-        for (int i = 1; i < 4; i++) {
-            ARBInstancedArrays.glVertexAttribDivisorARB(i, 0);
-        }
-        GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
-        program.unbind();
-        GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.disableBlend();
-        GlStateManager.depthMask(true);
     }
 
     private static void recordBlock(int x, int y, int z, double dx, double dy, double dz, float opacity,
@@ -241,20 +224,39 @@ public final class EntityShadowBatch {
             program.bind();
             program.getInterface().initialize();
             program.unbind();
-
             FloatBuffer corners = BufferUtils.createFloatBuffer(8);
             corners.put(new float[]{0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F}).flip();
-            vertexBuffer = GL15C.glGenBuffers();
-            GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, vertexBuffer);
-            GL15C.glBufferData(GL15C.GL_ARRAY_BUFFER, corners, GL15C.GL_STATIC_DRAW);
-            instanceBuffer = GL15C.glGenBuffers();
-            GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
+            geometry = new InstancedGeometryBuffer(corners, InstancedVertexFormats.SHADOW_VERTEX,
+                    InstancedVertexFormats.SHADOW_INSTANCE);
+
             LOGGER.info("Instanced entity shadows enabled");
         } catch (RuntimeException exception) {
             supported = false;
             LOGGER.error("Instanced entity shadows failed to initialize", exception);
         }
         return supported;
+    }
+
+    private static boolean initializeGeometry(CommandList commandList) {
+        try {
+            geometry.initialize(commandList);
+            return true;
+        } catch (RuntimeException exception) {
+            deleteGeometry(commandList);
+            supported = false;
+            LOGGER.error("Instanced entity shadow geometry failed to initialize", exception);
+            return false;
+        }
+    }
+
+    public static void deleteGeometry(CommandList commandList) {
+        if (geometry != null) {
+            geometry.delete(commandList);
+        }
+    }
+
+    public static boolean isInitialized() {
+        return initialized;
     }
 
     private static GlProgram<ShadowShader> createProgram() {
@@ -273,11 +275,6 @@ public final class EntityShadowBatch {
         } finally {
             shaders.forEach(GlShader::delete);
         }
-    }
-
-    private static void attribute(int index, int components, int stride, long offset) {
-        GL20C.glEnableVertexAttribArray(index);
-        GL20C.glVertexAttribPointer(index, components, GL11.GL_FLOAT, false, stride, offset);
     }
 
     private static final class ShadowShader {
