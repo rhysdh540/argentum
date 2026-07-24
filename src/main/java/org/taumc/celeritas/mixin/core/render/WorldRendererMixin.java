@@ -18,12 +18,15 @@ import org.taumc.celeritas.impl.extensions.RenderGlobalExtension;
 import org.taumc.celeritas.impl.debug.RenderMetrics;
 import org.taumc.celeritas.impl.render.entity.EntityGatherer;
 import org.taumc.celeritas.impl.render.terrain.CeleritasWorldRenderer;
+import org.taumc.celeritas.impl.render.terrain.NoopRenderChunkStorage;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.Culler;
 import net.minecraft.client.render.block.BlockLayer;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.platform.Lighting;
+import net.minecraft.client.render.world.RenderChunkFactory;
+import net.minecraft.client.render.world.RenderChunkStorage;
 import net.minecraft.client.render.world.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
@@ -170,6 +173,15 @@ public abstract class WorldRendererMixin implements RenderGlobalExtension {
         } finally {
             RenderDevice.exitManagedCode();
         }
+    }
+
+    @Redirect(
+            method = "reload()V",
+            at = @At(value = "NEW", target = "(Lnet/minecraft/world/World;ILnet/minecraft/client/render/world/WorldRenderer;Lnet/minecraft/client/render/world/RenderChunkFactory;)Lnet/minecraft/client/render/world/RenderChunkStorage;")
+    )
+    private RenderChunkStorage celeritas$skipVanillaChunkStorage(World world, int viewDistance,
+            WorldRenderer renderer, RenderChunkFactory factory) {
+        return new NoopRenderChunkStorage(world, viewDistance, renderer, factory);
     }
 
     /**
