@@ -160,7 +160,7 @@ public final class EntityInstancingRenderer {
         if (!frameActive || entityActive || item == null || !ITEM_GEOMETRY.supportsItem(model, item)) {
             return false;
         }
-        currentPass = EntityRenderPass.TRANSLUCENT;
+        currentPass = EntityRenderPass.ITEM;
         currentModel = null;
         currentEntityTexture = null;
         selectTexture(TextureAtlas.BLOCKS_LOCATION);
@@ -266,7 +266,10 @@ public final class EntityInstancingRenderer {
             return false;
         }
         EntityGeometry geometry;
+        EntityRenderPass previousPass = currentPass;
         if (item != null && color == -1) {
+            currentPass = EntityRenderPass.ITEM;
+            selectTexture(currentBoundTexture);
             geometry = ITEM_GEOMETRY.getItem(model, item);
         } else if (item == null && color == -8372020 && itemGlintPass < 2) {
             currentPass = itemGlintPass++ == 0 ? EntityRenderPass.ITEM_GLINT_0 : EntityRenderPass.ITEM_GLINT_1;
@@ -276,11 +279,17 @@ public final class EntityInstancingRenderer {
             return false;
         }
         if (geometry == null) {
+            currentPass = previousPass;
+            selectTexture(currentBoundTexture);
             return false;
         }
         currentTexture.add(geometry, MATRICES[matrixDepth], lightU, lightV, currentTextureLayer,
                 red, green, blue, alpha, effectTime,
                 overlayRed, overlayGreen, overlayBlue, currentOverlayAlpha);
+        if (item != null) {
+            currentPass = previousPass;
+            selectTexture(currentBoundTexture);
+        }
         entityRecorded = true;
         instanceCount++;
         return true;

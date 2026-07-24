@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.model.Model;
 import net.minecraft.client.render.platform.GlStateManager;
+import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.resource.Identifier;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
@@ -79,6 +80,20 @@ final class EntityBatcher {
         }
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        if (this.has(EntityRenderPass.ITEM)) {
+            var textureManager = Minecraft.getInstance().getTextureManager();
+            textureManager.bind(TextureAtlas.BLOCKS_LOCATION);
+            var blockAtlas = textureManager.get(TextureAtlas.BLOCKS_LOCATION);
+            blockAtlas.pushFilter(false, false);
+            try {
+                Stats items = this.renderPass(commandList, program, EntityRenderPass.ITEM);
+                draws += items.draws;
+                textureCount += items.textures;
+            } finally {
+                textureManager.bind(TextureAtlas.BLOCKS_LOCATION);
+                blockAtlas.popFilter();
+            }
+        }
         Stats translucent = this.renderPass(commandList, program, EntityRenderPass.TRANSLUCENT);
         draws += translucent.draws;
         textureCount += translucent.textures;
@@ -138,6 +153,7 @@ final class EntityBatcher {
         program.getInterface().setEmissive(pass != EntityRenderPass.NORMAL
                 && pass != EntityRenderPass.CULL_FRONT
                 && pass != EntityRenderPass.CULL_BACK
+                && pass != EntityRenderPass.ITEM
                 && pass != EntityRenderPass.TRANSLUCENT);
         program.getInterface().setChargePass(pass.chargePass);
         for (TextureBatch texture : this.textures.get(pass).values()) {
@@ -205,6 +221,7 @@ enum EntityRenderPass {
     NORMAL(0),
     CULL_FRONT(0),
     CULL_BACK(0),
+    ITEM(0),
     TRANSLUCENT(0),
     EMISSIVE(0),
     GLINT(0),
