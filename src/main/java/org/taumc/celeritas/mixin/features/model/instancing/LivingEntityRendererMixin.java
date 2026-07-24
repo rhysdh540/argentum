@@ -1,7 +1,5 @@
 package org.taumc.celeritas.mixin.features.model.instancing;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.render.entity.layer.EntityRenderLayer;
 import net.minecraft.client.render.model.Model;
@@ -14,6 +12,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.taumc.celeritas.impl.render.entity.instancing.EntityInstancingRenderer;
 
@@ -89,16 +88,16 @@ public abstract class LivingEntityRendererMixin {
         }
     }
 
-    @WrapOperation(
+    @Redirect(
             method = "renderLayers",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/layer/EntityRenderLayer;render(Lnet/minecraft/entity/living/LivingEntity;FFFFFFF)V")
     )
     private void celeritas$captureLayer(EntityRenderLayer<LivingEntity> layer, LivingEntity entity,
             float walkAnimationProgress, float walkAnimationSpeed, float tickDelta, float bob,
-            float yaw, float pitch, float scale, Operation<Void> original) {
+            float yaw, float pitch, float scale) {
         boolean capture = this.celeritas$instancingEntity && EntityInstancingRenderer.beginLayer(layer, entity);
         try {
-            original.call(layer, entity, walkAnimationProgress, walkAnimationSpeed, tickDelta, bob, yaw, pitch, scale);
+            layer.render(entity, walkAnimationProgress, walkAnimationSpeed, tickDelta, bob, yaw, pitch, scale);
         } finally {
             if (capture) {
                 EntityInstancingRenderer.endLayer();
