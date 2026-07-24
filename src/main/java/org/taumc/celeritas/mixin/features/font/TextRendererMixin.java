@@ -108,6 +108,9 @@ public abstract class TextRendererMixin {
     private Map<GeometryKey, Geometry> celeritas$geometryCache;
 
     @Unique
+    private final GeometryKey celeritas$lookupKey = new GeometryKey();
+
+    @Unique
     private GeometryKey celeritas$pendingKey;
 
     @Unique
@@ -172,7 +175,7 @@ public abstract class TextRendererMixin {
             return;
         }
 
-        GeometryKey key = new GeometryKey(text, shadow,
+        GeometryKey key = this.celeritas$lookupKey.set(text, shadow,
                 Float.floatToIntBits(this.celeritas$red), Float.floatToIntBits(this.celeritas$green),
                 Float.floatToIntBits(this.celeritas$blue), Float.floatToIntBits(this.celeritas$alpha));
         Geometry geometry = this.celeritas$geometryCache.get(key);
@@ -186,7 +189,7 @@ public abstract class TextRendererMixin {
             return;
         }
 
-        this.celeritas$pendingKey = key;
+        this.celeritas$pendingKey = new GeometryKey(key);
         this.celeritas$originX = this.x;
         this.celeritas$originY = this.y;
     }
@@ -451,7 +454,56 @@ public abstract class TextRendererMixin {
     }
 
     @Unique
-    private record GeometryKey(String text, boolean shadow, int red, int green, int blue, int alpha) {
+    private static final class GeometryKey {
+        private String text;
+        private boolean shadow;
+        private int red;
+        private int green;
+        private int blue;
+        private int alpha;
+
+        private GeometryKey() {
+        }
+
+        private GeometryKey(GeometryKey key) {
+            this.set(key.text, key.shadow, key.red, key.green, key.blue, key.alpha);
+        }
+
+        private GeometryKey set(String text, boolean shadow, int red, int green, int blue, int alpha) {
+            this.text = text;
+            this.shadow = shadow;
+            this.red = red;
+            this.green = green;
+            this.blue = blue;
+            this.alpha = alpha;
+            return this;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) {
+                return true;
+            }
+            if (!(object instanceof GeometryKey key)) {
+                return false;
+            }
+            return this.shadow == key.shadow
+                    && this.red == key.red
+                    && this.green == key.green
+                    && this.blue == key.blue
+                    && this.alpha == key.alpha
+                    && this.text.equals(key.text);
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = this.text.hashCode();
+            hash = 31 * hash + Boolean.hashCode(this.shadow);
+            hash = 31 * hash + this.red;
+            hash = 31 * hash + this.green;
+            hash = 31 * hash + this.blue;
+            return 31 * hash + this.alpha;
+        }
     }
 
     @Unique
