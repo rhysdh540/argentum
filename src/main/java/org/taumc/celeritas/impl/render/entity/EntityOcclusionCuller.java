@@ -69,7 +69,7 @@ public class EntityOcclusionCuller {
 
     public boolean isVisible(Entity entity) {
         Query query = this.queries.get(entity);
-        return query == null || !query.occluded;
+        return entity.shouldShowNameTag() || query == null || !query.occluded;
     }
 
     public void clear() {
