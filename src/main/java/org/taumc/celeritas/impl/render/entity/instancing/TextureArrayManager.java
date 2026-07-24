@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL12C;
 import org.lwjgl.opengl.GL13C;
 
 import java.util.Iterator;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -20,6 +21,7 @@ final class TextureArrayManager {
     private static final int MAX_POOL_BYTES = 8 * 1024 * 1024;
 
     private final Map<PoolKey, Pool> pools = new LinkedHashMap<>();
+    private final Map<Texture, CachedTexture> textures = new IdentityHashMap<>();
     private int framebuffer;
     private int fallbackTexture;
     private int maxLayers;
@@ -72,6 +74,12 @@ final class TextureArrayManager {
         }
 
         int sourceId = source.getGlId();
+        CachedTexture cached = this.textures.get(source);
+        if (cached != null && cached.sourceId == sourceId) {
+            Layer layer = cached.pool.getLayer(location, source, sourceId, frame);
+            return layer != null ? layer.selection : null;
+        }
+
         GlStateManager.bindTexture(sourceId);
         int width = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
         int height = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
@@ -91,11 +99,13 @@ final class TextureArrayManager {
             pool = new Pool(key, capacity);
             this.pools.put(key, pool);
         }
-        int layer = pool.getLayer(location, source, sourceId, frame);
-        return layer >= 0 ? new Selection(pool, layer) : null;
+        this.textures.put(source, new CachedTexture(sourceId, pool));
+        Layer layer = pool.getLayer(location, source, sourceId, frame);
+        return layer != null ? layer.selection : null;
     }
 
     void invalidate(Texture texture) {
+        this.textures.remove(texture);
         for (Pool pool : this.pools.values()) {
             pool.invalidate(texture);
         }
@@ -146,11 +156,11 @@ final class TextureArrayManager {
             GlStateManager.activeTexture(GLX.GL_TEXTURE0);
         }
 
-        private int getLayer(Identifier location, Texture source, int sourceId, int frame) {
+        private Layer getLayer(Identifier location, Texture source, int sourceId, int frame) {
             Layer layer = this.layers.get(location);
             if (layer != null && layer.source == source && layer.sourceId == sourceId) {
                 layer.frame = frame;
-                return layer.index;
+                return layer;
             }
             if (layer == null) {
                 int index = this.layers.size();
@@ -165,19 +175,19 @@ final class TextureArrayManager {
                         }
                     }
                     if (index == this.capacity) {
-                        return -1;
+                        return null;
                     }
                 }
-                layer = new Layer(index);
+                layer = new Layer(index, new Selection(this, index));
                 this.layers.put(location, layer);
             }
             if (!copy(sourceId, layer.index)) {
-                return -1;
+                return null;
             }
             layer.source = source;
             layer.sourceId = sourceId;
             layer.frame = frame;
-            return layer.index;
+            return layer;
         }
 
         private boolean copy(int sourceTexture, int layer) {
@@ -214,14 +224,19 @@ final class TextureArrayManager {
     private record PoolKey(int width, int height, int minFilter, int magFilter, int wrapS, int wrapT) {
     }
 
+    private record CachedTexture(int sourceId, Pool pool) {
+    }
+
     private static final class Layer {
         private final int index;
+        private final Selection selection;
         private Texture source;
         private int sourceId = -1;
         private int frame;
 
-        private Layer(int index) {
+        private Layer(int index, Selection selection) {
             this.index = index;
+            this.selection = selection;
         }
     }
 }
