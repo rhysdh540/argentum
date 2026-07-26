@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class CeleritasConfig {
-    public int chunkBuilderThreads;
+    public int chunkBuilderThreads = 0;
     public boolean deferChunkUpdates = true;
     public AsyncOcclusionMode asyncOcclusion = AsyncOcclusionMode.EVERYTHING;
     public boolean fogCulling = true;
@@ -18,9 +18,11 @@ public class CeleritasConfig {
     public int biomeBlendRadius = 3;
     public Set<String> renderPassDowngradeDenylist = new HashSet<>();
     public boolean safeChunkEdges = true;
-    public boolean compactVertexFormat;
-    public boolean checkGlErrors;
-    public void validate() {
+    public boolean compactVertexFormat = false;
+    public boolean checkGlErrors = false;
+    public boolean fontBatching = true;
+
+	public void validate() {
         this.chunkBuilderThreads = Math.max(0, this.chunkBuilderThreads);
         this.entityOcclusionIntervalMs = Math.max(0, this.entityOcclusionIntervalMs);
         this.biomeBlendRadius = Math.clamp(this.biomeBlendRadius, 0, 14);

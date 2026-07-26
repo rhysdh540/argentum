@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.debug.RenderMetrics;
 
 import java.util.HashMap;
@@ -36,9 +37,6 @@ public abstract class TextRendererMixin {
 
     @Unique
     private static final int GEOMETRY_CACHE_SIZE = 1024;
-
-    @Unique
-    private static final boolean FONT_BATCHING_DISABLED = Boolean.getBoolean("celeritas.disableFontBatching");
 
     @Shadow
     private int[] characterWidths;
@@ -168,7 +166,7 @@ public abstract class TextRendererMixin {
     @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("HEAD"), cancellable = true)
     private void celeritas$beginBatch(String text, boolean shadow, CallbackInfo ci) {
         this.celeritas$previousCategory = RenderMetrics.setCategory(RenderMetrics.Category.TEXT);
-        this.celeritas$batching = !FONT_BATCHING_DISABLED;
+        this.celeritas$batching = Celeritas.CONFIG.fontBatching;
         this.celeritas$pendingKey = null;
         this.celeritas$pendingBuffer = null;
         if (!this.celeritas$batching || !this.celeritas$canCache(text)) {

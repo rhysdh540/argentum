@@ -1,7 +1,6 @@
 package org.taumc.celeritas.impl.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.render.Window;
 import org.embeddedt.embeddium.impl.gui.framework.TextComponent;
 import org.embeddedt.embeddium.impl.render.chunk.compile.executor.ChunkBuilder;
@@ -252,6 +251,9 @@ final class CeleritasOptionPages {
                 .add(toggle("animate_visible_textures", OptionImpact.MEDIUM,
                         (config, value) -> config.animateOnlyVisibleTextures = value,
                         config -> config.animateOnlyVisibleTextures))
+                .add(toggle("font_batching", OptionImpact.MEDIUM,
+                        (config, value) -> config.fontBatching = value,
+                        config -> config.fontBatching))
                 .add(toggle("translucency_sorting", OptionImpact.VARIES,
                         (config, value) -> config.translucencySorting = value,
                         config -> config.translucencySorting, OptionFlag.REQUIRES_RENDERER_RELOAD))

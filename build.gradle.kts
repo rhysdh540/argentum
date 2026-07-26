@@ -10,7 +10,7 @@ object Versions {
     val feather = "1"
     val osl = "0.20.3"
     val fabric = "0.19.3"
-    val legacy_lwjgl3 = "1.4.0"
+    val legacy_lwjgl3 = "1.4.1"
 }
 
 group = "dev.rdh"
