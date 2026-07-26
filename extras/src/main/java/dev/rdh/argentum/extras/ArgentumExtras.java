@@ -14,6 +14,7 @@ public class ArgentumExtras implements ClientModInitializer {
 		CONFIG_STORAGE = JsonOptionStorage.load(FabricLoader.getInstance().getConfigDir().resolve("argentum-extras.json"),
                 ArgentumExtrasConfig.class, ArgentumExtrasConfig::new, ArgentumExtrasConfig::validate);
         CONFIG = CONFIG_STORAGE.getData();
-        OptionGUIConstructionEvent.BUS.addListener(event -> event.addPage(ArgentumExtrasOptionPage.create()));
+        OptionGUIConstructionEvent.BUS.addListener(event ->
+                ArgentumExtrasOptionPage.create().forEach(event::addPage));
 	}
 }
