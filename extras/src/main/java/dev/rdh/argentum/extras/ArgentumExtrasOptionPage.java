@@ -64,6 +64,12 @@ final class ArgentumExtrasOptionPage {
                 .add(slider("cloud_render_distance", 0, 1536, 96,
                         (c, v) -> c.cloudRenderDistance = v, c -> c.cloudRenderDistance,
                         value -> value == 0 ? text("value.vanilla") : text("value.blocks", value)).build())
+                .add(slider("cloud_height_offset", -128, 128, 4,
+                        (c, v) -> c.cloudHeightOffset = v, c -> c.cloudHeightOffset,
+                        value -> value == 0 ? text("value.vanilla") : text("value.signed_blocks", value)).build())
+                .add(slider("cloud_speed", 0, 200, 5,
+                        (c, v) -> c.cloudSpeed = v, c -> c.cloudSpeed,
+                        ControlValueFormatter.percentage()).build())
                 .add(toggle("cloud_fog", (c, v) -> c.cloudFog = v, c -> c.cloudFog))
                 .add(percentSlider("terrain_fog_density",
                         (c, v) -> c.terrainFogDensity = v, c -> c.terrainFogDensity))

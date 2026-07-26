@@ -1,13 +1,19 @@
 package org.taumc.celeritas.impl.render.cloud;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.platform.GlStateManager;
+import net.minecraft.client.render.texture.TextureManager;
 import net.minecraft.client.render.vertex.BufferBuilder;
 import net.minecraft.client.render.vertex.DefaultVertexFormat;
 import net.minecraft.client.render.vertex.VertexBuffer;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.Entity;
+import net.minecraft.resource.Identifier;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.opengl.GL11;
 
 public final class CloudRenderer {
+    private static final Identifier CLOUDS_LOCATION = new Identifier("textures/environment/clouds.png");
     private static final int BOTTOM = 0;
     private static final int TOP = 1;
     private static final int X_NEGATIVE = 2;
@@ -21,7 +27,27 @@ public final class CloudRenderer {
     private int cloudX = Integer.MIN_VALUE;
     private int cloudZ = Integer.MIN_VALUE;
 
-    public void render(double cameraX, double cameraZ, float cloudY, Vec3d color, int pass) {
+    public void render(Minecraft minecraft, TextureManager textureManager, ClientWorld world,
+            int ticks, float tickDelta, int pass) {
+        Entity camera = minecraft.getCamera();
+        float cameraY = (float)(camera.lastY + (camera.y - camera.lastY) * tickDelta);
+        double cloudTime = ticks + tickDelta;
+        double cameraX = (camera.prevX + (camera.x - camera.prevX) * tickDelta + cloudTime * 0.03D) / 12.0D;
+        double cameraZ = (camera.prevZ + (camera.z - camera.prevZ) * tickDelta) / 12.0D + 0.33D;
+        cameraX -= Math.floor(cameraX / 2048.0D) * 2048.0D;
+        cameraZ -= Math.floor(cameraZ / 2048.0D) * 2048.0D;
+
+        GlStateManager.disableCull();
+        textureManager.bind(CLOUDS_LOCATION);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+        this.renderClouds(cameraX, cameraZ, world.dimension.getCloudHeight() - cameraY + 0.33F,
+                world.getCloudColor(tickDelta), pass);
+        GlStateManager.disableBlend();
+        GlStateManager.enableCull();
+    }
+
+    private void renderClouds(double cameraX, double cameraZ, float cloudY, Vec3d color, int pass) {
         int cellX = (int)Math.floor(cameraX);
         int cellZ = (int)Math.floor(cameraZ);
         if (cellX != this.cloudX || cellZ != this.cloudZ) {

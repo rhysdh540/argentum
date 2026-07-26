@@ -17,11 +17,25 @@ ploceus {
     setIntermediaryGeneration(2)
 }
 
+loom.mods {
+    create("celeritas") {
+        sourceSet(rootProject.sourceSets.main.get())
+    }
+    create("argentum-extras") {
+        sourceSet(sourceSets.main.get())
+    }
+}
+
 dependencies {
     for (c in arrayOf("minecraft", "mappings", "modImplementation")) {
         rootProject.configurations[c].dependencies.forEach { add(c, it) }
     }
     modImplementation(project(path = ":", configuration = "namedElements"))
+}
+
+sourceSets.main {
+    compileClasspath = rootProject.sourceSets.main.get().output + compileClasspath
+    runtimeClasspath = rootProject.sourceSets.main.get().output + runtimeClasspath
 }
 
 loom.runs.named("client") {
