@@ -10,8 +10,26 @@ public class ArgentumExtrasConfig {
     public boolean miscellaneousParticles = true;
     public boolean steadyDebugHud = true;
     public int debugHudRefreshIntervalMs = 250;
+    public int debugHudScale = 0;
+    public int dynamicFovStrength = 100;
+    public int portalDistortionStrength = 100;
+    public int viewBobbingStrength = 100;
+    public int hurtCameraStrength = 100;
+    public int cloudRenderDistance = 0;
+    public boolean cloudFog = true;
+    public int weatherRenderDistance = 0;
+    public int weatherDensity = 100;
 
     public void validate() {
         this.debugHudRefreshIntervalMs = Math.max(0, this.debugHudRefreshIntervalMs);
+        this.debugHudScale = Math.clamp(this.debugHudScale, 0, 4);
+        this.dynamicFovStrength = Math.clamp(this.dynamicFovStrength, 0, 100);
+        this.portalDistortionStrength = Math.clamp(this.portalDistortionStrength, 0, 100);
+        this.viewBobbingStrength = Math.clamp(this.viewBobbingStrength, 0, 100);
+        this.hurtCameraStrength = Math.clamp(this.hurtCameraStrength, 0, 100);
+        this.cloudRenderDistance = Math.clamp(this.cloudRenderDistance, 0, 1536);
+        this.weatherRenderDistance = Math.clamp(this.weatherRenderDistance, 0, 15);
+        this.weatherDensity = Math.clamp(this.weatherDensity, 0, 100);
     }
+
 }
