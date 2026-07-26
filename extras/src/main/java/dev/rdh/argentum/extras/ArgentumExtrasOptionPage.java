@@ -78,6 +78,8 @@ final class ArgentumExtrasOptionPage {
                 .add(toggle("sky", (c, v) -> c.sky = v, c -> c.sky))
                 .add(toggle("sun_and_moon", (c, v) -> c.sunAndMoon = v, c -> c.sunAndMoon))
                 .add(toggle("stars", (c, v) -> c.stars = v, c -> c.stars))
+                .add(percentSlider("vignette_strength",
+                        (c, v) -> c.vignetteStrength = v, c -> c.vignetteStrength))
                 .add(slider("weather_render_distance", 0, 15, 1,
                         (c, v) -> c.weatherRenderDistance = v, c -> c.weatherRenderDistance,
                         value -> value == 0 ? text("value.vanilla") : text("value.blocks", value)).build())

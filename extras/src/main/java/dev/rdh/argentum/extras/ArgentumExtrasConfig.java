@@ -26,6 +26,7 @@ public class ArgentumExtrasConfig {
     public boolean sky = true;
     public boolean sunAndMoon = true;
     public boolean stars = true;
+    public int vignetteStrength = 100;
     public int weatherRenderDistance = 0;
     public int weatherDensity = 100;
 
@@ -42,6 +43,7 @@ public class ArgentumExtrasConfig {
         this.terrainFogDensity = Math.clamp(this.terrainFogDensity, 0, 100);
         this.fluidFogDensity = Math.clamp(this.fluidFogDensity, 0, 100);
         this.entityShadowDistance = Math.clamp(this.entityShadowDistance, 8, 128);
+        this.vignetteStrength = Math.clamp(this.vignetteStrength, 0, 100);
         this.weatherRenderDistance = Math.clamp(this.weatherRenderDistance, 0, 15);
         this.weatherDensity = Math.clamp(this.weatherDensity, 0, 100);
     }
