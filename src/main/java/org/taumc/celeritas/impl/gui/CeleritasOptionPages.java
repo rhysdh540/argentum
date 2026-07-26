@@ -82,23 +82,26 @@ final class CeleritasOptionPages {
                             }
                         }, options -> options.fullscreen)
                         .build())
-                .add(OptionImpl.createBuilder(boolean.class, VANILLA)
-                        .setId(StandardOptions.Option.VSYNC.cast())
-                        .setName(vanilla("options.vsync"))
-                        .setTooltip(text("vsync.tooltip"))
-                        .setControl(TickBoxControl::new)
-                        .setBinding((options, value) -> {
-                            options.vsync = value;
-                            Display.setVSyncEnabled(value);
-                        }, options -> options.vsync)
-                        .setImpact(OptionImpact.VARIES)
-                        .build())
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.MAX_FRAMERATE.cast())
                         .setName(vanilla("options.framerateLimit"))
                         .setTooltip(text("framerate_limit.tooltip"))
-                        .setControl(option -> new SliderControl(option, 10, 260, 10, ControlValueFormatter.fpsLimit()))
-                        .setBinding((options, value) -> options.fpsLimit = value, options -> options.fpsLimit)
+                        .setControl(option -> new SliderControl(option, 0, 260, 5,
+                                value -> {
+                                    if (value == 0) {
+                                        return text("value.vsync");
+                                    } else if (value == 260) {
+                                        return text("value.unlimited");
+                                    } else {
+                                        return text("value.fps", value);
+                                    }
+								}))
+                        .setBinding((options, value) -> {
+                            options.vsync = value == 0;
+                            options.fpsLimit = options.vsync ? 260 : value;
+                            Display.setVSyncEnabled(options.vsync);
+                        }, options -> options.vsync ? 0 : options.fpsLimit)
+                        .setImpact(OptionImpact.VARIES)
                         .build())
                 .build();
 
