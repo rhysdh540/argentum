@@ -183,6 +183,25 @@ final class CeleritasOptionPages {
                         .setImpact(OptionImpact.LOW)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
+                .add(OptionImpl.createBuilder(int.class, CONFIG_STORAGE)
+                        .setId(StandardOptions.Option.CHUNK_FADE_IN_DURATION.cast())
+                        .setName(TextComponent.translatable("celeritas.options.chunk_fade_in_duration.name"))
+                        .setTooltip(TextComponent.translatable("celeritas.options.chunk_fade_in_duration.tooltip"))
+                        .setControl(option -> new SliderControl(option, 0, 2000, 100,
+                                value -> TextComponent.translatable("celeritas.options.chunk_fade_in_duration.value", value)))
+                        .setBinding((config, value) -> config.chunkFadeInDuration = value,
+                                config -> config.chunkFadeInDuration)
+                        .setImpact(OptionImpact.LOW)
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build())
+                .add(OptionImpl.createBuilder(boolean.class, VANILLA)
+                        .setId(StandardOptions.Option.ENTITY_SHADOWS.cast())
+                        .setName(vanilla("options.entityShadows"))
+                        .setTooltip(TextComponent.translatable("sodium.options.entity_shadows.tooltip"))
+                        .setControl(TickBoxControl::new)
+                        .setBinding((options, value) -> options.renderClouds = value, options -> options.renderClouds)
+                        .setImpact(OptionImpact.LOW)
+                        .build())
                 .add(OptionImpl.createBuilder(int.class, VANILLA)
                         .setId(StandardOptions.Option.MIPMAP_LEVEL.cast())
                         .setName(vanilla("options.mipmapLevels"))
@@ -203,8 +222,8 @@ final class CeleritasOptionPages {
                 .setId(StandardOptions.Group.CHUNK_UPDATES)
                 .add(OptionImpl.createBuilder(int.class, CONFIG_STORAGE)
                         .setId(StandardOptions.Option.CHUNK_UPDATE_THREADS.cast())
-                        .setName(text("chunk_builder_threads.name"))
-                        .setTooltip(text("chunk_builder_threads.tooltip"))
+                        .setName(TextComponent.translatable("sodium.options.chunk_update_threads.name"))
+                        .setTooltip(TextComponent.translatable("sodium.options.chunk_update_threads.tooltip"))
                         .setControl(option -> new SliderControl(option, 0, ChunkBuilder.getMaxThreadCount(), 1,
                                 value -> value == 0 ? text("value.auto") : text("value.threads", value)))
                         .setBinding((config, value) -> config.chunkBuilderThreads = value,
@@ -212,12 +231,14 @@ final class CeleritasOptionPages {
                         .setImpact(OptionImpact.HIGH)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
-                .add(toggle("defer_chunk_updates", OptionImpact.VARIES,
-                        (config, value) -> config.deferChunkUpdates = value, config -> config.deferChunkUpdates))
+                .add(toggle(StandardOptions.Option.DEFFER_CHUNK_UPDATES,
+                        "sodium.options.always_defer_chunk_updates", OptionImpact.HIGH,
+                        (config, value) -> config.deferChunkUpdates = value, config -> config.deferChunkUpdates,
+                        OptionFlag.REQUIRES_RENDERER_UPDATE))
                 .add(OptionImpl.createBuilder(AsyncOcclusionMode.class, CONFIG_STORAGE)
                         .setId(StandardOptions.Option.ASYNC_GRAPH_SEARCH.cast())
-                        .setName(text("async_occlusion.name"))
-                        .setTooltip(text("async_occlusion.tooltip"))
+                        .setName(TextComponent.translatable("celeritas.options.async_graph_search.name"))
+                        .setTooltip(TextComponent.translatable("celeritas.options.async_graph_search.tooltip"))
                         .setControl(option -> new CyclingControl<>(option, AsyncOcclusionMode.class,
                                 values("off", "shadows_only", "everything")))
                         .setBinding((config, value) -> config.asyncOcclusion = value, config -> config.asyncOcclusion)
@@ -228,9 +249,16 @@ final class CeleritasOptionPages {
 
         OptionGroup culling = OptionGroup.createBuilder()
                 .setId(StandardOptions.Group.RENDERING_CULLING)
-                .add(toggle("fog_culling", OptionImpact.LOW,
-                        (config, value) -> config.fogCulling = value, config -> config.fogCulling))
-                .add(toggle("entity_culling", OptionImpact.MEDIUM,
+                .add(toggle(StandardOptions.Option.BLOCK_FACE_CULLING,
+                        "sodium.options.use_block_face_culling", OptionImpact.MEDIUM,
+                        (config, value) -> config.blockFaceCulling = value, config -> config.blockFaceCulling,
+                        OptionFlag.REQUIRES_RENDERER_RELOAD))
+                .add(toggle(StandardOptions.Option.FOG_OCCLUSION,
+                        "sodium.options.use_fog_occlusion", OptionImpact.MEDIUM,
+                        (config, value) -> config.fogCulling = value, config -> config.fogCulling,
+                        OptionFlag.REQUIRES_RENDERER_UPDATE))
+                .add(toggle(StandardOptions.Option.ENTITY_CULLING,
+                        "sodium.options.use_entity_culling", OptionImpact.MEDIUM,
                         (config, value) -> config.entityCulling = value, config -> config.entityCulling))
                 .add(OptionImpl.createBuilder(int.class, CONFIG_STORAGE)
                         .setId(id("entity_occlusion_interval"))
@@ -251,19 +279,25 @@ final class CeleritasOptionPages {
                 .setId(OptionIdentifier.create("celeritas", "rendering"))
                 .add(toggle("entity_instancing", OptionImpact.HIGH,
                         (config, value) -> config.entityInstancing = value, config -> config.entityInstancing))
-                .add(toggle("animate_visible_textures", OptionImpact.MEDIUM,
+                .add(toggle(StandardOptions.Option.ANIMATE_VISIBLE_TEXTURES,
+                        "sodium.options.animate_only_visible_textures", OptionImpact.HIGH,
                         (config, value) -> config.animateOnlyVisibleTextures = value,
-                        config -> config.animateOnlyVisibleTextures))
+                        config -> config.animateOnlyVisibleTextures, OptionFlag.REQUIRES_RENDERER_UPDATE))
                 .add(toggle("font_batching", OptionImpact.MEDIUM,
                         (config, value) -> config.fontBatching = value,
                         config -> config.fontBatching))
-                .add(toggle("translucency_sorting", OptionImpact.VARIES,
+                .add(toggle(StandardOptions.Option.TRANSLUCENT_FACE_SORTING,
+                        "sodium.options.translucent_face_sorting", OptionImpact.VARIES,
                         (config, value) -> config.translucencySorting = value,
                         config -> config.translucencySorting, OptionFlag.REQUIRES_RENDERER_RELOAD))
+                .add(toggle(StandardOptions.Option.USE_FASTER_CLOUDS,
+                        "embeddium.options.use_faster_clouds", OptionImpact.LOW,
+                        (config, value) -> config.fasterClouds = value, config -> config.fasterClouds))
                 .add(toggle("safe_chunk_edges", OptionImpact.LOW,
                         (config, value) -> config.safeChunkEdges = value, config -> config.safeChunkEdges,
                         OptionFlag.REQUIRES_RENDERER_RELOAD))
-                .add(toggle("compact_vertex_format", OptionImpact.MEDIUM,
+                .add(toggle(StandardOptions.Option.COMPACT_VERTEX_FORMAT,
+                        "sodium.options.use_compact_vertex_format", OptionImpact.MEDIUM,
                         (config, value) -> config.compactVertexFormat = value, config -> config.compactVertexFormat,
                         OptionFlag.REQUIRES_RENDERER_RELOAD))
                 .build();
@@ -273,6 +307,19 @@ final class CeleritasOptionPages {
     }
 
     static OptionPage advanced() {
+        OptionGroup cpuSaving = OptionGroup.createBuilder()
+                .setId(StandardOptions.Group.CPU_SAVING)
+                .add(OptionImpl.createBuilder(int.class, CONFIG_STORAGE)
+                        .setId(StandardOptions.Option.CPU_FRAMES_AHEAD.cast())
+                        .setName(TextComponent.translatable("sodium.options.cpu_render_ahead_limit.name"))
+                        .setTooltip(TextComponent.translatable("sodium.options.cpu_render_ahead_limit.tooltip"))
+                        .setControl(option -> new SliderControl(option, 0, 9, 1,
+                                value -> TextComponent.translatable("sodium.options.cpu_render_ahead_limit.value", value)))
+                        .setBinding((config, value) -> config.cpuRenderAheadLimit = value,
+                                config -> config.cpuRenderAheadLimit)
+                        .build())
+                .build();
+
         OptionGroup diagnostics = OptionGroup.createBuilder()
                 .setId(OptionIdentifier.create("celeritas", "diagnostics"))
                 .add(toggle("check_gl_errors", OptionImpact.LOW,
@@ -280,16 +327,22 @@ final class CeleritasOptionPages {
                         OptionFlag.REQUIRES_GAME_RESTART))
                 .build();
         return new OptionPage(StandardOptions.Pages.ADVANCED, text("pages.advanced"),
-                List.of(diagnostics));
+                List.of(cpuSaving, diagnostics));
     }
 
     private static OptionImpl<CeleritasConfig, Boolean> toggle(String id, OptionImpact impact,
             java.util.function.BiConsumer<CeleritasConfig, Boolean> setter,
             java.util.function.Function<CeleritasConfig, Boolean> getter, OptionFlag... flags) {
+        return toggle(id(id), "celeritas.options." + id, impact, setter, getter, flags);
+    }
+
+    private static OptionImpl<CeleritasConfig, Boolean> toggle(OptionIdentifier<?> id, String translationKey,
+            OptionImpact impact, java.util.function.BiConsumer<CeleritasConfig, Boolean> setter,
+            java.util.function.Function<CeleritasConfig, Boolean> getter, OptionFlag... flags) {
         return OptionImpl.createBuilder(boolean.class, CONFIG_STORAGE)
-                .setId(id(id))
-                .setName(text(id + ".name"))
-                .setTooltip(text(id + ".tooltip"))
+                .setId(id.cast())
+                .setName(TextComponent.translatable(translationKey + ".name"))
+                .setTooltip(TextComponent.translatable(translationKey + ".tooltip"))
                 .setControl(TickBoxControl::new)
                 .setBinding(setter, getter)
                 .setImpact(impact)

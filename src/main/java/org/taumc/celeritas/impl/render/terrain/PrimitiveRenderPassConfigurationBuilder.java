@@ -32,25 +32,30 @@ public class PrimitiveRenderPassConfigurationBuilder {
         }
     }
 
-    private static TerrainRenderPass.TerrainRenderPassBuilder builderForRenderType(int pass, boolean disableBlend, ChunkVertexType vertexType) {
+    private static TerrainRenderPass.TerrainRenderPassBuilder builderForRenderType(int pass, boolean disableBlend,
+            ChunkVertexType vertexType, Map<String, String> extraDefines) {
         var builder = TerrainRenderPass.builder();
         builder.pipelineState(new PrimitivePipelineState(pass, disableBlend));
-        builder.vertexType(vertexType).primitiveType(QuadPrimitiveType.TRIANGULATED);
+        builder.vertexType(vertexType).primitiveType(QuadPrimitiveType.TRIANGULATED).extraDefines(extraDefines);
         return builder;
     }
 
-    public static RenderPassConfiguration<?> build(ChunkVertexType vertexType, boolean translucencySorting) {
-        TerrainRenderPass solidPass = builderForRenderType(0, true, vertexType)
+    public static RenderPassConfiguration<?> build(ChunkVertexType vertexType, boolean translucencySorting,
+            int chunkFadeInDuration) {
+        Map<String, String> extraDefines = chunkFadeInDuration > 0
+                ? Map.of("CHUNK_FADE_IN_DURATION_MS", Integer.toString(chunkFadeInDuration))
+                : Map.of();
+        TerrainRenderPass solidPass = builderForRenderType(0, true, vertexType, extraDefines)
                 .name("solid")
                 .fragmentDiscard(false)
                 .useReverseOrder(false)
                 .build();
-        TerrainRenderPass cutoutMippedPass = builderForRenderType(0, false, vertexType)
+        TerrainRenderPass cutoutMippedPass = builderForRenderType(0, false, vertexType, extraDefines)
                 .name("cutout_mipped")
                 .fragmentDiscard(true)
                 .useReverseOrder(false)
                 .build();
-        TerrainRenderPass translucentPass = builderForRenderType(1, false, vertexType)
+        TerrainRenderPass translucentPass = builderForRenderType(1, false, vertexType, extraDefines)
                 .name("translucent")
                 .fragmentDiscard(false)
                 .useReverseOrder(true)

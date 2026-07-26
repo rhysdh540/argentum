@@ -13,8 +13,12 @@ public class CeleritasConfig {
     public boolean entityInstancing = true;
     public int entityOcclusionIntervalMs = 50;
     public boolean particleCulling = true;
+    public boolean blockFaceCulling = true;
     public boolean translucencySorting = true;
     public boolean animateOnlyVisibleTextures = true;
+    public int chunkFadeInDuration = 0;
+    public boolean fasterClouds = true;
+    public int cpuRenderAheadLimit = 3;
     public int biomeBlendRadius = 3;
     public Set<String> renderPassDowngradeDenylist = new HashSet<>();
     public boolean safeChunkEdges = true;
@@ -25,6 +29,8 @@ public class CeleritasConfig {
 	public void validate() {
         this.chunkBuilderThreads = Math.max(0, this.chunkBuilderThreads);
         this.entityOcclusionIntervalMs = Math.max(0, this.entityOcclusionIntervalMs);
+        this.chunkFadeInDuration = Math.clamp(this.chunkFadeInDuration, 0, 2000);
+        this.cpuRenderAheadLimit = Math.clamp(this.cpuRenderAheadLimit, 0, 9);
         this.biomeBlendRadius = Math.clamp(this.biomeBlendRadius, 0, 14);
         if (this.asyncOcclusion == null) {
             this.asyncOcclusion = AsyncOcclusionMode.EVERYTHING;

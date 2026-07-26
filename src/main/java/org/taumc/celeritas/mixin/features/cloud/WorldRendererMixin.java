@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.taumc.celeritas.impl.Celeritas;
 import org.taumc.celeritas.impl.render.cloud.CloudRenderer;
 
 @Mixin(WorldRenderer.class)
@@ -42,6 +43,10 @@ public abstract class WorldRendererMixin {
 
     @Inject(method = "renderFancyClouds", at = @At("HEAD"), cancellable = true)
     private void celeritas$renderFancyClouds(float tickDelta, int pass, CallbackInfo ci) {
+        if (!Celeritas.CONFIG.fasterClouds) {
+            return;
+        }
+
         Entity camera = this.minecraft.getCamera();
         float cameraY = (float)(camera.lastY + (camera.y - camera.lastY) * tickDelta);
         double cloudTime = this.ticks + tickDelta;

@@ -52,7 +52,8 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
     public static PrimitiveRenderSectionManager create(ChunkVertexType vertexType, World world, int renderDistance, CommandList commandList) {
         int maxSection = world.getHeight() / 16;
-        return new PrimitiveRenderSectionManager(PrimitiveRenderPassConfigurationBuilder.build(vertexType, Celeritas.CONFIG.translucencySorting), world, renderDistance, commandList,
+        return new PrimitiveRenderSectionManager(PrimitiveRenderPassConfigurationBuilder.build(vertexType,
+                Celeritas.CONFIG.translucencySorting, Celeritas.CONFIG.chunkFadeInDuration), world, renderDistance, commandList,
                 0, maxSection,
                 Celeritas.CONFIG.chunkBuilderThreads);
     }
@@ -135,6 +136,11 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
         public ChunkRenderer(RenderDevice device, RenderPassConfiguration<?> renderPassConfiguration) {
             super(device, renderPassConfiguration, new CountingMultiDrawEmitter(device));
+        }
+
+        @Override
+        protected boolean useBlockFaceCulling() {
+            return Celeritas.CONFIG.blockFaceCulling;
         }
 
         @Override
