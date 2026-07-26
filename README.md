@@ -1,21 +1,23 @@
 # Argentum
-Argentum is a performance mod for Ornithe 1.8.9, based on the [Celeritas](https://git.taumc.org/embeddedt/celeritas) engine.
+Argentum is a client performance mod for Ornithe 1.8.9, based on the [Celeritas](https://git.taumc.org/embeddedt/celeritas) rendering engine.
 
 ## Features
-The features that are currently implemented are as follows:
+A non-exhaustive list of features that currently exist:
 
+- Rewritten terrain meshing from [Celeritas](https://git.taumc.org/embeddedt/celeritas)
+- Entity rendering improvements, including instancing for players, mobs, and animals (and attachments, like armor)
+- An optimized font renderer
+- An optimized cloud renderer
+- Entity and particle occlusion culling
 - A Celeritas-based video settings menu
-- Optimized world rendering from [Celeritas](https://git.taumc.org/embeddedt/celeritas)
-- Entity instancing for players, mobs, and animals (including armor)
-- Glint instancing
-- Text width & glyph caching
 
 Along with that, some other optimizations are planned:
 
 - Block entity instancing (for chests, signs, etc)
+- Batching HUD draw calls
 - ...and more!
 
-A companion mod also exists under the `extras` folder, Argentum Extras, providing features analogous to [Sodium Extra](https://modrinth.com/mod/sodium-extra).
+A companion mod also exists under the [`extras`](/extras) folder, providing features analogous to [Sodium Extra](https://modrinth.com/mod/sodium-extra).
 
 ## License
-Being based on Celeritas, Argentum is licensed under the [LGPL 3.0](https://www.gnu.org/licenses/lgpl-3.0.html).
+Being based on Celeritas, Argentum is licensed under the [version 3.0 of the LGPL](https://www.gnu.org/licenses/lgpl-3.0.html).
