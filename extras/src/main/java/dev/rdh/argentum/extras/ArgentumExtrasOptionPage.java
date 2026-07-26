@@ -82,10 +82,18 @@ final class ArgentumExtrasOptionPage {
                         (c, v) -> c.weatherDensity = v, c -> c.weatherDensity))
                 .build();
 
+        OptionGroup entities = OptionGroup.createBuilder()
+                .setId(id("entities"))
+                .add(slider("entity_shadow_distance", 8, 128, 8,
+                        (c, v) -> c.entityShadowDistance = v, c -> c.entityShadowDistance,
+                        value -> text("value.blocks", value)).build())
+                .build();
+
         return List.of(
                 new OptionPage(id("particles"), text("pages.particles"), List.of(particles)),
                 new OptionPage(id("debug_hud"), text("pages.debug_hud"), List.of(debug)),
                 new OptionPage(id("camera_effects"), text("pages.camera_effects"), List.of(camera)),
+                new OptionPage(id("entities"), text("pages.entities"), List.of(entities)),
                 new OptionPage(id("environment"), text("pages.environment"), List.of(environment)));
     }
 
