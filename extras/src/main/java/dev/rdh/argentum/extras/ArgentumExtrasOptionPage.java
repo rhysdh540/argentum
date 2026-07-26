@@ -101,10 +101,35 @@ final class ArgentumExtrasOptionPage {
 
         OptionGroup misc = OptionGroup.createBuilder()
                 .setId(id("misc"))
+                .add(toggle("disable_realms", (c, v) -> c.disableRealms = v, c -> c.disableRealms))
+                .build();
+
+        OptionGroup entities = OptionGroup.createBuilder()
+                .setId(id("entities"))
                 .add(slider("entity_shadow_distance", 8, 128, 8,
                         (c, v) -> c.entityShadowDistance = v, c -> c.entityShadowDistance,
                         value -> text("value.blocks", value)).build())
-                .add(toggle("disable_realms", (c, v) -> c.disableRealms = v, c -> c.disableRealms))
+                .build();
+
+        OptionGroup equipment = OptionGroup.createBuilder()
+                .setId(id("equipment"))
+                .add(toggle("armor", (c, v) -> c.armor = v, c -> c.armor))
+                .add(toggle("armor_glint", (c, v) -> c.armorGlint = v, c -> c.armorGlint))
+                .add(toggle("held_items", (c, v) -> c.heldItems = v, c -> c.heldItems))
+                .add(toggle("worn_heads", (c, v) -> c.wornHeads = v, c -> c.wornHeads))
+                .build();
+
+        OptionGroup playerCosmetics = OptionGroup.createBuilder()
+                .setId(id("player_cosmetics"))
+                .add(toggle("capes", (c, v) -> c.capes = v, c -> c.capes))
+                .add(toggle("player_ears", (c, v) -> c.playerEars = v, c -> c.playerEars))
+                .build();
+
+        OptionGroup attachments = OptionGroup.createBuilder()
+                .setId(id("attachments"))
+                .add(toggle("stuck_arrows", (c, v) -> c.stuckArrows = v, c -> c.stuckArrows))
+                .add(toggle("leashes", (c, v) -> c.leashes = v, c -> c.leashes))
+                .add(toggle("name_tags", (c, v) -> c.nameTags = v, c -> c.nameTags))
                 .build();
 
         return List.of(
@@ -112,6 +137,8 @@ final class ArgentumExtrasOptionPage {
                 new OptionPage(id("camera_effects"), text("pages.camera_effects"), List.of(camera)),
                 new OptionPage(id("particles"), text("pages.particles"), List.of(particles)),
                 new OptionPage(id("debug_hud"), text("pages.debug_hud"), List.of(debug)),
+                new OptionPage(id("entities"), text("pages.entities"),
+                        List.of(entities, equipment, playerCosmetics, attachments)),
                 new OptionPage(id("misc"), text("pages.misc"), List.of(misc))
         );
     }

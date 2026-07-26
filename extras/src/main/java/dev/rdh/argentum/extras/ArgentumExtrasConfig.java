@@ -24,6 +24,15 @@ public class ArgentumExtrasConfig {
     public int terrainFogDensity = 100;
     public int fluidFogDensity = 100;
     public int entityShadowDistance = 16;
+    public boolean armor = true;
+    public boolean armorGlint = true;
+    public boolean heldItems = true;
+    public boolean wornHeads = true;
+    public boolean capes = true;
+    public boolean playerEars = true;
+    public boolean stuckArrows = true;
+    public boolean leashes = true;
+    public boolean nameTags = true;
     public boolean sky = true;
     public boolean sunAndMoon = true;
     public boolean stars = true;
