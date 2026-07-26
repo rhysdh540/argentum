@@ -11,6 +11,7 @@ public class ArgentumExtrasConfig {
     public boolean steadyDebugHud = true;
     public int debugHudRefreshIntervalMs = 250;
     public int debugHudScale = 0;
+    public boolean fpsHud = false;
     public int dynamicFovStrength = 100;
     public int portalDistortionStrength = 100;
     public int viewBobbingStrength = 100;

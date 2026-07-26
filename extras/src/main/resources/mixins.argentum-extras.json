@@ -6,6 +6,7 @@
   "client": [
     "CloudRendererMixin",
     "DebugOverlayMixin",
+    "GameGuiMixin",
     "GameRendererMixin",
     "ParticleManagerMixin"
   ],

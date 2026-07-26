@@ -44,6 +44,7 @@ final class ArgentumExtrasOptionPage {
                 .add(slider("debug_hud_scale", 0, 4, 1,
                         (c, v) -> c.debugHudScale = v, c -> c.debugHudScale,
                         value -> value == 0 ? text("value.gui_scale") : text("value.scale", value)).build())
+                .add(toggle("fps_hud", (c, v) -> c.fpsHud = v, c -> c.fpsHud))
                 .build();
 
         OptionGroup camera = OptionGroup.createBuilder()
