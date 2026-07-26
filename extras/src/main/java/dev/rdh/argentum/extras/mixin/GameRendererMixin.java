@@ -1,11 +1,19 @@
 package dev.rdh.argentum.extras.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import dev.rdh.argentum.extras.ArgentumExtras;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.client.render.world.WorldRenderer;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.living.LivingEntity;
+import net.minecraft.entity.living.effect.StatusEffect;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,6 +25,10 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
+    @Shadow private Minecraft minecraft;
+    @Shadow private float renderDistance;
+    @Shadow private boolean thiccFog;
+
     @ModifyExpressionValue(method = "tickFov",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/entity/living/player/ClientPlayerEntity;getFovModifier()F"))
@@ -72,6 +84,25 @@ public class GameRendererMixin {
         }
     }
 
+    @WrapOperation(method = "render(IFJ)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/GameRenderer;setupFog(IF)V"))
+    private void argentumExtras$changeTerrainFog(GameRenderer instance, int mode, float tickDelta,
+            Operation<Void> original) {
+        original.call(instance, mode, tickDelta);
+        int density = ArgentumExtras.CONFIG.terrainFogDensity;
+        Entity camera = this.minecraft.getCamera();
+        if (density < 100 && mode != -1
+                && (!(camera instanceof LivingEntity living) || !living.hasStatusEffect(StatusEffect.BLINDNESS))) {
+            GlStateManager.fogEnd(density == 0 ? Float.MAX_VALUE : this.renderDistance / strength(density));
+        }
+    }
+
+    @ModifyArg(method = "setupFog",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;fogDensity(F)V"))
+    private float argentumExtras$changeFluidFog(float density) {
+        return this.thiccFog ? density : density * strength(ArgentumExtras.CONFIG.fluidFogDensity);
+    }
+
     @ModifyExpressionValue(method = {"tickRain", "renderSnowAndRain"},
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/world/ClientWorld;getRain(F)F"))
     private float argentumExtras$scaleWeatherDensity(float density) {
@@ -88,11 +119,13 @@ public class GameRendererMixin {
         return weatherDistance(vanilla);
     }
 
+    @Unique
     private static int weatherDistance(int vanilla) {
         int distance = ArgentumExtras.CONFIG.weatherRenderDistance;
         return distance == 0 ? vanilla : distance;
     }
 
+    @Unique
     private static float strength(int percentage) {
         return percentage / 100.0F;
     }
