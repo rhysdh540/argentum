@@ -75,6 +75,9 @@ final class ArgentumExtrasOptionPage {
                         (c, v) -> c.terrainFogDensity = v, c -> c.terrainFogDensity))
                 .add(percentSlider("fluid_fog_density",
                         (c, v) -> c.fluidFogDensity = v, c -> c.fluidFogDensity))
+                .add(toggle("sky", (c, v) -> c.sky = v, c -> c.sky))
+                .add(toggle("sun_and_moon", (c, v) -> c.sunAndMoon = v, c -> c.sunAndMoon))
+                .add(toggle("stars", (c, v) -> c.stars = v, c -> c.stars))
                 .add(slider("weather_render_distance", 0, 15, 1,
                         (c, v) -> c.weatherRenderDistance = v, c -> c.weatherRenderDistance,
                         value -> value == 0 ? text("value.vanilla") : text("value.blocks", value)).build())

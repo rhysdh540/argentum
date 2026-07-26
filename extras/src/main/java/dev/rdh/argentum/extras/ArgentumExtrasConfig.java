@@ -23,6 +23,9 @@ public class ArgentumExtrasConfig {
     public int terrainFogDensity = 100;
     public int fluidFogDensity = 100;
     public int entityShadowDistance = 16;
+    public boolean sky = true;
+    public boolean sunAndMoon = true;
+    public boolean stars = true;
     public int weatherRenderDistance = 0;
     public int weatherDensity = 100;
 

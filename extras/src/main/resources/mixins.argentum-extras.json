@@ -9,7 +9,8 @@
     "EntityRendererMixin",
     "GameGuiMixin",
     "GameRendererMixin",
-    "ParticleManagerMixin"
+    "ParticleManagerMixin",
+    "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
