@@ -1,10 +1,12 @@
 argentum-extras.options.pages.particles=Particles
 argentum-extras.options.pages.debug_hud=Debug HUD
 argentum-extras.options.pages.camera_effects=Camera Effects
+argentum-extras.options.pages.misc=Miscellaneous
 argentum-extras.options.pages.environment=Environment
-argentum-extras.options.pages.entities=Entities
 argentum-extras.options.entity_shadow_distance.name=Entity Shadow Distance
 argentum-extras.options.entity_shadow_distance.tooltip=Controls how far away entity shadows are rendered.
+argentum-extras.options.disable_realms.name=Hide Realms Button
+argentum-extras.options.disable_realms.tooltip=Hides the Minecraft Realms button from the title screen.
 argentum-extras.options.sky.name=Sky
 argentum-extras.options.sky.tooltip=Controls whether the sky and sunrise are rendered.
 argentum-extras.options.sun_and_moon.name=Sun & Moon

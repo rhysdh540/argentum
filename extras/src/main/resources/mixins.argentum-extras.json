@@ -4,13 +4,8 @@
   "package": "dev.rdh.argentum.extras.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "CloudRendererMixin",
-    "DebugOverlayMixin",
-    "EntityRendererMixin",
-    "GameGuiMixin",
-    "GameRendererMixin",
-    "ParticleManagerMixin",
-    "WorldRendererMixin"
+    "CloudRendererMixin", "DebugOverlayMixin", "EntityRendererMixin", "GameGuiMixin", "GameRendererMixin",
+    "ParticleManagerMixin", "TitleScreenMixin", "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

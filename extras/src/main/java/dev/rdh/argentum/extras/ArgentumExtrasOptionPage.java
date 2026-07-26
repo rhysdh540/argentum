@@ -57,10 +57,12 @@ final class ArgentumExtrasOptionPage {
                         (c, v) -> c.viewBobbingStrength = v, c -> c.viewBobbingStrength))
                 .add(percentSlider("hurt_camera_strength",
                         (c, v) -> c.hurtCameraStrength = v, c -> c.hurtCameraStrength))
+                .add(percentSlider("vignette_strength",
+                        (c, v) -> c.vignetteStrength = v, c -> c.vignetteStrength))
                 .build();
 
-        OptionGroup environment = OptionGroup.createBuilder()
-                .setId(id("environment"))
+        OptionGroup clouds = OptionGroup.createBuilder()
+                .setId(id("clouds"))
                 .add(slider("cloud_render_distance", 0, 1536, 96,
                         (c, v) -> c.cloudRenderDistance = v, c -> c.cloudRenderDistance,
                         value -> value == 0 ? text("value.vanilla") : text("value.blocks", value)).build())
@@ -71,15 +73,25 @@ final class ArgentumExtrasOptionPage {
                         (c, v) -> c.cloudSpeed = v, c -> c.cloudSpeed,
                         ControlValueFormatter.percentage()).build())
                 .add(toggle("cloud_fog", (c, v) -> c.cloudFog = v, c -> c.cloudFog))
+                .build();
+
+        OptionGroup fog = OptionGroup.createBuilder()
+                .setId(id("fog"))
                 .add(percentSlider("terrain_fog_density",
                         (c, v) -> c.terrainFogDensity = v, c -> c.terrainFogDensity))
                 .add(percentSlider("fluid_fog_density",
                         (c, v) -> c.fluidFogDensity = v, c -> c.fluidFogDensity))
+                .build();
+
+        OptionGroup sky = OptionGroup.createBuilder()
+                .setId(id("sky"))
                 .add(toggle("sky", (c, v) -> c.sky = v, c -> c.sky))
                 .add(toggle("sun_and_moon", (c, v) -> c.sunAndMoon = v, c -> c.sunAndMoon))
                 .add(toggle("stars", (c, v) -> c.stars = v, c -> c.stars))
-                .add(percentSlider("vignette_strength",
-                        (c, v) -> c.vignetteStrength = v, c -> c.vignetteStrength))
+                .build();
+
+        OptionGroup weather = OptionGroup.createBuilder()
+                .setId(id("weather"))
                 .add(slider("weather_render_distance", 0, 15, 1,
                         (c, v) -> c.weatherRenderDistance = v, c -> c.weatherRenderDistance,
                         value -> value == 0 ? text("value.vanilla") : text("value.blocks", value)).build())
@@ -87,19 +99,21 @@ final class ArgentumExtrasOptionPage {
                         (c, v) -> c.weatherDensity = v, c -> c.weatherDensity))
                 .build();
 
-        OptionGroup entities = OptionGroup.createBuilder()
-                .setId(id("entities"))
+        OptionGroup misc = OptionGroup.createBuilder()
+                .setId(id("misc"))
                 .add(slider("entity_shadow_distance", 8, 128, 8,
                         (c, v) -> c.entityShadowDistance = v, c -> c.entityShadowDistance,
                         value -> text("value.blocks", value)).build())
+                .add(toggle("disable_realms", (c, v) -> c.disableRealms = v, c -> c.disableRealms))
                 .build();
 
         return List.of(
+                new OptionPage(id("environment"), text("pages.environment"), List.of(clouds, fog, sky, weather)),
+                new OptionPage(id("camera_effects"), text("pages.camera_effects"), List.of(camera)),
                 new OptionPage(id("particles"), text("pages.particles"), List.of(particles)),
                 new OptionPage(id("debug_hud"), text("pages.debug_hud"), List.of(debug)),
-                new OptionPage(id("camera_effects"), text("pages.camera_effects"), List.of(camera)),
-                new OptionPage(id("entities"), text("pages.entities"), List.of(entities)),
-                new OptionPage(id("environment"), text("pages.environment"), List.of(environment)));
+                new OptionPage(id("misc"), text("pages.misc"), List.of(misc))
+        );
     }
 
     private static OptionImpl<ArgentumExtrasConfig, Boolean> toggle(String name,

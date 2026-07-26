@@ -33,11 +33,6 @@ dependencies {
     modImplementation(project(path = ":", configuration = "namedElements"))
 }
 
-sourceSets.main {
-    compileClasspath = rootProject.sourceSets.main.get().output + compileClasspath
-    runtimeClasspath = rootProject.sourceSets.main.get().output + runtimeClasspath
-}
-
 loom.runs.named("client") {
     jvmArguments.add("-XstartOnFirstThread")
 
