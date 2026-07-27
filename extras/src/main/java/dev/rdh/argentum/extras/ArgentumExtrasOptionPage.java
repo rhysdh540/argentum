@@ -5,6 +5,7 @@ import org.taumc.celeritas.api.options.OptionIdentifier;
 import org.taumc.celeritas.api.options.control.ControlValueFormatter;
 import org.taumc.celeritas.api.options.control.SliderControl;
 import org.taumc.celeritas.api.options.control.TickBoxControl;
+import org.taumc.celeritas.api.options.structure.OptionFlag;
 import org.taumc.celeritas.api.options.structure.OptionGroup;
 import org.taumc.celeritas.api.options.structure.OptionImpl;
 import org.taumc.celeritas.api.options.structure.OptionPage;
@@ -99,6 +100,15 @@ final class ArgentumExtrasOptionPage {
                         (c, v) -> c.weatherDensity = v, c -> c.weatherDensity))
                 .build();
 
+        OptionGroup leaves = OptionGroup.createBuilder()
+                .setId(id("leaves"))
+                .add(slider("leaf_quality", 0, LeafQuality.values().length - 1, 1,
+                        (c, v) -> c.leafQuality = LeafQuality.values()[v], c -> c.leafQuality.ordinal(),
+                        v -> text(LeafQuality.key(v)))
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build())
+                .build();
+
         OptionGroup misc = OptionGroup.createBuilder()
                 .setId(id("misc"))
                 .add(toggle("disable_realms", (c, v) -> c.disableRealms = v, c -> c.disableRealms))
@@ -133,7 +143,7 @@ final class ArgentumExtrasOptionPage {
                 .build();
 
         return List.of(
-                new OptionPage(id("environment"), text("pages.environment"), List.of(clouds, fog, sky, weather)),
+                new OptionPage(id("environment"), text("pages.environment"), List.of(clouds, fog, sky, weather, leaves)),
                 new OptionPage(id("camera_effects"), text("pages.camera_effects"), List.of(camera)),
                 new OptionPage(id("particles"), text("pages.particles"), List.of(particles)),
                 new OptionPage(id("debug_hud"), text("pages.debug_hud"), List.of(debug)),
