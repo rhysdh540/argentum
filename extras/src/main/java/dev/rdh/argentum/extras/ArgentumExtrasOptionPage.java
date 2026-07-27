@@ -109,6 +109,11 @@ final class ArgentumExtrasOptionPage {
                         .build())
                 .build();
 
+        OptionGroup quality = OptionGroup.createBuilder()
+                .setId(id("quality"))
+                .add(toggle("fxaa", (c, v) -> c.fxaa = v, c -> c.fxaa))
+                .build();
+
         OptionGroup misc = OptionGroup.createBuilder()
                 .setId(id("misc"))
                 .add(toggle("disable_realms", (c, v) -> c.disableRealms = v, c -> c.disableRealms))
@@ -149,6 +154,7 @@ final class ArgentumExtrasOptionPage {
                 new OptionPage(id("debug_hud"), text("pages.debug_hud"), List.of(debug)),
                 new OptionPage(id("entities"), text("pages.entities"),
                         List.of(entities, equipment, playerCosmetics, attachments)),
+                new OptionPage(id("quality"), text("pages.quality"), List.of(quality)),
                 new OptionPage(id("misc"), text("pages.misc"), List.of(misc))
         );
     }

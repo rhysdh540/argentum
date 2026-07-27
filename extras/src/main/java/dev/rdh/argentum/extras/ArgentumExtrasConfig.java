@@ -40,6 +40,7 @@ public class ArgentumExtrasConfig {
     public int weatherRenderDistance = 0;
     public int weatherDensity = 100;
     public LeafQuality leafQuality = LeafQuality.FANCY;
+    public boolean fxaa = false;
 
     public void validate() {
         this.debugHudRefreshIntervalMs = Math.max(0, this.debugHudRefreshIntervalMs);
