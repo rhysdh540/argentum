@@ -9,4 +9,4 @@ pluginManagement {
 
 rootProject.name = "argentum"
 
-include("extras")
+include("extras", "cera")

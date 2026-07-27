@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "cera",
+  "name": "Cera",
+  "version": "${version}",
+  "environment": "client",
+  "description": "MCPatcher/OptiFine resource pack extensions",
+  "authors": ["rdh"],
+  "entrypoints": {
+    "client": ["dev.rdh.cera.Cera"]
+  },
+  "mixins": ["mixins.cera.json"],
+  "depends": {
+    "celeritas": "*"
+  }
+}

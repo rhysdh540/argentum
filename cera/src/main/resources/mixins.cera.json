@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.rdh.cera.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "FastBlockRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
