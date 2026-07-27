@@ -2,8 +2,8 @@ package dev.rdh.argentum.extras;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import dev.rdh.argentum.impl.config.JsonOptionStorage;
 import org.taumc.celeritas.api.OptionGUIConstructionEvent;
-import org.taumc.celeritas.impl.config.JsonOptionStorage;
 
 public class ArgentumExtras implements ClientModInitializer {
     public static ArgentumExtrasConfig CONFIG = new ArgentumExtrasConfig();

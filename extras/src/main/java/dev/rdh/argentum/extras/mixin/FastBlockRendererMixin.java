@@ -6,6 +6,9 @@ import com.llamalad7.mixinextras.sugar.Local;
 
 import dev.rdh.argentum.extras.ArgentumExtras;
 import dev.rdh.argentum.extras.LeafQuality;
+import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
+import dev.rdh.argentum.impl.render.terrain.compile.pipeline.FastBlockRenderer;
+import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 import net.minecraft.block.AbstractLeavesBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.BlockState;
@@ -21,15 +24,12 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.taumc.celeritas.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
-import org.taumc.celeritas.impl.render.terrain.compile.pipeline.FastBlockRenderer;
-import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 
 @Mixin(value = FastBlockRenderer.class, remap = false)
 public class FastBlockRendererMixin {
     @WrapWithCondition(method = "renderQuads",
             at = @At(value = "INVOKE",
-                    target = "Lorg/taumc/celeritas/impl/render/terrain/compile/pipeline/FastBlockRenderer;writeQuad(Lorg/embeddedt/embeddium/impl/model/quad/BakedQuadView;Lnet/minecraft/util/math/BlockPos;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/model/quad/properties/ModelQuadOrientation;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;)V"))
+                    target = "Ldev/rdh/argentum/impl/render/terrain/compile/pipeline/FastBlockRenderer;writeQuad(Lorg/embeddedt/embeddium/impl/model/quad/BakedQuadView;Lnet/minecraft/util/math/BlockPos;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/model/quad/properties/ModelQuadOrientation;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;)V"))
     private boolean argentumExtras$shouldRenderLeafQuad(FastBlockRenderer renderer, BakedQuadView quad,
             BlockPos pos, Material material, ModelQuadOrientation orientation, ChunkBuildBuffers buffers,
             @Local(argsOnly = true) Block block,

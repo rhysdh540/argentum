@@ -65,10 +65,10 @@ loom {
     uncompressNestedJars = true
 
     mods {
-        create("celeritas") {
+        create("argentum") {
             sourceSet(sourceSets.main.get())
         }
-        create("celeritas-font-test") {
+        create("argentum-font-test") {
             sourceSet(testmod)
         }
     }
@@ -92,16 +92,16 @@ loom {
             source(testmod)
             configName = "Font Visual Test"
             jvmArguments.add("-XstartOnFirstThread")
-            systemProperties.put("celeritas.disableFontBatching", findProperty("disableFontBatching")?.toString() ?: "false")
-            systemProperties.put("celeritas.fontTestVariant", findProperty("fontTestVariant")?.toString() ?: "batched")
+            systemProperties.put("argentum.disableFontBatching", findProperty("disableFontBatching")?.toString() ?: "false")
+            systemProperties.put("argentum.fontTestVariant", findProperty("fontTestVariant")?.toString() ?: "batched")
         }
         create("fontTestVanillaClient") {
             inherit(getByName("client"))
             source(testmod)
             configName = "Font Visual Test (Vanilla)"
             jvmArguments.add("-XstartOnFirstThread")
-            systemProperties.put("celeritas.disableFontBatching", "true")
-            systemProperties.put("celeritas.fontTestVariant", "vanilla")
+            systemProperties.put("argentum.disableFontBatching", "true")
+            systemProperties.put("argentum.fontTestVariant", "vanilla")
         }
     }
 }

@@ -11,6 +11,6 @@
   },
   "mixins": ["mixins.argentum-extras.json"],
   "depends": {
-    "celeritas": "*"
+    "argentum": "*"
   }
 }

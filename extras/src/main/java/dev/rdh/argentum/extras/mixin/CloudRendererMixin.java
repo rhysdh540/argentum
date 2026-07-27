@@ -1,12 +1,12 @@
 package dev.rdh.argentum.extras.mixin;
 
 import dev.rdh.argentum.extras.ArgentumExtras;
+import dev.rdh.argentum.impl.render.cloud.CloudRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.taumc.celeritas.impl.render.cloud.CloudRenderer;
 
 @Mixin(value = CloudRenderer.class, remap = false)
 public class CloudRendererMixin {

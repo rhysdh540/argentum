@@ -3,6 +3,7 @@ package dev.rdh.cera.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import dev.rdh.cera.NaturalTextures;
+import dev.rdh.argentum.impl.render.terrain.compile.pipeline.FastBlockRenderer;
 import net.minecraft.util.math.BlockPos;
 
 import com.llamalad7.mixinextras.sugar.Share;
@@ -16,7 +17,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.taumc.celeritas.impl.render.terrain.compile.pipeline.FastBlockRenderer;
 
 @Mixin(value = FastBlockRenderer.class, remap = false)
 public class FastBlockRendererMixin {

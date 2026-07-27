@@ -16,7 +16,7 @@ ploceus {
 }
 
 loom.mods {
-    create("celeritas") {
+    create("argentum") {
         sourceSet(rootProject.sourceSets.main.get())
     }
     create("cera") {

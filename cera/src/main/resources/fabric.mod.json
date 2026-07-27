@@ -11,6 +11,6 @@
   },
   "mixins": ["mixins.cera.json"],
   "depends": {
-    "celeritas": "*"
+    "argentum": "*"
   }
 }

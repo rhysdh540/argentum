@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "id": "celeritas",
-  "name": "Celeritas",
+  "id": "argentum",
+  "name": "Argentum",
   "version": "${version}",
   "environment": "client",
   "description": "An open-source client performance mod for Minecraft",
-  "icon": "assets/celeritas/textures/gui/icon.png",
+  "icon": "assets/argentum/textures/gui/icon.png",
   "authors": ["embeddedt", "rdh"],
   "license": "LGPL-3.0-only",
   "contributors": ["JellySquid", "IMS212"],
   "entrypoints": {
-    "client": ["org.taumc.celeritas.impl.Celeritas"]
+    "client": ["dev.rdh.argentum.impl.Argentum"]
   },
-  "mixins": ["mixins.celeritas.json"]
+  "mixins": ["mixins.argentum.json"]
 }
