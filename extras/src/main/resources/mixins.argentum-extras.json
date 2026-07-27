@@ -5,7 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "client": [
     "AbstractArmorLayerMixin", "AbstractLeavesBlockMixin", "CloudRendererMixin", "DebugOverlayMixin",
-    "EntityRendererMixin", "GameGuiMixin",
+    "EntityRendererMixin", "GameGuiMixin", "TextRendererMixin",
     "FastBlockRendererMixin", "GameRendererMixin", "LivingEntityRendererMixin", "MobRendererMixin",
     "ParticleManagerMixin", "TitleScreenMixin", "WorldRendererMixin"
   ],
