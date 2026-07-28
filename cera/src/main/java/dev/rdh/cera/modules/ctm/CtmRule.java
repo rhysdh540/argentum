@@ -204,7 +204,11 @@ record CtmRule(
     }
 
     private int connections(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
-        Direction[] directions = directions(face, axis(state));
+        // vanilla's north and west pane faces have horizontally mirrored uvs
+        boolean mirroredPane = state.getBlock() instanceof PaneBlock
+                && face.getAxis() != Direction.Axis.Y
+                && face.getAxisDirection() == Direction.AxisDirection.NEGATIVE;
+        Direction[] directions = directions(mirroredPane ? face.getOpposite() : face, axis(state));
         int connections = 0;
         for (int i = 0; i < 4; i++) {
             if (connects(world, state, pos, context.offset(pos, directions[i]), face, sprite, context)) {

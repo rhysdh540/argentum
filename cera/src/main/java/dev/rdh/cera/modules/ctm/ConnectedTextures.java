@@ -81,10 +81,24 @@ public final class ConnectedTextures {
             BlockPos pos, BakedQuad quad, List<Overlay> overlays, CtmRenderContext context) {
         TextureAtlasSprite sprite = sprite(quad);
         if (sprite == null) return Result.NO_MATCH;
-        if (PaneCulling.shouldSkip(world, blockState, pos, quad, sprite)) {
-            return Result.split(List.of());
+        List<BakedQuad> visible = PaneCulling.cull(world, blockState, pos, quad, sprite);
+        if (visible != null) {
+            List<BakedQuad> transformed = new ObjectArrayList<>(visible.size());
+            for (BakedQuad part : visible) {
+                Result result = transformVisible(state, world, blockState, pos,
+                        part, sprite, overlays, context);
+                if (!result.matched) transformed.add(part);
+                else if (result.quads == null) transformed.add(result.quad);
+                else transformed.addAll(result.quads);
+            }
+            return Result.split(transformed);
         }
+        return transformVisible(state, world, blockState, pos, quad, sprite, overlays, context);
+    }
 
+    private Result transformVisible(State state, WorldView world, BlockState blockState,
+            BlockPos pos, BakedQuad quad, TextureAtlasSprite sprite,
+            List<Overlay> overlays, CtmRenderContext context) {
         Result result = apply(state.tiles.get(sprite.getName()), world, blockState, pos,
                 quad, sprite, overlays, context);
         if (!result.matched) {
