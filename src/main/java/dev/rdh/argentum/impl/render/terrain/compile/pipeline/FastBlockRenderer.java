@@ -80,7 +80,7 @@ public final class FastBlockRenderer {
         Material material = buffers.getRenderPassConfiguration().getMaterialForRenderType(layer);
         boolean smooth = Minecraft.isAmbientOcclusionEnabled() && block.getLight() == 0 && model.useAmbientOcclusion();
         LightPipeline lighter = this.lighters.getLighter(smooth ? LightMode.SMOOTH : LightMode.FLAT);
-        BiomeColorCache.ColorType colorType = this.getBiomeColorType(block, world, pos);
+        BiomeColorCache.ColorType colorType = getBiomeColorType(state, world, pos);
         this.setOffset(block, pos);
 
         for (Direction direction : DIRECTIONS) {
@@ -92,17 +92,17 @@ public final class FastBlockRenderer {
             if (!block.shouldRenderFace(world, this.neighborPos, direction)) continue;
 
             int flags = this.analyzer.getFlagsForRendering(PrimitiveModelUtil.fromDirection(direction), BakedQuadView.ofList(quads));
-            this.renderQuads(quads, pos, block, world, lighter, direction, flags, colorType, material, buffers, renderData);
+            this.renderQuads(quads, pos, state, world, lighter, direction, flags, colorType, material, buffers, renderData);
         }
 
         List<BakedQuad> quads = model.getQuads();
         if (!quads.isEmpty()) {
             int flags = this.analyzer.getFlagsForRendering(ModelQuadFacing.UNASSIGNED, BakedQuadView.ofList(quads));
-            this.renderQuads(quads, pos, block, world, lighter, null, flags, colorType, material, buffers, renderData);
+            this.renderQuads(quads, pos, state, world, lighter, null, flags, colorType, material, buffers, renderData);
         }
     }
 
-    private void renderQuads(List<BakedQuad> quads, BlockPos pos, Block block, ChunkRenderContext world,
+    private void renderQuads(List<BakedQuad> quads, BlockPos pos, BlockState colorState, ChunkRenderContext world,
                              LightPipeline lighter, Direction cullFace, int flags, BiomeColorCache.ColorType colorType,
                              Material material,
                              ChunkBuildBuffers buffers, PrimitiveBuiltRenderSectionData renderData) {
@@ -119,7 +119,15 @@ public final class FastBlockRenderer {
                 if (colorType != null && Argentum.CONFIG.biomeBlendRadius > 0) {
                     this.getVertexColors(world, pos, view, colorType);
                 } else {
-                    int color = block.getColor(world, pos, quad.getTintIndex());
+                    Block colorBlock = colorState.getBlock();
+                    int color;
+                    if (colorBlock == world.getBlockState(pos).getBlock()) {
+                        color = colorBlock.getColor(world, pos, quad.getTintIndex());
+                    } else if (colorType != null) {
+                        color = world.getBiomeColor(pos, colorType);
+                    } else {
+                        color = colorBlock.getColor(colorState);
+                    }
                     if (GameRenderer.anaglyphEnabled) color = TextureUtil.getAnaglyphColor(color);
                     Arrays.fill(this.colors, 0xFF000000 | ColorARGB.toABGR(color));
                 }
@@ -143,7 +151,9 @@ public final class FastBlockRenderer {
         }
     }
 
-    private BiomeColorCache.ColorType getBiomeColorType(Block block, ChunkRenderContext world, BlockPos pos) {
+    private static BiomeColorCache.ColorType getBiomeColorType(
+            BlockState state, ChunkRenderContext world, BlockPos pos) {
+        Block block = state.getBlock();
         if (block == Blocks.GRASS || block == Blocks.TALLGRASS || block == Blocks.REEDS) {
             return BiomeColorCache.ColorType.GRASS;
         }
@@ -153,7 +163,7 @@ public final class FastBlockRenderer {
                     ? BiomeColorCache.ColorType.GRASS : null;
         }
         if (block == Blocks.LEAVES) {
-            PlanksBlock.Variant variant = world.getBlockState(pos).get(LeavesBlock.VARIANT);
+            PlanksBlock.Variant variant = state.get(LeavesBlock.VARIANT);
             return variant == PlanksBlock.Variant.SPRUCE || variant == PlanksBlock.Variant.BIRCH
                     ? null : BiomeColorCache.ColorType.FOLIAGE;
         }

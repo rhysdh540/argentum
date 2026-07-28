@@ -3,6 +3,7 @@ package dev.rdh.cera;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.ornithemc.osl.resource.loader.api.client.ClientResourceLoaderEvents;
+import net.ornithemc.osl.resource.loader.api.resource.repository.ResourcePackRepository;
 import dev.rdh.argentum.impl.config.JsonOptionStorage;
 import dev.rdh.cera.modules.DynamicLights;
 import dev.rdh.cera.modules.NaturalTextures;
@@ -19,6 +20,8 @@ public class Cera implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ResourcePackRepository.registerBundledModResourcePack("cera-default", "Cera Default Connected Textures",
+                FabricLoader.getInstance().getModContainer("cera").orElseThrow(), "resourcepacks/default");
         CONFIG_STORAGE = JsonOptionStorage.load(FabricLoader.getInstance().getConfigDir().resolve("cera.json"),
                 CeraConfig.class, CeraConfig::new, CeraConfig::validate);
         CONFIG = CONFIG_STORAGE.getData();

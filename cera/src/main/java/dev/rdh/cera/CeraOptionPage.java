@@ -10,6 +10,7 @@ import org.taumc.celeritas.api.options.structure.OptionImpl;
 import org.taumc.celeritas.api.options.structure.OptionPage;
 
 import dev.rdh.cera.modules.BetterGrass;
+import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import dev.rdh.cera.modules.DynamicLights;
 
 import java.util.List;
@@ -33,6 +34,14 @@ final class CeraOptionPage {
                         .setId(id("natural_textures"))
                         .setControl(TickBoxControl::new)
                         .setBinding((config, value) -> config.naturalTextures = value, config -> config.naturalTextures)
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build())
+                .add(OptionImpl.createBuilder(int.class, Cera.CONFIG_STORAGE)
+                        .setId(id("connected_textures"))
+                        .setControl(option -> new SliderControl(option, 0, ConnectedTextures.Mode.values().length - 1, 1,
+                                value -> text(ConnectedTextures.Mode.values()[value].key())))
+                        .setBinding((config, value) -> config.connectedTextures = ConnectedTextures.Mode.values()[value],
+                                config -> config.connectedTextures.ordinal())
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
                 .add(OptionImpl.createBuilder(int.class, Cera.CONFIG_STORAGE)
