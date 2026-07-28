@@ -2,6 +2,7 @@ package dev.rdh.cera;
 
 import org.embeddedt.embeddium.impl.gui.framework.TextComponent;
 import org.taumc.celeritas.api.options.OptionIdentifier;
+import org.taumc.celeritas.api.options.control.SliderControl;
 import org.taumc.celeritas.api.options.control.TickBoxControl;
 import org.taumc.celeritas.api.options.structure.OptionFlag;
 import org.taumc.celeritas.api.options.structure.OptionGroup;
@@ -17,6 +18,14 @@ final class CeraOptionPage {
     static OptionPage create() {
         OptionGroup quality = OptionGroup.createBuilder()
                 .setId(id("quality"))
+                .add(OptionImpl.createBuilder(int.class, Cera.CONFIG_STORAGE)
+                        .setId(id("better_grass"))
+                        .setControl(option -> new SliderControl(option, 0, BetterGrassMode.values().length - 1, 1,
+                                value -> text(BetterGrassMode.values()[value].key())))
+                        .setBinding((config, value) -> config.betterGrass = BetterGrassMode.values()[value],
+                                config -> config.betterGrass.ordinal())
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build())
                 .add(OptionImpl.createBuilder(boolean.class, Cera.CONFIG_STORAGE)
                         .setId(id("natural_textures"))
                         .setControl(TickBoxControl::new)
@@ -31,7 +40,7 @@ final class CeraOptionPage {
         return OptionIdentifier.create("cera", path).cast();
     }
 
-    private static TextComponent text(String path) {
-        return TextComponent.translatable("cera.options." + path);
+    private static TextComponent text(String path, Object... args) {
+        return TextComponent.translatable("cera.options." + path, args);
     }
 }

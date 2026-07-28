@@ -1,3 +1,8 @@
 cera.options.pages.cera=Cera
+cera.options.better_grass.name=Better Grass
+cera.options.better_grass.tooltip=Extends top textures onto block sides. Fast applies them everywhere; Fancy connects only to matching lower neighbors.
+cera.options.value.better_grass.off=Off
+cera.options.value.better_grass.fast=Fast
+cera.options.value.better_grass.fancy=Fancy
 cera.options.natural_textures.name=Natural Textures
 cera.options.natural_textures.tooltip=Rotates and flips block textures to reduce visible repetition.
