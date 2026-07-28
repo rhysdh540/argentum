@@ -1,7 +1,7 @@
 package dev.rdh.cera.mixin;
 
 import dev.rdh.argentum.impl.extensions.RenderGlobalExtension;
-import dev.rdh.cera.modules.DynamicLights;
+import dev.rdh.cera.CeraClientWorldExtension;
 import net.minecraft.client.render.world.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,7 +18,8 @@ public abstract class WorldRendererMixin {
     @Inject(method = "tick", at = @At("TAIL"))
     private void cera$updateDynamicLights(CallbackInfo ci) {
         if (this.world != null) {
-            DynamicLights.update(this.world, ((RenderGlobalExtension)this).sodium$getWorldRenderer());
+            var renderer = ((RenderGlobalExtension)this).sodium$getWorldRenderer();
+            ((CeraClientWorldExtension)this.world).cera$getDynamicLights().update(this.world, renderer);
         }
     }
 }

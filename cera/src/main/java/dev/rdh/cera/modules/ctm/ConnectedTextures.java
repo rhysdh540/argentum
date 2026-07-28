@@ -24,20 +24,17 @@ import static dev.rdh.cera.modules.ctm.CtmRule.sprite;
 import static org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFlags.IS_PARTIAL;
 
 public final class ConnectedTextures {
-    private static List<CtmRule> pending = List.of();
-    private static volatile State state = State.EMPTY;
+    private List<CtmRule> pending = List.of();
+    private volatile State state = State.EMPTY;
 
-    private ConnectedTextures() {
-    }
-
-    public static void reload(TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
+    public void reload(TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
         CtmLookup.validate();
         CompactCtm.validate();
         PaneCulling.validate();
         pending = CtmRuleLoader.load(atlas, sourcedSprites);
     }
 
-    public static void bake() {
+    public void bake() {
         Map<Block, List<CtmRule>> blocks = new Object2ObjectOpenHashMap<>();
         Map<String, List<CtmRule>> tiles = new Object2ObjectOpenHashMap<>();
         for (CtmRule rule : pending) {
@@ -55,15 +52,16 @@ public final class ConnectedTextures {
         pending = List.of();
     }
 
-    public static List<BakedQuad> transform(WorldView world, BlockState blockState, BlockPos pos,
+    public List<BakedQuad> transform(WorldView world, BlockState blockState, BlockPos pos,
             List<BakedQuad> quads, List<Overlay> overlays, CtmRenderContext context) {
+        State state = this.state;
         if (Cera.CONFIG.connectedTextures == Mode.OFF || state == State.EMPTY) return quads;
         context.begin(state, world, pos);
 
         List<BakedQuad> transformed = null;
         for (int i = 0; i < quads.size(); i++) {
             BakedQuad original = quads.get(i);
-            Result replacement = transform(world, blockState, pos, original, overlays, context);
+            Result replacement = transform(state, world, blockState, pos, original, overlays, context);
             if (transformed == null && (!replacement.matched || replacement.quad == original)) {
                 continue;
             }
@@ -79,7 +77,7 @@ public final class ConnectedTextures {
         return transformed == null ? quads : transformed;
     }
 
-    private static Result transform(WorldView world, BlockState blockState,
+    private Result transform(State state, WorldView world, BlockState blockState,
             BlockPos pos, BakedQuad quad, List<Overlay> overlays, CtmRenderContext context) {
         TextureAtlasSprite sprite = sprite(quad);
         if (sprite == null) return Result.NO_MATCH;
@@ -109,7 +107,7 @@ public final class ConnectedTextures {
         return result;
     }
 
-    private static Result apply(List<CtmRule> rules, WorldView world, BlockState blockState, BlockPos pos,
+    private Result apply(List<CtmRule> rules, WorldView world, BlockState blockState, BlockPos pos,
             BakedQuad quad, TextureAtlasSprite sprite, List<Overlay> overlays, CtmRenderContext context) {
         if (rules == null) return Result.NO_MATCH;
         for (CtmRule rule : rules) {

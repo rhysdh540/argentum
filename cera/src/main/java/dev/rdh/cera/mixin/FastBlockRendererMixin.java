@@ -8,6 +8,7 @@ import dev.rdh.cera.modules.BetterGrass;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import dev.rdh.cera.modules.ctm.CtmRenderContext;
 import dev.rdh.cera.modules.NaturalTextures;
+import dev.rdh.cera.CeraTextureAtlasExtension;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import dev.rdh.argentum.impl.render.terrain.compile.pipeline.FastBlockRenderer;
@@ -20,6 +21,7 @@ import net.minecraft.block.LeavesBlock;
 import net.minecraft.block.PlanksBlock;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.client.resource.model.BakedQuad;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import org.embeddedt.embeddium.impl.model.light.LightPipeline;
@@ -38,9 +40,18 @@ import java.util.List;
 @Mixin(value = FastBlockRenderer.class, remap = false)
 public class FastBlockRendererMixin {
     @Unique
+    private final BetterGrass cera$betterGrass =
+            ((CeraTextureAtlasExtension)Minecraft.getInstance().getBlocksAtlas()).cera$getBetterGrass();
+    @Unique
+    private final ConnectedTextures cera$connectedTextures =
+            ((CeraTextureAtlasExtension)Minecraft.getInstance().getBlocksAtlas()).cera$getConnectedTextures();
+    @Unique
+    private final NaturalTextures cera$naturalTextures =
+            ((CeraTextureAtlasExtension)Minecraft.getInstance().getBlocksAtlas()).cera$getNaturalTextures();
+    @Unique
     private final List<ConnectedTextures.Overlay> cera$overlays = new ObjectArrayList<>();
     @Unique
-    private final CtmRenderContext cera$ctmContext = new CtmRenderContext();
+    private final CtmRenderContext cera$ctmContext = new CtmRenderContext(this.cera$betterGrass);
 
     @WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Ldev/rdh/argentum/impl/render/terrain/compile/pipeline/FastBlockRenderer;renderQuads(Ljava/util/List;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/state/BlockState;Ldev/rdh/argentum/impl/world/cloned/ChunkRenderContext;Lorg/embeddedt/embeddium/impl/model/light/LightPipeline;Lnet/minecraft/util/math/Direction;ILdev/rdh/argentum/impl/world/biome/BiomeColorCache$ColorType;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;Ldev/rdh/argentum/impl/render/terrain/compile/PrimitiveBuiltRenderSectionData;)V"))
     private void cera$renderQuads(FastBlockRenderer renderer, List<BakedQuad> quads, BlockPos pos,
@@ -49,8 +60,8 @@ public class FastBlockRendererMixin {
             ChunkBuildBuffers buffers, PrimitiveBuiltRenderSectionData renderData, Operation<Void> original) {
         var state = world.getBlockState(pos);
         this.cera$overlays.clear();
-        List<BakedQuad> transformed = ConnectedTextures.transform(world, state, pos,
-                BetterGrass.getFaceQuads(world, state, pos, cullFace, quads),
+        List<BakedQuad> transformed = this.cera$connectedTextures.transform(world, state, pos,
+                this.cera$betterGrass.getFaceQuads(world, state, pos, cullFace, quads),
                 this.cera$overlays, this.cera$ctmContext);
         original.call(renderer, transformed, pos, colorState, world, lighter, cullFace, flags,
                 colorType, material, buffers, renderData);
@@ -86,7 +97,7 @@ public class FastBlockRendererMixin {
     @Inject(method = "writeQuad", at = @At("HEAD"))
     private void cera$prepareNaturalTexture(BakedQuadView quad, BlockPos pos, Material material,
                                             ModelQuadOrientation orientation, ChunkBuildBuffers buffers, CallbackInfo ci, @Share("transform") LocalIntRef transform) {
-        transform.set(NaturalTextures.getTransform(quad, pos));
+        transform.set(this.cera$naturalTextures.getTransform(quad, pos));
     }
 
     @WrapOperation(method = "writeQuad",

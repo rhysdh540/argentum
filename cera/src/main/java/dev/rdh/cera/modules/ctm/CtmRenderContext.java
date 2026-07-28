@@ -18,6 +18,7 @@ import net.minecraft.world.WorldView;
 import java.util.List;
 
 public final class CtmRenderContext {
+    private final BetterGrass betterGrass;
     private final Reference2ObjectMap<BakedQuad, Reference2ObjectMap<TextureAtlasSprite, Int2ObjectMap<BakedQuad>>> remapped = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<CtmRule, Reference2ObjectMap<BakedQuad, List<BakedQuad>[]>> compact = new Reference2ObjectOpenHashMap<>();
     private final BlockPos.Mutable neighborPos = new BlockPos.Mutable();
@@ -31,6 +32,10 @@ public final class CtmRenderContext {
     private int blockY;
     private int blockZ;
     private int neighborCount;
+
+    public CtmRenderContext(BetterGrass betterGrass) {
+        this.betterGrass = betterGrass;
+    }
 
     void begin(Object owner, WorldView world, BlockPos pos) {
         if (this.owner != owner) {
@@ -104,11 +109,11 @@ public final class CtmRenderContext {
         return sprite;
     }
 
-    private static TextureAtlasSprite loadNeighborSprite(WorldView world, BlockState state,
+    private TextureAtlasSprite loadNeighborSprite(WorldView world, BlockState state,
             BlockPos pos, Direction face) {
         state = state.getBlock().resolveVirtualProperties(state, world, pos);
         BakedModel model = Minecraft.getInstance().getBlockRenderDispatcher().getModel(state, world, pos);
-        List<BakedQuad> quads = BetterGrass.getFaceQuads(world, state, pos, face, model.getQuads(face));
+        List<BakedQuad> quads = this.betterGrass.getFaceQuads(world, state, pos, face, model.getQuads(face));
         if (!quads.isEmpty()) return CtmRule.sprite(quads.getFirst());
         for (BakedQuad quad : model.getQuads()) {
             if (quad.getFace() == face) return CtmRule.sprite(quad);

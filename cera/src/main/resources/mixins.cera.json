@@ -4,6 +4,7 @@
   "package": "dev.rdh.cera.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
+    "ClientWorldMixin",
     "ChunkRenderContextMixin",
     "EntityMixin",
     "FastBlockRendererMixin",

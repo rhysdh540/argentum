@@ -29,13 +29,10 @@ import java.util.Properties;
 
 public final class BetterGrass {
     private static final Identifier CONFIG = new Identifier("optifine/bettergrass.properties");
-    private static Pending pending;
-    private static volatile State state = State.EMPTY;
+    private Pending pending;
+    private volatile State state = State.EMPTY;
 
-    private BetterGrass() {
-    }
-
-    public static void reload(ResourceManager resources, TextureAtlas atlas,
+    public void reload(ResourceManager resources, TextureAtlas atlas,
             Map<String, TextureAtlasSprite> sourcedSprites) {
         Properties properties = new Properties();
         try {
@@ -62,8 +59,8 @@ public final class BetterGrass {
         );
     }
 
-    public static void bake() {
-        Pending pending = BetterGrass.pending;
+    public void bake() {
+        Pending pending = this.pending;
         if (pending == null) return;
 
         Map<Direction, List<BakedQuad>> grass = cube(pending.grass, 0);
@@ -90,12 +87,12 @@ public final class BetterGrass {
         );
     }
 
-    public static List<BakedQuad> getFaceQuads(WorldView world, BlockState blockState, BlockPos pos,
+    public List<BakedQuad> getFaceQuads(WorldView world, BlockState blockState, BlockPos pos,
             Direction face, List<BakedQuad> original) {
         Mode mode = Cera.CONFIG.betterGrass;
         if (mode == Mode.OFF || face == null || !face.getAxis().isHorizontal()) return original;
 
-        State state = BetterGrass.state;
+        State state = this.state;
         Block block = blockState.getBlock();
         Block above = world.getBlockState(pos.up()).getBlock();
         boolean snowy = above == Blocks.SNOW || above == Blocks.SNOW_LAYER;

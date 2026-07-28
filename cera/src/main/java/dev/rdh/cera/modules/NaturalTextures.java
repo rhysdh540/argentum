@@ -19,12 +19,9 @@ import java.util.Properties;
 public final class NaturalTextures {
     private static final Identifier CONFIG = new Identifier("optifine/natural.properties");
     private static final Identifier LEGACY_CONFIG = new Identifier("mcpatcher/natural.properties");
-    private static volatile Map<String, Rule> rules = Map.of();
+    private volatile Map<String, Rule> rules = Map.of();
 
-    private NaturalTextures() {
-    }
-
-    public static void reload(ResourceManager resources) {
+    public void reload(ResourceManager resources) {
         try {
             Resource config = get(resources, CONFIG);
             boolean defaults = resources.getResourceStack(CONFIG).size() == 1;
@@ -62,7 +59,7 @@ public final class NaturalTextures {
         }
     }
 
-    public static int getTransform(BakedQuadView quad, BlockPos pos) {
+    public int getTransform(BakedQuadView quad, BlockPos pos) {
         if (!Cera.CONFIG.naturalTextures) return 0;
 
         TextureAtlasSprite sprite = (TextureAtlasSprite)quad.celeritas$getSprite();

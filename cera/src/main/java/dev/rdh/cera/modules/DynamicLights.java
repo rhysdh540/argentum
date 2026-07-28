@@ -35,16 +35,12 @@ public final class DynamicLights {
     private static final String CONFIG = "optifine/dynamic_lights.properties";
     private static final double MAX_DISTANCE = 7.5;
     private static final Light[] NO_LIGHTS = new Light[0];
-    private static final Int2ObjectMap<Light> tracked = new Int2ObjectOpenHashMap<>();
-    private static volatile Rules rules = Rules.EMPTY;
-    private static volatile Light[] lights = NO_LIGHTS;
-    private static ClientWorld world;
-    private static int ticks;
+    private final Int2ObjectMap<Light> tracked = new Int2ObjectOpenHashMap<>();
+    private volatile Rules rules = Rules.EMPTY;
+    private volatile Light[] lights = NO_LIGHTS;
+    private int ticks;
 
-    private DynamicLights() {
-    }
-
-    public static void reload(ResourceManager resources) {
+    public void reload(ResourceManager resources) {
         Object2IntMap<String> entities = new Object2IntOpenHashMap<>();
         Object2IntMap<Item> items = new Object2IntOpenHashMap<>();
 
@@ -55,15 +51,11 @@ public final class DynamicLights {
         Cera.LOGGER.info("Loaded {} dynamic light entity rules and {} item rules", entities.size(), items.size());
     }
 
-    public static void update(ClientWorld world, ArgentumWorldRenderer renderer) {
+    public void update(ClientWorld world, ArgentumWorldRenderer renderer) {
         Mode mode = Cera.CONFIG.dynamicLights;
         if (mode == Mode.OFF) {
             clear();
             return;
-        }
-        if (DynamicLights.world != world) {
-            clear();
-            DynamicLights.world = world;
         }
         if (mode == Mode.FAST && ticks++ % 10 != 0) return;
 
@@ -97,7 +89,7 @@ public final class DynamicLights {
         lights = tracked.values().toArray(Light[]::new);
     }
 
-    public static int combine(int x, int y, int z, int packedLight) {
+    public int combine(int x, int y, int z, int packedLight) {
         if (Cera.CONFIG.dynamicLights == Mode.OFF) return packedLight;
 
         double maximum = 0.0;
@@ -119,13 +111,13 @@ public final class DynamicLights {
         return dynamic > (packedLight & 0xFF) ? packedLight & ~0xFF | dynamic : packedLight;
     }
 
-    public static int combine(Entity entity, int packedLight) {
+    public int combine(Entity entity, int packedLight) {
         if (Cera.CONFIG.dynamicLights == Mode.OFF) return packedLight;
         int dynamic = getLightLevel(entity) << 4;
         return dynamic > (packedLight & 0xFF) ? packedLight & ~0xFF | dynamic : packedLight;
     }
 
-    private static int getLightLevel(Entity entity) {
+    private int getLightLevel(Entity entity) {
         if (entity instanceof PlayerEntity player && player.isSpectator()) return 0;
         if (entity.isOnFire()) return 15;
 
@@ -141,7 +133,7 @@ public final class DynamicLights {
         return level;
     }
 
-    private static int getLightLevel(ItemStack stack) {
+    private int getLightLevel(ItemStack stack) {
         if (stack == null || stack.getItem() == null) return 0;
         if (stack.getItem() instanceof BlockItem blockItem) return blockItem.getBlock().getLight();
         return rules.items.getOrDefault(stack.getItem(), 0);
@@ -195,10 +187,9 @@ public final class DynamicLights {
                 false);
     }
 
-    private static void clear() {
+    private void clear() {
         tracked.clear();
         lights = NO_LIGHTS;
-        world = null;
         ticks = 0;
     }
 
