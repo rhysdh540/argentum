@@ -66,7 +66,7 @@ public final class NaturalTextures {
         Rule rule = sprite == null ? null : rules.get(sprite.getName());
         if (rule == null) return 0;
 
-        int random = random(pos, side(quad.getLightFace()));
+        int random = Cera.random(pos, side(quad.getLightFace()));
         int rotation = switch (rule.rotations) {
             case 4 -> random & 3;
             case 2 -> random & 2;
@@ -125,22 +125,6 @@ public final class NaturalTextures {
             case POS_X -> 5;
             default -> -1;
         };
-    }
-
-    // From Config.getRandom(BlockPos, int) and Config.intHash(int) in OptiFine 1.8.9 HD U M6 pre2.
-    private static int random(BlockPos pos, int side) {
-        int value = hash(side + 37);
-        value = hash(value + pos.getX());
-        value = hash(value + pos.getZ());
-        return hash(value + pos.getY());
-    }
-
-    private static int hash(int x) {
-        x = x ^ 61 ^ x >> 16;
-        x += x << 3;
-        x ^= x >> 4;
-        x *= 668265261;
-        return x ^ x >> 15;
     }
 
     private record Rule(int rotations, boolean flip) {

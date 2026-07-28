@@ -4,6 +4,7 @@ import dev.rdh.cera.Cera;
 import net.minecraft.block.AbstractLogBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.PaneBlock;
 import net.minecraft.block.QuartzBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.state.BlockState;
@@ -14,6 +15,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.Nameable;
 import net.minecraft.world.WorldView;
+
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 
 import java.util.List;
@@ -57,8 +60,7 @@ record CtmRule(
         BlockState tintState,
         BlockLayer layer
 ) {
-    boolean matches(WorldView world, BlockState state, BlockPos pos, Direction face,
-            TextureAtlasSprite sprite) {
+    boolean matches(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite) {
         int checkedMetadata = checkedMetadata(state);
         if (!matchBlocks.isEmpty()) {
             Integer blockMetadata = matchBlocks.get(state.getBlock());
@@ -76,28 +78,22 @@ record CtmRule(
                 && name.test(named.getName());
     }
 
-    Tile select(WorldView world, BlockState state, BlockPos pos, Direction face,
-            TextureAtlasSprite sprite, CtmRenderContext context) {
+    Tile select(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
         int axis = axis(state);
         return switch (method) {
-            case CTM -> tiles[tileIndex(connections(world, state, pos, face, sprite, context))];
-            case CTM_COMPACT -> throw new IllegalStateException();
+            case CTM, OVERLAY_CTM -> tiles[tileIndex(connections(world, state, pos, face, sprite, context))];
+            case CTM_COMPACT, OVERLAY -> throw new IllegalStateException();
             case HORIZONTAL -> line(world, state, pos, face, sprite,
                     horizontalDirections(face, axis), context);
             case VERTICAL -> line(world, state, pos, face, sprite,
                     verticalDirections(face, axis), context);
             case TOP -> top(world, state, pos, face, sprite, context);
-            case RANDOM -> random(world, state, pos, face);
-            case REPEAT -> repeat(pos, face);
-            case FIXED -> tiles[0];
+            case RANDOM, OVERLAY_RANDOM -> random(world, state, pos, face);
+            case REPEAT, OVERLAY_REPEAT -> repeat(pos, face);
+            case FIXED, OVERLAY_FIXED -> tiles[0];
             case HORIZONTAL_VERTICAL -> combined(world, state, pos, face, sprite, true, context);
             case VERTICAL_HORIZONTAL -> combined(world, state, pos, face, sprite, false, context);
-            case OVERLAY_FIXED -> tiles[0];
-            case OVERLAY_RANDOM -> random(world, state, pos, face);
-            case OVERLAY_REPEAT -> repeat(pos, face);
-            case OVERLAY_CTM -> tiles[tileIndex(connections(world, state, pos, face, sprite, context))];
-            case OVERLAY -> throw new IllegalStateException();
-        };
+		};
     }
 
     List<Tile> overlays(WorldView world, BlockState state, BlockPos pos, Direction face,
@@ -109,8 +105,7 @@ record CtmRule(
         return tile == null || tile.action == TileAction.SKIP ? List.of() : List.of(tile);
     }
 
-    List<BakedQuad> compact(WorldView world, BlockState state, BlockPos pos,
-            BakedQuad quad, TextureAtlasSprite sprite, CtmRenderContext context) {
+    List<BakedQuad> compact(WorldView world, BlockState state, BlockPos pos, BakedQuad quad, TextureAtlasSprite sprite, CtmRenderContext context) {
         int connections = connections(world, state, pos, quad.getFace(), sprite, context);
         List<BakedQuad> cached = context.compact(this, quad, connections);
         if (cached != null) return cached;
@@ -135,17 +130,19 @@ record CtmRule(
         return result;
     }
 
-    private Tile top(WorldView world, BlockState state, BlockPos pos, Direction face,
-            TextureAtlasSprite sprite, CtmRenderContext context) {
+    private Tile top(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
         int axis = axis(state);
         if (logicalFace(face, axis).getAxis() == Direction.Axis.Y) return null;
-        Direction top = axis == 0 ? Direction.UP : axis == 1 ? Direction.SOUTH : Direction.EAST;
-        return connects(world, state, pos, context.offset(pos, top), face, sprite, context)
-                ? tiles[0] : null;
+        Direction top = switch (axis) {
+            case 0 -> Direction.UP;
+            case 1 -> Direction.SOUTH;
+            case 2 -> Direction.EAST;
+            default -> throw new IllegalStateException();
+        };
+        return connects(world, state, pos, context.offset(pos, top), face, sprite, context) ? tiles[0] : null;
     }
 
-    private Tile combined(WorldView world, BlockState state, BlockPos pos, Direction face,
-            TextureAtlasSprite sprite, boolean horizontalFirst, CtmRenderContext context) {
+    private Tile combined(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, boolean horizontalFirst, CtmRenderContext context) {
         int axis = axis(state);
         int horizontal = lineIndex(world, state, pos, face, sprite,
                 horizontalDirections(face, axis), context);
@@ -156,16 +153,15 @@ record CtmRule(
         return tiles[primary == 3 && secondary != 3 ? secondary + 4 : primary];
     }
 
-    private Tile line(WorldView world, BlockState state, BlockPos pos, Direction face,
-            TextureAtlasSprite sprite, Direction[] directions, CtmRenderContext context) {
+    private Tile line(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, Direction[] directions, CtmRenderContext context) {
         return tiles[lineIndex(world, state, pos, face, sprite, directions, context)];
     }
 
-    private int lineIndex(WorldView world, BlockState state, BlockPos pos, Direction face,
-            TextureAtlasSprite sprite, Direction[] directions, CtmRenderContext context) {
+    private int lineIndex(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, Direction[] directions, CtmRenderContext context) {
         return lineIndex(
                 connects(world, state, pos, context.offset(pos, directions[0]), face, sprite, context),
-                connects(world, state, pos, context.offset(pos, directions[1]), face, sprite, context));
+                connects(world, state, pos, context.offset(pos, directions[1]), face, sprite, context)
+        );
     }
 
     private Tile random(WorldView world, BlockState state, BlockPos pos, Direction face) {
@@ -176,8 +172,8 @@ record CtmRule(
                 below = below.offset(Direction.DOWN);
             }
         }
-        int hash = random(pos, face.ordinal() / symmetry * symmetry) & Integer.MAX_VALUE;
-        for (int i = 0; i < randomLoops; i++) hash = intHash(hash);
+        int hash = Cera.random(pos, face.ordinal() / symmetry * symmetry) & Integer.MAX_VALUE;
+        for (int i = 0; i < randomLoops; i++) hash = Cera.intHash(hash);
         if (weights == null) return tiles[hash % tiles.length];
         int total = weights[weights.length - 1];
         if (total <= 0) return tiles[0];
@@ -207,13 +203,11 @@ record CtmRule(
         return tiles[Math.floorMod(ny, height) * width + Math.floorMod(nx, width)];
     }
 
-    private int connections(WorldView world, BlockState state, BlockPos pos, Direction face,
-            TextureAtlasSprite sprite, CtmRenderContext context) {
+    private int connections(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
         Direction[] directions = directions(face, axis(state));
         int connections = 0;
         for (int i = 0; i < 4; i++) {
-            if (connects(world, state, pos, context.offset(pos, directions[i]),
-                    face, sprite, context)) {
+            if (connects(world, state, pos, context.offset(pos, directions[i]), face, sprite, context)) {
                 connections |= 1 << (i * 2);
             }
         }
@@ -234,8 +228,7 @@ record CtmRule(
     private boolean connects(WorldView world, BlockState state, BlockPos pos, BlockPos otherPos,
             Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
         if (!connectsOnce(world, state, otherPos, face, sprite, context)) return false;
-        return !innerSeams || !connectsOnce(world, state, context.offset(otherPos, face),
-                face, sprite, context);
+        return !innerSeams || !connectsOnce(world, state, context.offset(otherPos, face), face, sprite, context);
     }
 
     boolean connectsOnce(WorldView world, BlockState state, BlockPos otherPos,
@@ -259,22 +252,17 @@ record CtmRule(
         return mask != null && (mask & 1 << metadata) != 0;
     }
 
-    boolean matchesConnectTile(WorldView world, BlockState state, BlockPos pos, Direction face,
-            CtmRenderContext context) {
-        return connectTiles.isEmpty()
-                || connectTiles.contains(spriteName(world, state, pos, face, context));
+    boolean matchesConnectTile(WorldView world, BlockState state, BlockPos pos, Direction face, CtmRenderContext context) {
+        return connectTiles.isEmpty() || connectTiles.contains(spriteName(world, state, pos, face, context));
     }
 
-    boolean matchesNeighbor(WorldView world, BlockState state, BlockPos pos, Direction face,
-            TextureAtlasSprite sprite, CtmRenderContext context) {
+    boolean matchesNeighbor(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
         if (state.getBlock() == Blocks.AIR) return false;
         if (!matchBlocks.isEmpty()) {
             Integer mask = matchBlocks.get(state.getBlock());
-            int metadata = checkedMetadata(state);
-            if (mask == null || (mask & 1 << metadata) == 0) return false;
+			if (mask == null || (mask & 1 << checkedMetadata(state)) == 0) return false;
         }
-        return matchTiles.isEmpty()
-                || spriteName(world, state, pos, face, context).equals(sprite.getName());
+        return matchTiles.isEmpty() || spriteName(world, state, pos, face, context).equals(sprite.getName());
     }
 
     private int checkedMetadata(BlockState state) {
@@ -282,10 +270,6 @@ record CtmRule(
         if (state.getBlock() instanceof AbstractLogBlock && metadataMax <= 3) return value & 3;
         if (state.getBlock() instanceof QuartzBlock && metadataMax <= 2 && value > 2) return 2;
         return value;
-    }
-
-    static BakedQuad remap(BakedQuad quad, TextureAtlasSprite from, TextureAtlasSprite to) {
-        return remap(quad, from, to, quad.getTintIndex());
     }
 
     static BakedQuad remap(BakedQuad quad, TextureAtlasSprite from, TextureAtlasSprite to,
@@ -313,22 +297,10 @@ record CtmRule(
     }
 
     private static int lineIndex(boolean first, boolean second) {
-        return first ? second ? 1 : 2 : second ? 0 : 3;
-    }
-
-    private static int random(BlockPos pos, int face) {
-        int hash = intHash(face + 37);
-        hash = intHash(hash + pos.getX());
-        hash = intHash(hash + pos.getZ());
-        return intHash(hash + pos.getY());
-    }
-
-    private static int intHash(int value) {
-        value = value ^ 61 ^ value >> 16;
-        value += value << 3;
-        value ^= value >> 4;
-        value *= 668265261;
-        return value ^ value >> 15;
+        if (first && second) return 1;
+        else if (first) return 2;
+        else if (second) return 0;
+        else return 3;
     }
 
     private static String spriteName(WorldView world, BlockState state, BlockPos pos, Direction face,

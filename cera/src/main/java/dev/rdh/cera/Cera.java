@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.taumc.celeritas.api.OptionGUIConstructionEvent;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.math.BlockPos;
 
 public class Cera implements ClientModInitializer {
     public static CeraConfig CONFIG = new CeraConfig();
@@ -32,5 +33,21 @@ public class Cera implements ClientModInitializer {
                 world.cera$getDynamicLights().reload(resources);
             }
         });
+    }
+
+    // From Config.getRandom(BlockPos, int) and Config.intHash(int) in OptiFine 1.8.9 HD U M6 pre2.
+    public static int random(BlockPos pos, int face) {
+        int hash = intHash(face + 37);
+        hash = intHash(hash + pos.getX());
+        hash = intHash(hash + pos.getZ());
+        return intHash(hash + pos.getY());
+    }
+
+    public static int intHash(int value) {
+        value = value ^ 61 ^ value >> 16;
+        value += value << 3;
+        value ^= value >> 4;
+        value *= 668265261;
+        return value ^ value >> 15;
     }
 }

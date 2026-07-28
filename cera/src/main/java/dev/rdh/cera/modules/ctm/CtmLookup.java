@@ -210,9 +210,10 @@ final class CtmLookup {
         return mask;
     }
 
-    private static void require(Direction[] actual, Direction first, Direction second) {
-        if (actual[0] != first || actual[1] != second) {
-            throw new IllegalStateException("Invalid line-method directions");
+    private static void require(Direction[] actual, Direction... expected) {
+        for (int i = 0; i < expected.length; i++) {
+            if (actual[i] == expected[i]) continue;
+            throw new IllegalStateException("Invalid CTM directions");
         }
     }
 }
