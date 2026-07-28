@@ -86,12 +86,14 @@ public final class DynamicLights {
             }
         }
 
-        tracked.int2ObjectEntrySet().removeIf(entry -> {
-            if (seen.contains(entry.getIntKey())) return false;
-            Light light = entry.getValue();
+        var iterator = tracked.int2ObjectEntrySet().iterator();
+        while (iterator.hasNext()) {
+            var e = iterator.next();
+            if (seen.contains(e.getIntKey())) continue;
+            Light light = e.getValue();
             dirty(renderer, light.x, light.y, light.z);
-            return true;
-        });
+            iterator.remove();
+        }
         lights = tracked.values().toArray(Light[]::new);
     }
 
