@@ -18,12 +18,8 @@ import net.minecraft.world.WorldView;
 import java.util.List;
 
 public final class CtmRenderContext {
-    private final Reference2ObjectMap<BakedQuad,
-            Reference2ObjectMap<TextureAtlasSprite, Int2ObjectMap<BakedQuad>>> remapped
-            = new Reference2ObjectOpenHashMap<>();
-    private final Reference2ObjectMap<CtmRule,
-            Reference2ObjectMap<BakedQuad, List<BakedQuad>[]>> compact
-            = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<BakedQuad, Reference2ObjectMap<TextureAtlasSprite, Int2ObjectMap<BakedQuad>>> remapped = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<CtmRule, Reference2ObjectMap<BakedQuad, List<BakedQuad>[]>> compact = new Reference2ObjectOpenHashMap<>();
     private final BlockPos.Mutable neighborPos = new BlockPos.Mutable();
     private final long[] neighborPositions = new long[32];
     private final Direction[] neighborFaces = new Direction[32];
@@ -54,24 +50,24 @@ public final class CtmRenderContext {
 
     BakedQuad remap(BakedQuad quad, TextureAtlasSprite from, TextureAtlasSprite to, int tintIndex) {
         Int2ObjectMap<BakedQuad> tinted = this.remapped
-                .computeIfAbsent(quad, ignored -> new Reference2ObjectOpenHashMap<>())
-                .computeIfAbsent(to, ignored -> new Int2ObjectOpenHashMap<>());
-        return tinted.computeIfAbsent(tintIndex, ignored -> CtmRule.remap(quad, from, to, tintIndex));
+                .computeIfAbsent(quad, _ -> new Reference2ObjectOpenHashMap<>())
+                .computeIfAbsent(to, _ -> new Int2ObjectOpenHashMap<>());
+        return tinted.computeIfAbsent(tintIndex, _ -> CtmRule.remap(quad, from, to, tintIndex));
     }
 
     @SuppressWarnings("unchecked")
     List<BakedQuad> compact(CtmRule rule, BakedQuad quad, int connections) {
         List<BakedQuad>[] results = this.compact
-                .computeIfAbsent(rule, ignored -> new Reference2ObjectOpenHashMap<>())
-                .computeIfAbsent(quad, ignored -> new List[256]);
+                .computeIfAbsent(rule, _ -> new Reference2ObjectOpenHashMap<>())
+                .computeIfAbsent(quad, _ -> new List[256]);
         return results[connections & 255];
     }
 
     @SuppressWarnings("unchecked")
     void putCompact(CtmRule rule, BakedQuad quad, int connections, List<BakedQuad> result) {
         this.compact
-                .computeIfAbsent(rule, ignored -> new Reference2ObjectOpenHashMap<>())
-                .computeIfAbsent(quad, ignored -> new List[256])[connections & 255] = result;
+                .computeIfAbsent(rule, _ -> new Reference2ObjectOpenHashMap<>())
+                .computeIfAbsent(quad, _ -> new List[256])[connections & 255] = result;
     }
 
     BlockPos offset(BlockPos pos, Direction direction) {

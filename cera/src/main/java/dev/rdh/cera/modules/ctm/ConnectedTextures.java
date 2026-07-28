@@ -42,27 +42,17 @@ public final class ConnectedTextures {
         Map<String, List<CtmRule>> tiles = new Object2ObjectOpenHashMap<>();
         for (CtmRule rule : pending) {
             for (Block block : rule.matchBlocks().keySet()) {
-                blocks.computeIfAbsent(block, ignored -> new ObjectArrayList<>()).add(rule);
+                blocks.computeIfAbsent(block, _ -> new ObjectArrayList<>()).add(rule);
             }
             for (String tile : rule.matchTiles()) {
-                tiles.computeIfAbsent(tile, ignored -> new ObjectArrayList<>()).add(rule);
+                tiles.computeIfAbsent(tile, _ -> new ObjectArrayList<>()).add(rule);
             }
         }
-        blocks.replaceAll((block, rules) -> List.copyOf(rules));
-        tiles.replaceAll((tile, rules) -> List.copyOf(rules));
+        blocks.replaceAll((_, rules) -> List.copyOf(rules));
+        tiles.replaceAll((_, rules) -> List.copyOf(rules));
         state = pending.isEmpty() ? State.EMPTY : new State(Map.copyOf(blocks), Map.copyOf(tiles));
         Cera.LOGGER.info("Loaded {} connected texture rules", pending.size());
         pending = List.of();
-    }
-
-    public static List<BakedQuad> transform(WorldView world, BlockState blockState, BlockPos pos,
-            List<BakedQuad> quads) {
-        return transform(world, blockState, pos, quads, null, new CtmRenderContext());
-    }
-
-    public static List<BakedQuad> transform(WorldView world, BlockState blockState, BlockPos pos,
-            List<BakedQuad> quads, List<Overlay> overlays) {
-        return transform(world, blockState, pos, quads, overlays, new CtmRenderContext());
     }
 
     public static List<BakedQuad> transform(WorldView world, BlockState blockState, BlockPos pos,

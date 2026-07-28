@@ -17,6 +17,10 @@ ploceus {
     setIntermediaryGeneration(2)
 }
 
+tasks.remapJar {
+    destinationDirectory = rootProject.layout.buildDirectory.dir("libs")
+}
+
 loom.mods {
     create("argentum") {
         sourceSet(rootProject.sourceSets.main.get())

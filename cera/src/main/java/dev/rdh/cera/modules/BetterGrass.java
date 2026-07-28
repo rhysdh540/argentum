@@ -43,7 +43,7 @@ public final class BetterGrass {
             try (var stream = resource.asStream()) {
                 properties.load(stream);
             }
-        } catch (IOException ignored) {
+        } catch (IOException _) {
         }
 
         pending = new Pending(

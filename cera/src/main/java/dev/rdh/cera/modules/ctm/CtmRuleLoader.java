@@ -280,7 +280,7 @@ final class CtmRuleLoader {
             BlockState state;
             try {
                 state = block.getStateFromMetadata(metadata);
-            } catch (IllegalArgumentException ignored) {
+            } catch (IllegalArgumentException _) {
                 continue;
             }
             if (matchesProperties(state, expected)) mask |= 1 << metadata;
@@ -312,7 +312,7 @@ final class CtmRuleLoader {
     private static Block parseBlock(String value) {
         try {
             return Block.byId(Integer.parseInt(value));
-        } catch (NumberFormatException ignored) {
+        } catch (NumberFormatException _) {
             return Block.byKey(value);
         }
     }
@@ -363,7 +363,7 @@ final class CtmRuleLoader {
                         for (int i = min; i <= max; i++) result.add(Integer.toString(i));
                         continue;
                     }
-                } catch (NumberFormatException ignored) {
+                } catch (NumberFormatException _) {
                 }
             }
             if (!token.isEmpty()) result.add(token);
@@ -540,7 +540,7 @@ final class CtmRuleLoader {
         if (value == null) return fallback;
         try {
             return Integer.parseInt(value.trim());
-        } catch (NumberFormatException ignored) {
+        } catch (NumberFormatException _) {
             return fallback;
         }
     }

@@ -95,7 +95,7 @@ public final class NaturalTextures {
         if (resource == null) return false;
         try (resource) {
             return "Default".equals(resource.sourceName());
-        } catch (IOException ignored) {
+        } catch (IOException _) {
             return false;
         }
     }
