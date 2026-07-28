@@ -2,13 +2,10 @@ package dev.rdh.cera;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
+import net.minecraft.resource.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.ornithemc.osl.core.api.util.NamespacedIdentifier;
-import net.ornithemc.osl.core.api.util.NamespacedIdentifiers;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFacing;
 
@@ -18,8 +15,8 @@ import java.util.Map;
 import java.util.Properties;
 
 public final class NaturalTextures {
-    private static final NamespacedIdentifier CONFIG = NamespacedIdentifiers.from("optifine/natural.properties");
-    private static final NamespacedIdentifier LEGACY_CONFIG = NamespacedIdentifiers.from("mcpatcher/natural.properties");
+    private static final Identifier CONFIG = new Identifier("optifine/natural.properties");
+    private static final Identifier LEGACY_CONFIG = new Identifier("mcpatcher/natural.properties");
     private static volatile Map<String, Rule> rules = Map.of();
 
     private NaturalTextures() {
@@ -87,12 +84,12 @@ public final class NaturalTextures {
         return flip ? (3 - rotation - vertex) & 3 : (vertex + rotation) & 3;
     }
 
-    private static Resource get(ResourceManager resources, NamespacedIdentifier id) {
+    private static Resource get(ResourceManager resources, Identifier id) {
         return resources.getResource(id).orElse(null);
     }
 
     private static boolean isVanillaTexture(ResourceManager resources, String texture) {
-        Resource resource = get(resources, NamespacedIdentifiers.from("textures/blocks/" + texture + ".png"));
+        Resource resource = get(resources, new Identifier("textures/blocks/" + texture + ".png"));
         if (resource == null) return false;
         try (resource) {
             return "Default".equals(resource.sourceName());
