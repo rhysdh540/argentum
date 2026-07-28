@@ -54,8 +54,8 @@ public final class DynamicLights {
     }
 
     public static void update(ClientWorld world, ArgentumWorldRenderer renderer) {
-        DynamicLightsMode mode = Cera.CONFIG.dynamicLights;
-        if (mode == DynamicLightsMode.OFF) {
+        Mode mode = Cera.CONFIG.dynamicLights;
+        if (mode == Mode.OFF) {
             clear();
             return;
         }
@@ -63,7 +63,7 @@ public final class DynamicLights {
             clear();
             DynamicLights.world = world;
         }
-        if (mode == DynamicLightsMode.FAST && ticks++ % 10 != 0) return;
+        if (mode == Mode.FAST && ticks++ % 10 != 0) return;
 
         Set<Integer> seen = new HashSet<>();
         for (Entity entity : world.entities) {
@@ -94,7 +94,7 @@ public final class DynamicLights {
     }
 
     public static int combine(int x, int y, int z, int packedLight) {
-        if (Cera.CONFIG.dynamicLights == DynamicLightsMode.OFF) return packedLight;
+        if (Cera.CONFIG.dynamicLights == Mode.OFF) return packedLight;
 
         double maximum = 0.0;
         for (Light light : lights) {
@@ -116,7 +116,7 @@ public final class DynamicLights {
     }
 
     public static int combine(Entity entity, int packedLight) {
-        if (Cera.CONFIG.dynamicLights == DynamicLightsMode.OFF) return packedLight;
+        if (Cera.CONFIG.dynamicLights == Mode.OFF) return packedLight;
         int dynamic = getLightLevel(entity) << 4;
         return dynamic > (packedLight & 0xFF) ? packedLight & ~0xFF | dynamic : packedLight;
     }
@@ -217,5 +217,15 @@ public final class DynamicLights {
     @FunctionalInterface
     private interface RuleConsumer {
         void accept(String name, int level);
+    }
+
+    public enum Mode {
+        OFF,
+        FAST,
+        FANCY;
+
+        public String key() {
+            return "value.dynamic_lights." + name().toLowerCase();
+        }
     }
 }

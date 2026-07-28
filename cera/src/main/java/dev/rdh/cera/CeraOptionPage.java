@@ -20,9 +20,9 @@ final class CeraOptionPage {
                 .setId(id("quality"))
                 .add(OptionImpl.createBuilder(int.class, Cera.CONFIG_STORAGE)
                         .setId(id("better_grass"))
-                        .setControl(option -> new SliderControl(option, 0, BetterGrassMode.values().length - 1, 1,
-                                value -> text(BetterGrassMode.values()[value].key())))
-                        .setBinding((config, value) -> config.betterGrass = BetterGrassMode.values()[value],
+                        .setControl(option -> new SliderControl(option, 0, BetterGrass.Mode.values().length - 1, 1,
+                                value -> text(BetterGrass.Mode.values()[value].key())))
+                        .setBinding((config, value) -> config.betterGrass = BetterGrass.Mode.values()[value],
                                 config -> config.betterGrass.ordinal())
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
@@ -34,9 +34,9 @@ final class CeraOptionPage {
                         .build())
                 .add(OptionImpl.createBuilder(int.class, Cera.CONFIG_STORAGE)
                         .setId(id("dynamic_lights"))
-                        .setControl(option -> new SliderControl(option, 0, DynamicLightsMode.values().length - 1, 1,
-                                value -> text(DynamicLightsMode.values()[value].key())))
-                        .setBinding((config, value) -> config.dynamicLights = DynamicLightsMode.values()[value],
+                        .setControl(option -> new SliderControl(option, 0, DynamicLights.Mode.values().length - 1, 1,
+                                value -> text(DynamicLights.Mode.values()[value].key())))
+                        .setBinding((config, value) -> config.dynamicLights = DynamicLights.Mode.values()[value],
                                 config -> config.dynamicLights.ordinal())
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())

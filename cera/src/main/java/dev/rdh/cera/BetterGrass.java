@@ -90,8 +90,8 @@ public final class BetterGrass {
 
     public static List<BakedQuad> getFaceQuads(WorldView world, BlockState blockState, BlockPos pos,
             Direction face, List<BakedQuad> original) {
-        BetterGrassMode mode = Cera.CONFIG.betterGrass;
-        if (mode == BetterGrassMode.OFF || face == null || !face.getAxis().isHorizontal()) return original;
+        Mode mode = Cera.CONFIG.betterGrass;
+        if (mode == Mode.OFF || face == null || !face.getAxis().isHorizontal()) return original;
 
         State state = BetterGrass.state;
         Block block = blockState.getBlock();
@@ -122,7 +122,7 @@ public final class BetterGrass {
                         ? state.snow.get(face) : original;
             }
             BlockState neighbor = world.getBlockState(pos.down().offset(face));
-            return state.podzolEnabled && (mode == BetterGrassMode.FAST
+            return state.podzolEnabled && (mode == Mode.FAST
                     || neighbor.getBlock() == Blocks.DIRT
                     && neighbor.get(DirtBlock.VARIANT) == DirtBlock.Variant.PODZOL)
                     ? state.podzol.get(face) : original;
@@ -131,8 +131,8 @@ public final class BetterGrass {
         return original;
     }
 
-    private static boolean connects(BetterGrassMode mode, WorldView world, BlockPos pos, Direction face, Block block) {
-        return mode == BetterGrassMode.FAST || world.getBlockState(pos.offset(face)).getBlock() == block;
+    private static boolean connects(Mode mode, WorldView world, BlockPos pos, Direction face, Block block) {
+        return mode == Mode.FAST || world.getBlockState(pos.offset(face)).getBlock() == block;
     }
 
     private static boolean enabled(Properties properties, String key) {
@@ -203,5 +203,15 @@ public final class BetterGrass {
     ) {
         private static final State EMPTY = new State(
                 false, false, false, false, false, false, Map.of(), Map.of(), Map.of(), Map.of());
+    }
+
+    public enum Mode {
+        OFF,
+        FAST,
+        FANCY;
+
+        public String key() {
+            return "value.better_grass." + this.name().toLowerCase();
+        }
     }
 }
