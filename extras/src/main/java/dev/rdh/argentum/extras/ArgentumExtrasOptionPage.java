@@ -117,6 +117,7 @@ final class ArgentumExtrasOptionPage {
         OptionGroup misc = OptionGroup.createBuilder()
                 .setId(id("misc"))
                 .add(toggle("disable_realms", (c, v) -> c.disableRealms = v, c -> c.disableRealms))
+                .add(toggle("disable_text_shadows", (c, v) -> c.disableTextShadows = v, c -> c.disableTextShadows))
                 .build();
 
         OptionGroup entities = OptionGroup.createBuilder()

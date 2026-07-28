@@ -40,6 +40,7 @@ public class ArgentumExtrasConfig {
     public int weatherRenderDistance = 0;
     public int weatherDensity = 100;
     public LeafQuality leafQuality = LeafQuality.FANCY;
+    public boolean disableTextShadows = false;
     public boolean fxaa = false;
 
     public void validate() {
