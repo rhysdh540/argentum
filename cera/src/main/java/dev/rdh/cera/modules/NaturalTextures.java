@@ -10,9 +10,9 @@ import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFacing;
 
 import dev.rdh.cera.Cera;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -41,7 +41,7 @@ public final class NaturalTextures {
                 properties.load(stream);
             }
 
-            Map<String, Rule> loaded = new HashMap<>();
+            Map<String, Rule> loaded = new Object2ObjectOpenHashMap<>();
             for (String texture : properties.stringPropertyNames()) {
                 Rule rule = Rule.parse(properties.getProperty(texture));
                 if (rule == null) {

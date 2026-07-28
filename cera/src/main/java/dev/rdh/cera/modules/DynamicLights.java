@@ -21,15 +21,15 @@ import net.minecraft.util.math.BlockPos;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 public final class DynamicLights {
     private static final String CONFIG = "optifine/dynamic_lights.properties";
@@ -45,8 +45,8 @@ public final class DynamicLights {
     }
 
     public static void reload(ResourceManager resources) {
-        Map<String, Integer> entities = new HashMap<>();
-        Map<Item, Integer> items = new HashMap<>();
+        Object2IntMap<String> entities = new Object2IntOpenHashMap<>();
+        Object2IntMap<Item> items = new Object2IntOpenHashMap<>();
 
         resources.findResources("optifine", id -> CONFIG.equals(id.identifier())).forEach((id, resource) ->
                 load(resource, id.namespace(), entities, items));
@@ -67,7 +67,7 @@ public final class DynamicLights {
         }
         if (mode == Mode.FAST && ticks++ % 10 != 0) return;
 
-        Set<Integer> seen = new HashSet<>();
+        IntOpenHashSet seen = new IntOpenHashSet();
         for (Entity entity : world.entities) {
             int level = getLightLevel(entity);
             if (level <= 0) continue;
@@ -145,7 +145,7 @@ public final class DynamicLights {
         return rules.items.getOrDefault(stack.getItem(), 0);
     }
 
-    private static void load(Resource resource, String namespace, Map<String, Integer> entities, Map<Item, Integer> items) {
+    private static void load(Resource resource, String namespace, Object2IntMap<String> entities, Object2IntMap<Item> items) {
         try (resource) {
             Properties properties = new Properties();
             try (var stream = resource.open()) {
