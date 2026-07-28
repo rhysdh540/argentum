@@ -9,6 +9,9 @@ import org.taumc.celeritas.api.options.structure.OptionGroup;
 import org.taumc.celeritas.api.options.structure.OptionImpl;
 import org.taumc.celeritas.api.options.structure.OptionPage;
 
+import dev.rdh.cera.modules.BetterGrass;
+import dev.rdh.cera.modules.DynamicLights;
+
 import java.util.List;
 
 final class CeraOptionPage {

@@ -1,7 +1,7 @@
 package dev.rdh.cera.mixin;
 
 import dev.rdh.argentum.impl.extensions.RenderGlobalExtension;
-import dev.rdh.cera.DynamicLights;
+import dev.rdh.cera.modules.DynamicLights;
 import net.minecraft.client.render.world.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import org.spongepowered.asm.mixin.Mixin;

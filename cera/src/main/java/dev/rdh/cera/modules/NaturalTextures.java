@@ -1,4 +1,4 @@
-package dev.rdh.cera;
+package dev.rdh.cera.modules;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
@@ -8,6 +8,8 @@ import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFacing;
+
+import dev.rdh.cera.Cera;
 
 import java.io.IOException;
 import java.util.HashMap;

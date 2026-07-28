@@ -2,7 +2,7 @@ package dev.rdh.cera.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
-import dev.rdh.cera.DynamicLights;
+import dev.rdh.cera.modules.DynamicLights;
 import net.minecraft.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

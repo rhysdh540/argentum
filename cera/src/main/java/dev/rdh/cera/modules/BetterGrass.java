@@ -1,4 +1,4 @@
-package dev.rdh.cera;
+package dev.rdh.cera.modules;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -18,6 +18,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.WorldView;
 import org.lwjgl.util.vector.Vector3f;
+
+import dev.rdh.cera.Cera;
 
 import java.io.IOException;
 import java.util.EnumMap;

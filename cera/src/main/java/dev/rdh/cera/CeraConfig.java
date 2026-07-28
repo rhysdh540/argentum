@@ -1,5 +1,8 @@
 package dev.rdh.cera;
 
+import dev.rdh.cera.modules.BetterGrass;
+import dev.rdh.cera.modules.DynamicLights;
+
 public class CeraConfig {
     public BetterGrass.Mode betterGrass = BetterGrass.Mode.OFF;
     public DynamicLights.Mode dynamicLights = DynamicLights.Mode.OFF;

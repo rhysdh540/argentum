@@ -1,6 +1,8 @@
-package dev.rdh.cera;
+package dev.rdh.cera.modules;
 
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
+import dev.rdh.cera.Cera;
+
 import net.minecraft.block.material.Material;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entities;

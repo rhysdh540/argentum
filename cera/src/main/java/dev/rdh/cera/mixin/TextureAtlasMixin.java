@@ -1,6 +1,6 @@
 package dev.rdh.cera.mixin;
 
-import dev.rdh.cera.BetterGrass;
+import dev.rdh.cera.modules.BetterGrass;
 import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.resource.manager.ResourceManager;

@@ -4,6 +4,9 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.ornithemc.osl.resource.loader.api.client.ClientResourceLoaderEvents;
 import dev.rdh.argentum.impl.config.JsonOptionStorage;
+import dev.rdh.cera.modules.DynamicLights;
+import dev.rdh.cera.modules.NaturalTextures;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.taumc.celeritas.api.OptionGUIConstructionEvent;
