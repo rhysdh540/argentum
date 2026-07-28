@@ -9,6 +9,9 @@
     "FastBlockRendererMixin", "GameRendererMixin", "LivingEntityRendererMixin", "MobRendererMixin",
     "ParticleManagerMixin", "TitleScreenMixin", "WorldRendererMixin"
   ],
+  "mixinextras": {
+    "minVersion": "0.5.1"
+  },
   "injectors": {
     "defaultRequire": 1
   }
