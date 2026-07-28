@@ -20,7 +20,9 @@ public class Cera implements ClientModInitializer {
                 CeraConfig.class, CeraConfig::new, CeraConfig::validate);
         CONFIG = CONFIG_STORAGE.getData();
         OptionGUIConstructionEvent.BUS.addListener(event -> event.addPage(CeraOptionPage.create()));
-        ClientResourceLoaderEvents.END_RESOURCE_RELOAD.register((resources, context) ->
-                NaturalTextures.reload(resources));
+        ClientResourceLoaderEvents.END_RESOURCE_RELOAD.register((resources, context) -> {
+            NaturalTextures.reload(resources);
+            DynamicLights.reload(resources);
+        });
     }
 }

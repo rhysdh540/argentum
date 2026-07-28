@@ -4,8 +4,11 @@
   "package": "dev.rdh.cera.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
+    "ChunkRenderContextMixin",
+    "EntityMixin",
     "FastBlockRendererMixin",
-    "TextureAtlasMixin"
+    "TextureAtlasMixin",
+    "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

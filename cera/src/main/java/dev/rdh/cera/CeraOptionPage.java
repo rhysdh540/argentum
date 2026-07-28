@@ -32,6 +32,14 @@ final class CeraOptionPage {
                         .setBinding((config, value) -> config.naturalTextures = value, config -> config.naturalTextures)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
+                .add(OptionImpl.createBuilder(int.class, Cera.CONFIG_STORAGE)
+                        .setId(id("dynamic_lights"))
+                        .setControl(option -> new SliderControl(option, 0, DynamicLightsMode.values().length - 1, 1,
+                                value -> text(DynamicLightsMode.values()[value].key())))
+                        .setBinding((config, value) -> config.dynamicLights = DynamicLightsMode.values()[value],
+                                config -> config.dynamicLights.ordinal())
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build())
                 .build();
         return new OptionPage(id("cera"), text("pages.cera"), List.of(quality));
     }
