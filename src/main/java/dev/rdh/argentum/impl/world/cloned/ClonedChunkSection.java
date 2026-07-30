@@ -89,24 +89,17 @@ final class ClonedChunkSection {
         int chunkBaseX = this.position.x() << 4;
         int chunkBaseZ = this.position.z() << 4;
 
+        BlockPos.Mutable pos = new BlockPos.Mutable();
         for (int y = minY; y <= maxY; y++) {
             for (int z = 0; z < 16; z++) {
                 for (int x = 0; x < 16; x++) {
-                    BlockPos pos = new BlockPos(
-                            chunkBaseX + x,
-                            y,
-                            chunkBaseZ + z
-                    );
+                    pos.set(chunkBaseX + x, y, chunkBaseZ + z);
 
-                    BlockEntity blockEntity = chunk.getBlockEntity(pos, WorldChunk.BlockEntityCreationType.IMMEDIATE);
+                    BlockEntity be = chunk.getBlockEntity(pos, WorldChunk.BlockEntityCreationType.IMMEDIATE);
 
-                    if (blockEntity != null) {
-                        blockEntity.setPos(pos);
-
-                        this.blockEntities.put(
-                                packLocal(x, y & 15, z),
-                                blockEntity
-                        );
+                    if (be != null) {
+                        be.setPos(pos);
+                        this.blockEntities.put(packLocal(x, y & 15, z), be);
                     }
                 }
             }
