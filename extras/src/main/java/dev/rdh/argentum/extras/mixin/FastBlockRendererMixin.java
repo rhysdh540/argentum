@@ -32,9 +32,9 @@ public class FastBlockRendererMixin {
                     target = "Ldev/rdh/argentum/impl/render/terrain/compile/pipeline/FastBlockRenderer;writeQuad(Lorg/embeddedt/embeddium/impl/model/quad/BakedQuadView;Lnet/minecraft/util/math/BlockPos;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/model/quad/properties/ModelQuadOrientation;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;)V"))
     private boolean argentumExtras$shouldRenderLeafQuad(FastBlockRenderer renderer, BakedQuadView quad,
             BlockPos pos, Material material, ModelQuadOrientation orientation, ChunkBuildBuffers buffers,
-            @Local(argsOnly = true) Block block,
+            @Local(argsOnly = true) BlockState colorState,
             @Local(argsOnly = true) ChunkRenderContext world) {
-        if (!(block instanceof AbstractLeavesBlock)
+        if (!(colorState.getBlock() instanceof AbstractLeavesBlock)
                 || !ModelQuadFlags.contains(quad.getFlags(), ModelQuadFlags.IS_ALIGNED)) {
             return true;
         }
