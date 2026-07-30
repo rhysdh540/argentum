@@ -83,10 +83,25 @@ final class ClonedChunkSection {
     }
 
     private void copyBlockEntities(WorldChunk chunk, int sectionY) {
-        for (Map.Entry<BlockPos, BlockEntity> entry : chunk.getBlockEntities().entrySet()) {
-            BlockPos pos = entry.getKey();
-            if (pos.getY() >> 4 == sectionY) {
-                this.blockEntities.put(packLocal(pos.getX(), pos.getY(), pos.getZ()), entry.getValue());
+        int minY = sectionY << 4;
+        int maxY = minY + 15;
+
+        int chunkBaseX = this.position.x() << 4;
+        int chunkBaseZ = this.position.z() << 4;
+
+        BlockPos.Mutable pos = new BlockPos.Mutable();
+        for (int y = minY; y <= maxY; y++) {
+            for (int z = 0; z < 16; z++) {
+                for (int x = 0; x < 16; x++) {
+                    pos.set(chunkBaseX + x, y, chunkBaseZ + z);
+
+                    BlockEntity be = chunk.getBlockEntity(pos, WorldChunk.BlockEntityCreationType.IMMEDIATE);
+
+                    if (be != null) {
+                        be.setPos(pos);
+                        this.blockEntities.put(packLocal(x, y & 15, z), be);
+                    }
+                }
             }
         }
     }
