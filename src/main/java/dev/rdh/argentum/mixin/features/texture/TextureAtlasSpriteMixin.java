@@ -47,12 +47,12 @@ public abstract class TextureAtlasSpriteMixin implements TextureAtlasSpriteExten
     }
 
     @Override
-    public void celeritas$markActive() {
+    public void argentum$markActive() {
         this.celeritas$active = true;
     }
 
     @Override
-    public boolean celeritas$shouldUpdate() {
+    public boolean argentum$shouldUpdate() {
         boolean active = this.celeritas$active;
         this.celeritas$active = false;
         return active;

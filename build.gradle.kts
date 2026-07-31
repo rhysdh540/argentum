@@ -13,6 +13,8 @@ testmod.compileClasspath += sourceSets.main.get().output + sourceSets.main.get()
 testmod.runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 
 loom {
+    accessWidenerPath = file("src/main/resources/argentum.classtweaker")
+
     mods {
         create("argentum-font-test") {
             sourceSet(testmod)
@@ -78,4 +80,3 @@ tasks.register("verifyFontRendering") {
 tasks.check {
     dependsOn("compileTestmodJava")
 }
-

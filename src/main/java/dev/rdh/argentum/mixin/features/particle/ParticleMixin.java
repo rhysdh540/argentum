@@ -21,7 +21,7 @@ public abstract class ParticleMixin implements ParticleExtension {
     }
 
     @Override
-    public boolean celeritas$isVisible() {
+    public boolean argentum$isVisible() {
         return this.celeritas$visible;
     }
 }

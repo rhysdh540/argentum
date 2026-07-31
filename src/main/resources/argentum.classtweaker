@@ -1,0 +1,5 @@
+classTweaker v2 named
+inject-interface net/minecraft/client/entity/particle/Particle dev/rdh/argentum/impl/extensions/ParticleExtension
+inject-interface net/minecraft/client/render/texture/TextureAtlas dev/rdh/argentum/impl/extensions/TextureAtlasExtension
+inject-interface net/minecraft/client/render/texture/TextureAtlasSprite dev/rdh/argentum/impl/extensions/TextureAtlasSpriteExtension
+inject-interface net/minecraft/client/render/world/WorldRenderer dev/rdh/argentum/impl/extensions/WorldRendererExtension

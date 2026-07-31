@@ -9,7 +9,6 @@ import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTrackerHolder;
 import org.embeddedt.embeddium.impl.render.terrain.SimpleWorldRenderer;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.extensions.WorldRendererExtension;
 import dev.rdh.argentum.impl.render.entity.EntityOcclusionCuller;
 import dev.rdh.argentum.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
 
@@ -49,11 +48,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
     public static ArgentumWorldRenderer instanceNullable() {
         var world = Minecraft.getInstance().worldRenderer;
 
-        if (world instanceof WorldRendererExtension extension) {
-            return extension.sodium$getWorldRenderer();
-        }
-
-        return null;
+        return world == null ? null : world.argentum$getWorldRenderer();
     }
 
     @Override

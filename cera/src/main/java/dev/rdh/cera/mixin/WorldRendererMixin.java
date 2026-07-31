@@ -18,7 +18,7 @@ public abstract class WorldRendererMixin {
     @Inject(method = "tick", at = @At("TAIL"))
     private void cera$updateDynamicLights(CallbackInfo ci) {
         if (this.world != null) {
-            var renderer = ((WorldRendererExtension)this).sodium$getWorldRenderer();
+            var renderer = ((WorldRendererExtension)this).argentum$getWorldRenderer();
             ((CeraClientWorldExtension)this.world).cera$getDynamicLights().update(this.world, renderer);
         }
     }

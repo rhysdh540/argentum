@@ -74,7 +74,7 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
     }
 
     @Override
-    public ArgentumWorldRenderer sodium$getWorldRenderer() {
+    public ArgentumWorldRenderer argentum$getWorldRenderer() {
         return this.renderer;
     }
 

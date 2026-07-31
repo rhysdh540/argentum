@@ -12,12 +12,12 @@ import org.lwjgl.opengl.GL11C;
 
 import net.minecraft.client.render.block.BlockLayer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.render.vertex.BufferBuilder;
 import net.minecraft.client.render.vertex.DefaultVertexFormat;
 
 import java.nio.IntBuffer;
-import dev.rdh.argentum.impl.extensions.TextureAtlasExtension;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.render.terrain.compile.light.PrimitiveLightDataCache;
 import dev.rdh.argentum.impl.render.terrain.compile.pipeline.FastBlockRenderer;
@@ -30,7 +30,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
 
     private final BufferBuilder[] layerBuffers = new BufferBuilder[LAYERS.length];
     private final boolean[] usedLayerBuffers = new boolean[LAYERS.length];
-    private final TextureAtlasExtension textureAtlas;
+    private final TextureAtlas textureAtlas;
     private final RenderPassConfiguration<?> renderPassConfiguration;
     private final PrimitiveLightDataCache lightCache = new PrimitiveLightDataCache();
     private final short[] renderLightCache = new short[20 * 20 * 20];
@@ -44,7 +44,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     public PrimitiveChunkBuildContext(RenderPassConfiguration renderPassConfiguration) {
         super(renderPassConfiguration);
         this.renderPassConfiguration = renderPassConfiguration;
-        this.textureAtlas = (TextureAtlasExtension)Minecraft.getInstance().getBlocksAtlas();
+        this.textureAtlas = Minecraft.getInstance().getBlocksAtlas();
     }
 
     public void beginSection(ChunkRenderContext world, int x, int y, int z) {
@@ -149,7 +149,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
                 vertices[vIdx].trueNormal = trueNormal;
             }
             ModelQuadFacing facing = QuadUtil.findNormalFace(trueNormal);
-            TextureAtlasSprite sprite = this.textureAtlas.celeritas$findFromUV(uSum * 0.25F, vSum * 0.25F);
+            TextureAtlasSprite sprite = this.textureAtlas.argentum$findFromUV(uSum * 0.25F, vSum * 0.25F);
             if (sprite != null && sprite.isAnimated()
                     && buffers.getSectionContextBundle() instanceof PrimitiveBuiltRenderSectionData renderData) {
                 renderData.animatedSprites.add(sprite);

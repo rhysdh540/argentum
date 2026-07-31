@@ -24,13 +24,13 @@ import org.embeddedt.embeddium.impl.util.position.SectionPos;
 import org.jetbrains.annotations.Nullable;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.extensions.TextureAtlasSpriteExtension;
 import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import dev.rdh.argentum.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 import dev.rdh.argentum.impl.world.cloned.ClonedChunkSectionCache;
 
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.world.World;
 
 public class PrimitiveRenderSectionManager extends RenderSectionManager {
@@ -58,7 +58,7 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected @Nullable SectionTicker createSectionTicker() {
-        return new GenericSectionSpriteTicker<>(s -> ((TextureAtlasSpriteExtension) s).celeritas$markActive());
+        return new GenericSectionSpriteTicker<TextureAtlasSprite>(TextureAtlasSprite::argentum$markActive);
     }
 
     @Override

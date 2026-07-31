@@ -13,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import dev.rdh.argentum.impl.Argentum;
-import dev.rdh.argentum.impl.extensions.TextureAtlasSpriteExtension;
 import dev.rdh.argentum.impl.extensions.TextureAtlasExtension;
 
 import java.util.Iterator;
@@ -50,17 +49,12 @@ public class TextureAtlasMixin implements TextureAtlasExtension {
     private Iterator<TextureAtlasSprite> celeritas$visibleAnimations(List<TextureAtlasSprite> sprites) {
         Iterator<TextureAtlasSprite> iterator = sprites.iterator();
         return Argentum.CONFIG.animateOnlyVisibleTextures
-                ? Iterators.filter(iterator, sprite -> ((TextureAtlasSpriteExtension)sprite).celeritas$shouldUpdate())
+                ? Iterators.filter(iterator, TextureAtlasSprite::argentum$shouldUpdate)
                 : iterator;
     }
 
     @Override
-    public QuadTree<TextureAtlasSprite> celeritas$getQuadTree() {
-        return this.celeritas$quadTree;
-    }
-
-    @Override
-    public TextureAtlasSprite celeritas$findFromUV(float u, float v) {
+    public TextureAtlasSprite argentum$findFromUV(float u, float v) {
         return this.celeritas$quadTree.find(Math.round(u * this.celeritas$width), Math.round(v * this.celeritas$height));
     }
 

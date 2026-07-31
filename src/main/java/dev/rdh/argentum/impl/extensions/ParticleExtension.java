@@ -1,5 +1,7 @@
 package dev.rdh.argentum.impl.extensions;
 
 public interface ParticleExtension {
-    boolean celeritas$isVisible();
+    default boolean argentum$isVisible() {
+        throw new UnsupportedOperationException();
+    }
 }

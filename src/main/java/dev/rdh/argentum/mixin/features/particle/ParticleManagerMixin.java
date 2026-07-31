@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.extensions.ParticleExtension;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 
 @Mixin(ParticleManager.class)
@@ -36,7 +35,7 @@ public abstract class ParticleManagerMixin {
     )
     private boolean celeritas$renderVisibleParticle(Particle particle, BufferBuilder buffer, Entity camera,
             float tickDelta, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
-        boolean visible = ((ParticleExtension) particle).celeritas$isVisible();
+        boolean visible = particle.argentum$isVisible();
         if (visible) {
             RenderMetrics.recordRenderedParticle();
         } else {

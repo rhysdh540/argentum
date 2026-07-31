@@ -12,7 +12,6 @@ import org.embeddedt.embeddium.impl.util.ModelQuadUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import dev.rdh.argentum.impl.extensions.TextureAtlasExtension;
 import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveModelUtil;
 
 @Mixin(BakedQuad.class)
@@ -92,8 +91,8 @@ public abstract class BakedQuadMixin implements BakedQuadView {
                 u += this.getTexU(i);
                 v += this.getTexV(i);
             }
-            TextureAtlasExtension atlas = (TextureAtlasExtension)Minecraft.getInstance().getBlocksAtlas();
-            TextureAtlasSprite sprite = atlas.celeritas$findFromUV(u * 0.25F, v * 0.25F);
+            TextureAtlasSprite sprite = Minecraft.getInstance().getBlocksAtlas()
+                    .argentum$findFromUV(u * 0.25F, v * 0.25F);
             this.celeritas$sprite = sprite;
             if (sprite != null && this.isInside(sprite)) {
                 this.celeritas$flags |= ModelQuadFlags.IS_TRUSTED_SPRITE;
