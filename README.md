@@ -18,8 +18,7 @@ Along with that, some other optimizations are planned:
 - Block entity per-section frustum fast paths
 - Cache item frame geometry
 - Particle instancing
-- Batching HUD draw calls
-- Caching HUD elements to reduce draw calls
+- Batching HUD draw calls & HUD caching
 - ...and more!
 
 A companion mod also exists under the [`extras`](/extras) folder, providing extra rendering customization and eye candy; read more about it [here](/extras/README.md).

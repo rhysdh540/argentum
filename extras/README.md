@@ -20,6 +20,8 @@ Along with that, some other features are planned:
 
 - Render resolution scaling
 - FSR 1.0 as an anti-aliasing option
+- Sign text distance culling
+- Item frame LODs
 
 ## License
 Argentum Extras is licensed under the [version 3.0 of the LGPL](https://www.gnu.org/licenses/lgpl-3.0.html).
