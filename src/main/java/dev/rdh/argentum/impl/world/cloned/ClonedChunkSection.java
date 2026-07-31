@@ -17,7 +17,6 @@ import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.chunk.WorldChunkSection;
 
 import java.util.Arrays;
-import java.util.Map;
 
 final class ClonedChunkSection {
     private final SectionPos position;
@@ -89,11 +88,11 @@ final class ClonedChunkSection {
         int chunkBaseX = this.position.x() << 4;
         int chunkBaseZ = this.position.z() << 4;
 
-        BlockPos.Mutable pos = new BlockPos.Mutable();
         for (int y = minY; y <= maxY; y++) {
             for (int z = 0; z < 16; z++) {
                 for (int x = 0; x < 16; x++) {
-                    pos.set(chunkBaseX + x, y, chunkBaseZ + z);
+                    // we can't reuse the same BlockPos in the loop, since `chunk.getBlockEntity` and `be.setPos` both don't clone it
+                    BlockPos pos = new BlockPos(chunkBaseX + x, y, chunkBaseZ + z);
 
                     BlockEntity be = chunk.getBlockEntity(pos, WorldChunk.BlockEntityCreationType.IMMEDIATE);
 
