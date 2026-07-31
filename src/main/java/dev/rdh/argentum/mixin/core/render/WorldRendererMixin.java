@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.extensions.RenderGlobalExtension;
+import dev.rdh.argentum.impl.extensions.WorldRendererExtension;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.entity.EntityGatherer;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
@@ -41,7 +41,7 @@ import java.util.Iterator;
 import java.util.List;
 
 @Mixin(value = WorldRenderer.class, priority = 900)
-public abstract class WorldRendererMixin implements RenderGlobalExtension {
+public abstract class WorldRendererMixin implements WorldRendererExtension {
 
     @Shadow
     @Final

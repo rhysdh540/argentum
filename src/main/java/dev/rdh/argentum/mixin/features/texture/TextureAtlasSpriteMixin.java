@@ -9,13 +9,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import dev.rdh.argentum.impl.extensions.SpriteExtension;
+import dev.rdh.argentum.impl.extensions.TextureAtlasSpriteExtension;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
 
 @Mixin(TextureAtlasSprite.class)
-public abstract class TextureAtlasSpriteMixin implements SpriteExtension {
+public abstract class TextureAtlasSpriteMixin implements TextureAtlasSpriteExtension {
     @Shadow
     protected List<int[][]> frames;
 

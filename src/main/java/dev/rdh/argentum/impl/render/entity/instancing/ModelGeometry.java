@@ -49,8 +49,6 @@ final class ModelBatch {
 }
 
 final class PartGeometry implements EntityGeometry {
-    private static final int INSTANCE_FLOATS = 28;
-
     private final ModelPart part;
     private final InstancedGeometryBuffer buffers;
     private final int vertexCount;

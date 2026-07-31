@@ -1,6 +1,5 @@
 package dev.rdh.argentum.impl.render.terrain;
 
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.device.RenderDevice;
 import org.embeddedt.embeddium.impl.gl.functions.MultidrawFunctions;
@@ -12,7 +11,6 @@ import org.embeddedt.embeddium.impl.render.chunk.RenderSection;
 import org.embeddedt.embeddium.impl.render.chunk.RenderSectionManager;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildOutput;
 import org.embeddedt.embeddium.impl.render.chunk.compile.tasks.ChunkBuilderTask;
-import org.embeddedt.embeddium.impl.render.chunk.data.BuiltRenderSectionData;
 import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
 import org.embeddedt.embeddium.impl.render.chunk.lists.SectionTicker;
 import org.embeddedt.embeddium.impl.render.chunk.multidraw.DirectMultiDrawEmitter;
@@ -26,8 +24,7 @@ import org.embeddedt.embeddium.impl.util.position.SectionPos;
 import org.jetbrains.annotations.Nullable;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.extensions.SpriteExtension;
-import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
+import dev.rdh.argentum.impl.extensions.TextureAtlasSpriteExtension;
 import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveChunkBuildContext;
 import dev.rdh.argentum.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
@@ -36,12 +33,9 @@ import dev.rdh.argentum.impl.world.cloned.ClonedChunkSectionCache;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-import java.util.Collection;
-
 public class PrimitiveRenderSectionManager extends RenderSectionManager {
     private final World world;
     private final ClonedChunkSectionCache sectionCache;
-    private final ReferenceOpenHashSet<RenderSection> sectionsWithSkyLight = new ReferenceOpenHashSet<>();
 
     public PrimitiveRenderSectionManager(RenderPassConfiguration<?> configuration, World world, int renderDistance, CommandList commandList, int minSection, int maxSection, int requestedThreads) {
         super(configuration, () -> new PrimitiveChunkBuildContext(configuration), ChunkRenderer::new, renderDistance, commandList, minSection, maxSection, requestedThreads, false);
@@ -64,7 +58,7 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected @Nullable SectionTicker createSectionTicker() {
-        return new GenericSectionSpriteTicker<>(s -> ((SpriteExtension) s).celeritas$markActive());
+        return new GenericSectionSpriteTicker<>(s -> ((TextureAtlasSpriteExtension) s).celeritas$markActive());
     }
 
     @Override
@@ -110,25 +104,6 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
     @Override
     protected boolean allowImportantRebuilds() {
         return !Argentum.CONFIG.deferChunkUpdates;
-    }
-
-    @Override
-    protected boolean updateSectionInfo(RenderSection render, @Nullable BuiltRenderSectionData info) {
-        boolean changed = super.updateSectionInfo(render, info);
-
-        if (changed) {
-            if (!(info instanceof PrimitiveBuiltRenderSectionData data)) {
-                this.sectionsWithSkyLight.remove(render);
-            } else if (data.hasSkyLight) {
-                this.sectionsWithSkyLight.add(render);
-            }
-        }
-
-        return changed;
-    }
-
-    public Collection<RenderSection> getSectionsWithSkyLight() {
-        return this.sectionsWithSkyLight;
     }
 
     private static class ChunkRenderer extends DefaultChunkRenderer {

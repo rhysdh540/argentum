@@ -18,13 +18,8 @@ public class DebugOverlayMixin {
     private void appendArgentumSystemInfo(CallbackInfoReturnable<List<String>> cir) {
         var strings = cir.getReturnValue();
         strings.add("");
-        strings.addAll(DebugStrings.getStringsToRender().stream().map(pair -> {
-            // TODO
-            if (pair.right() == 0xFF55FF55) {
-                return Formatting.GREEN + pair.left();
-            } else {
-                return pair.left();
-            }
-        }).toList());
+        strings.addAll(DebugStrings.getStringsToRender().stream()
+                .map(pair -> pair.right().toString() + pair.left()).toList()
+        );
     }
 }

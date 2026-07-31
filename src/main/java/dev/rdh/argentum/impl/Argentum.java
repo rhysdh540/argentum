@@ -4,6 +4,9 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.embeddedt.embeddium.impl.gl.device.GLRenderDevice;
 import org.lwjgl.opengl.GL15C;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import dev.rdh.argentum.impl.config.ArgentumConfig;
 import dev.rdh.argentum.impl.config.JsonOptionStorage;
 
@@ -17,6 +20,8 @@ public class Argentum implements ClientModInitializer {
     public static String VERSION;
     public static ArgentumConfig CONFIG = new ArgentumConfig();
     public static JsonOptionStorage<ArgentumConfig> CONFIG_STORAGE;
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(MODID);
 
     @Override
     public void onInitializeClient() {

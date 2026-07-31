@@ -7,27 +7,29 @@ import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 
+import net.minecraft.text.Formatting;
+
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DebugStrings {
-    public static List<Pair<String, Integer>> getStringsToRender() {
-        List<Pair<String, Integer>> stringsToRender = new ArrayList<>();
+    public static List<Pair<String, Formatting>> getStringsToRender() {
+        List<Pair<String, Formatting>> stringsToRender = new ArrayList<>();
 
-        stringsToRender.add(Pair.of(getNativeMemoryString(), -1));
-        stringsToRender.add(Pair.of("", -1));
+        stringsToRender.add(Pair.of(getNativeMemoryString(), Formatting.RESET));
+        stringsToRender.add(Pair.of("", Formatting.RESET));
 
-        stringsToRender.add(Pair.of("%s Renderer (%s)".formatted("Argentum", Argentum.VERSION), 0xFF55FF55));
-        stringsToRender.add(Pair.of("", -1));
+        stringsToRender.add(Pair.of("%s Renderer (%s)".formatted("Argentum", Argentum.VERSION), Formatting.GREEN));
+        stringsToRender.add(Pair.of("", Formatting.RESET));
 
         var renderer = ArgentumWorldRenderer.instanceNullable();
 
         if (renderer != null) {
-            RenderMetrics.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, -1)));
-            stringsToRender.add(Pair.of(EntityInstancingRenderer.getDebugString(), -1));
-            stringsToRender.add(Pair.of("", -1));
-            renderer.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, -1)));
+            RenderMetrics.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, Formatting.RESET)));
+            stringsToRender.add(Pair.of(EntityInstancingRenderer.getDebugString(), Formatting.RESET));
+            stringsToRender.add(Pair.of("", Formatting.RESET));
+            renderer.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, Formatting.RESET)));
         }
 
         return stringsToRender;

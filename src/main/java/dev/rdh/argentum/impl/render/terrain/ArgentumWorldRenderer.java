@@ -9,7 +9,7 @@ import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTrackerHolder;
 import org.embeddedt.embeddium.impl.render.terrain.SimpleWorldRenderer;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.extensions.RenderGlobalExtension;
+import dev.rdh.argentum.impl.extensions.WorldRendererExtension;
 import dev.rdh.argentum.impl.render.entity.EntityOcclusionCuller;
 import dev.rdh.argentum.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
 
@@ -49,7 +49,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
     public static ArgentumWorldRenderer instanceNullable() {
         var world = Minecraft.getInstance().worldRenderer;
 
-        if (world instanceof RenderGlobalExtension extension) {
+        if (world instanceof WorldRendererExtension extension) {
             return extension.sodium$getWorldRenderer();
         }
 
@@ -95,11 +95,6 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
     @Override
     public int getMaximumBuildHeight() {
         return this.world.getHeight();
-    }
-
-    @Override
-    public String getChunksDebugString() {
-        return super.getChunksDebugString() + "S: " + this.renderSectionManager.getSectionsWithSkyLight().size();
     }
 
     @Override
@@ -163,7 +158,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
                     BlockEntityRenderDispatcher.INSTANCE.render(blockEntity, partialTicks, -1);
                 } catch(RuntimeException e) {
                     if(blockEntity.isRemoved()) {
-                        System.err.println("Suppressing crash from invalid tile entity");
+                        Argentum.LOGGER.warn("Suppressing crash from invalid tile entity");
                     } else {
                         throw e;
                     }

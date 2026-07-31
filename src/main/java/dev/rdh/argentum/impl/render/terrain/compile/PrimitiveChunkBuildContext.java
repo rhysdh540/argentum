@@ -111,9 +111,6 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
 
     private final ChunkVertexEncoder.Vertex[] vertices = ChunkVertexEncoder.Vertex.uninitializedQuad();
 
-    private static final int[] NORMAL_WINDING = new int[] {0, 1, 2, 3};
-    private static final int[] BACKFACE_WINDING = new int[] {3, 2, 1, 0};
-
     public void copyRawBuffer(IntBuffer rawBuffer, int vertexCount, ChunkBuildBuffers buffers, Material material) {
         if (vertexCount == 0) {
             return;
@@ -124,20 +121,19 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
             throw new IllegalStateException();
         }
 
-		outputQuads(rawBuffer, this.vertices, vertexCount / 4, buffers, material, NORMAL_WINDING);
+		outputQuads(rawBuffer, this.vertices, vertexCount / 4, buffers, material);
     }
 
-    private void outputQuads(IntBuffer rawBuffer, ChunkVertexEncoder.Vertex[] vertices, int numQuads, ChunkBuildBuffers buffers, Material material, int[] winding) {
+    private void outputQuads(IntBuffer rawBuffer, ChunkVertexEncoder.Vertex[] vertices, int numQuads, ChunkBuildBuffers buffers, Material material) {
         int ptr = 0;
         for (int quadIdx = 0; quadIdx < numQuads; quadIdx++) {
             float uSum = 0, vSum = 0;
             for (int vIdx = 0; vIdx < 4; vIdx++) {
-                var vertex = vertices[winding[vIdx]];
+                var vertex = vertices[vIdx];
                 vertex.x = Float.intBitsToFloat(rawBuffer.get(ptr++));
                 vertex.y = Float.intBitsToFloat(rawBuffer.get(ptr++));
                 vertex.z = Float.intBitsToFloat(rawBuffer.get(ptr++));
 
-                // In 1.8+, color comes before all UVs. In 1.7-, texture UV comes before color.
                 vertex.color = rawBuffer.get(ptr++);
 
                 float u = Float.intBitsToFloat(rawBuffer.get(ptr++));
@@ -150,7 +146,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
             }
             int trueNormal = QuadUtil.calculateNormal(vertices);
             for (int vIdx = 0; vIdx < 4; vIdx++) {
-                vertices[winding[vIdx]].trueNormal = trueNormal;
+                vertices[vIdx].trueNormal = trueNormal;
             }
             ModelQuadFacing facing = QuadUtil.findNormalFace(trueNormal);
             TextureAtlasSprite sprite = this.textureAtlas.celeritas$findFromUV(uSum * 0.25F, vSum * 0.25F);
