@@ -15,6 +15,8 @@ Along with that, some other optimizations are planned:
 
 - Block entity instancing (for chests, signs, etc)
 - Batching HUD draw calls
+- Particle instancing
+- Caching item frame geometry
 - ...and more!
 
 A companion mod also exists under the [`extras`](/extras) folder, providing extra rendering customization and eye candy.
