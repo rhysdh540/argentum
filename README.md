@@ -13,17 +13,15 @@ A non-exhaustive list of features that currently exist:
 
 Along with that, some other optimizations are planned:
 
-- Binary greedy meshing
 - Block entity instancing (for chests, signs, etc)
-- Block entity per-section frustum fast paths
-- Cache item frame geometry
+- Batching HUD draw calls
 - Particle instancing
-- Batching HUD draw calls & HUD caching
+- Caching item frame geometry
 - ...and more!
 
-A companion mod also exists under the [`extras`](/extras) folder, providing extra rendering customization and eye candy; read more about it [here](/extras/README.md).
+A companion mod also exists under the [`extras`](/extras) folder, providing extra rendering customization and eye candy.
 
-The [`cera`](/cera) subproject reimplements MCPatcher/OptiFine resource pack extensions; read more about it [here](/cera/README.md).
+The [`cera`](/cera) subproject reimplements MCPatcher/OptiFine resource pack extensions.
 
 ## License
 Being based on Celeritas, Argentum is licensed under the [version 3.0 of the LGPL](https://www.gnu.org/licenses/lgpl-3.0.html).

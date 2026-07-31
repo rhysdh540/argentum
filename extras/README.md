@@ -5,11 +5,11 @@ Argentum Extras is a companion mod for Argentum, providing eye-candy and options
 A non-exhaustive list of features that currently exist:
 
 - Debug HUD settings (including an FPS HUD)
-- Leaf culling (enclosed and hollow)
-- Particle control
+- Leaf culling (with three extra levels between Fast and Fancy)
+- Particle controls
 - Camera effect strength configuring (dynamic FOV, vignette, hurt camera, etc)
 - Configurable terrain & fluid fog density
-- Entity rendering toggleability (equipment, player cosmetics, attachements, etc)
+- Entity model attachment toggles (equipment, player cosmetics, arrows, etc)
 - Miscellaneous world detail configuring (sky, sun & moon, and stars)
 - Cloud customization
 - FXAA (fast approximate anti-aliasing)
@@ -19,9 +19,5 @@ A non-exhaustive list of features that currently exist:
 Along with that, some other features are planned:
 
 - Render resolution scaling
-- FSR 1.0 as an anti-aliasing option
 - Sign text distance culling
 - Item frame LODs
-
-## License
-Argentum Extras is licensed under the [version 3.0 of the LGPL](https://www.gnu.org/licenses/lgpl-3.0.html).
