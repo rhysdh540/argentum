@@ -13,8 +13,13 @@ A non-exhaustive list of features that currently exist:
 
 Along with that, some other optimizations are planned:
 
+- Binary greedy meshing
 - Block entity instancing (for chests, signs, etc)
+- Block entity per-section frustum fast paths
+- Cache item frame geometry
+- Particle instancing
 - Batching HUD draw calls
+- Caching HUD elements to reduce draw calls
 - ...and more!
 
 A companion mod also exists under the [`extras`](/extras) folder, providing extra rendering customization and eye candy.
