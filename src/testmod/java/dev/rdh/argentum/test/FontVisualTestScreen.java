@@ -1,10 +1,12 @@
 package dev.rdh.argentum.test;
 
+import dev.rdh.argentum.impl.render.hud.HudBatch;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screen.Screen;
 
 public class FontVisualTestScreen extends Screen {
     private final String variant = System.getProperty("argentum.fontTestVariant", "batched");
+    private final HudBatch.Colored backgroundBatch = HudBatch.colored(4 * 1024);
     private int ticks;
 
     @Override
@@ -23,6 +25,33 @@ public class FontVisualTestScreen extends Screen {
         this.textRenderer.setBidirectional(true);
         this.textRenderer.draw("שלום עולם", x, y + 80, 0xFFFFFFFF);
         this.textRenderer.setBidirectional(bidirectional);
+
+        this.renderHudBatchTest(x, y + 112);
+    }
+
+    private void renderHudBatchTest(int x, int y) {
+        String[] lines = {
+                "Cached ASCII",
+                "Formatted: §aGreen §lBold",
+                "Decorated: §nUnderline §mStrike",
+                "Unicode: Ελληνικά 日本語"
+        };
+
+        if (this.variant.equals("vanilla")) {
+            for (int i = 0; i < lines.length; i++) {
+                fill(x - 2, y + i * 12 - 2, x + 250, y + i * 12 + 10, 0x80000000);
+                this.textRenderer.draw(lines[i], x, y + i * 12, 0xFFFFFFFF);
+            }
+            return;
+        }
+
+        this.textRenderer.argentum$beginBatch(this.backgroundBatch);
+        for (int i = 0; i < lines.length; i++) {
+            this.backgroundBatch.fill(x - 2, y + i * 12 - 2, x + 250, y + i * 12 + 10, 0x80000000);
+            this.textRenderer.draw(lines[i], x, y + i * 12, 0xFFFFFFFF);
+        }
+        this.backgroundBatch.draw();
+        this.textRenderer.argentum$endBatch();
     }
 
     @Override
