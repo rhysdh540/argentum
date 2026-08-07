@@ -5,9 +5,7 @@
   "name": "Argentum Font Test",
   "environment": "client",
   "entrypoints": {
-    "client": [
-      "dev.rdh.argentum.test.FontVisualTest"
-    ]
+    "client": ["dev.rdh.argentum.test.ArgentumTestMod"]
   },
   "depends": {
     "fabricloader": "*",
