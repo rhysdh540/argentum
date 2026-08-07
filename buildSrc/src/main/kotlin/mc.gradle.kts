@@ -60,10 +60,14 @@ loom {
         jvmArguments.add("--enable-native-access=ALL-UNNAMED")
         jvmArguments.add("--sun-misc-unsafe-memory-access=allow")
 
-        systemProperties.put("java.awt.headless", "true")
-        systemProperties.put("legacy_lwjgl3.use_sdl", "true")
-        systemProperties.put("devauth.enabled", "true")
-        systemProperties.put("mixin.debug.export", "true")
+        rootProject.extra.properties.forEach{ (key, value) ->
+            if (key.startsWith("run.")) {
+                systemProperties.put(
+                    key.removePrefix("run."),
+                    value as? String ?: error("run property ${key} is not a string")
+                )
+            }
+        }
 
         if (project != rootProject) {
             runDirectory = rootProject.layout.projectDirectory.dir("run")
