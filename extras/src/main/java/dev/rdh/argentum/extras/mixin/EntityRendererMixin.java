@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
-import org.spongepowered.asm.mixin.injection.WrapWithCondition;
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 
 @Mixin(EntityRenderer.class)
 public class EntityRendererMixin {
@@ -16,11 +16,13 @@ public class EntityRendererMixin {
         return distance * distance;
     }
 
-    @WrapWithCondition(method = "renderNameTag", at = {@At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;enableDepthTest()V",
-                    ordinal = 1), @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;depthMask()V",
-                    ordinal = 1), @At(value = "INVOKE", target = "Lnet/minecraft/client/render/TextRenderer;draw(Ljava/lang/String;FFIZ)I",
-                    ordinal = 2)})
-    private boolean argentumExtras$toggleSecondNameTagLayer() {
+    @SuppressWarnings("WrapWithConditionTargetsNonVoid")
+    @WrapWithCondition(method = "renderNameTag(Lnet/minecraft/entity/Entity;Ljava/lang/String;DDDI)V", at = {
+            @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;enableDepthTest()V", ordinal = 0),
+            @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;depthMask(Z)V", ordinal = 1),
+            @At(value = "INVOKE", target = "Lnet/minecraft/client/render/TextRenderer;draw(Ljava/lang/String;III)I", ordinal = 1)
+    })
+    private boolean argentumExtras$disableSecondNameTagLayer() {
         return ArgentumExtras.CONFIG.secondNameTagLayer;
     }
 }
