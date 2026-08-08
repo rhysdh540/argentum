@@ -5,7 +5,7 @@ import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 
-final class ArrowGeometry implements EntityGeometry {
+final class ArrowGeometry extends EntityGeometry {
     private final InstancedGeometryBuffer buffers;
 
     ArrowGeometry() {

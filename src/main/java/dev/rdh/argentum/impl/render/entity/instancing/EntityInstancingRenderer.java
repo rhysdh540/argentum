@@ -60,14 +60,19 @@ public final class EntityInstancingRenderer {
     private static int matrixDepth;
     private static int matrixMode = GL11.GL_MODELVIEW;
     private static int frame;
+    private static int selectedFrame = -1;
     private static int currentTextureLayer;
+    private static int selectedTextureLayer;
     private static int itemGlintPass;
     private static Identifier currentEntityTexture;
     private static Identifier currentBoundTexture;
+    private static Identifier selectedTexture;
     private static GlProgram<EntityShader> program;
     private static ModelBatch currentModel;
     private static EntityBatcher.TextureBatch currentTexture;
+    private static EntityBatcher.TextureBatch selectedTextureBatch;
     private static EntityRenderPass currentPass = EntityRenderPass.NORMAL;
+    private static EntityRenderPass selectedTexturePass;
     private static int entityCount;
     private static int instanceCount;
     private static int drawCount;
@@ -435,6 +440,7 @@ public final class EntityInstancingRenderer {
     }
 
     public static void invalidateTexture(Texture texture) {
+        selectedFrame = -1;
         TEXTURE_ARRAYS.invalidate(texture);
     }
 
@@ -552,6 +558,11 @@ public final class EntityInstancingRenderer {
             return;
         }
         currentBoundTexture = texture;
+        if (selectedFrame == frame && selectedTexturePass == currentPass && texture.equals(selectedTexture)) {
+            currentTexture = selectedTextureBatch;
+            currentTextureLayer = selectedTextureLayer;
+            return;
+        }
         TextureArrayManager.Selection selection = null;
         selectingTexture = true;
         try {
@@ -568,6 +579,11 @@ public final class EntityInstancingRenderer {
             currentTextureLayer = 0;
             currentTexture = BATCHER.texture(texture, currentPass);
         }
+        selectedFrame = frame;
+        selectedTexture = texture;
+        selectedTexturePass = currentPass;
+        selectedTextureBatch = currentTexture;
+        selectedTextureLayer = currentTextureLayer;
     }
 
     private static boolean initialize() {

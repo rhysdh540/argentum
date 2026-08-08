@@ -7,19 +7,20 @@ import net.minecraft.client.render.model.Model;
 import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.resource.Identifier;
+
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 
-import java.util.IdentityHashMap;
 import java.util.EnumMap;
 import java.util.Map;
 
 final class EntityBatcher {
-    private final Map<Model, ModelBatch> models = new IdentityHashMap<>();
-    private final EnumMap<EntityRenderPass, Object2ObjectLinkedOpenHashMap<Identifier, TextureBatch>> textures =
+    private final Map<Model, ModelBatch> models = new Reference2ReferenceOpenHashMap<>();
+    private final EnumMap<EntityRenderPass, Map<Identifier, TextureBatch>> textures =
             new EnumMap<>(EntityRenderPass.class);
     private final EnumMap<EntityRenderPass, Map<TextureArrayManager.Pool, TextureBatch>> arrayTextures =
             new EnumMap<>(EntityRenderPass.class);
@@ -27,7 +28,7 @@ final class EntityBatcher {
     EntityBatcher() {
         for (EntityRenderPass pass : EntityRenderPass.values()) {
             this.textures.put(pass, new Object2ObjectLinkedOpenHashMap<>());
-            this.arrayTextures.put(pass, new IdentityHashMap<>());
+            this.arrayTextures.put(pass, new Reference2ReferenceOpenHashMap<>());
         }
     }
 
@@ -194,10 +195,18 @@ final class EntityBatcher {
         void add(EntityGeometry geometry, Matrix4f matrix, float u, float v, int layer,
                 float red, float green, float blue, float alpha, float effectTime,
                 float overlayRed, float overlayGreen, float overlayBlue, float overlayAlpha) {
-            this.parts.computeIfAbsent(geometry, ignored -> new Instances())
-                    .add(matrix, u, v, layer, red, green, blue, alpha, effectTime,
-                            overlayRed, overlayGreen, overlayBlue, overlayAlpha);
+            geometry.instances(this).add(matrix, u, v, layer, red, green, blue, alpha, effectTime,
+                    overlayRed, overlayGreen, overlayBlue, overlayAlpha);
             this.count++;
+        }
+
+        Instances instances(EntityGeometry geometry) {
+            Instances instances = this.parts.get(geometry);
+            if (instances == null) {
+                instances = new Instances();
+                this.parts.put(geometry, instances);
+            }
+            return instances;
         }
 
         private int render(CommandList commandList, boolean sort) {

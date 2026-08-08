@@ -48,7 +48,7 @@ final class ModelBatch {
     }
 }
 
-final class PartGeometry implements EntityGeometry {
+final class PartGeometry extends EntityGeometry {
     private final ModelPart part;
     private final InstancedGeometryBuffer buffers;
     private final int vertexCount;
@@ -106,10 +106,22 @@ final class PartGeometry implements EntityGeometry {
     }
 }
 
-interface EntityGeometry {
-    void render(CommandList commandList, Instances instances);
+abstract class EntityGeometry {
+    private EntityBatcher.TextureBatch batch;
+    private Instances instances;
 
-    void delete(CommandList commandList);
+    final Instances instances(EntityBatcher.TextureBatch batch) {
+        if (this.batch != batch) {
+            Instances instances = batch.instances(this);
+            this.batch = batch;
+            this.instances = instances;
+        }
+        return this.instances;
+    }
+
+    abstract void render(CommandList commandList, Instances instances);
+
+    abstract void delete(CommandList commandList);
 }
 
 final class Instances {

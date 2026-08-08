@@ -94,7 +94,7 @@ final class BakedItemGeometryCache {
         return tint == -1 || tint == color ? color : MULTIPLE_TINTS;
     }
 
-    private static final class BakedItemGeometry implements EntityGeometry {
+    private static final class BakedItemGeometry extends EntityGeometry {
         private final InstancedGeometryBuffer buffers;
         private final int vertexCount;
 
