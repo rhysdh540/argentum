@@ -33,6 +33,7 @@ public class ArgentumExtrasConfig {
     public boolean stuckArrows = true;
     public boolean leashes = true;
     public boolean nameTags = true;
+    public boolean secondNameTagLayer = true;
     public boolean sky = true;
     public boolean sunAndMoon = true;
     public boolean stars = true;
