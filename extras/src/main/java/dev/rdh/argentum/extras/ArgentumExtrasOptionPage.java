@@ -146,6 +146,7 @@ final class ArgentumExtrasOptionPage {
                 .add(toggle("stuck_arrows", (c, v) -> c.stuckArrows = v, c -> c.stuckArrows))
                 .add(toggle("leashes", (c, v) -> c.leashes = v, c -> c.leashes))
                 .add(toggle("name_tags", (c, v) -> c.nameTags = v, c -> c.nameTags))
+                .add(toggle("second_name_tag_layer", (c, v) -> c.secondNameTagLayer = v, c -> c.secondNameTagLayer))
                 .build();
 
         return List.of(
