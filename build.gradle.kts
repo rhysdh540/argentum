@@ -37,6 +37,22 @@ loom {
             systemProperties.put("argentum.disableFontBatching", "true")
             systemProperties.put("argentum.fontTestVariant", "vanilla")
         }
+        create("guiBenchmarkBatchedClient") {
+            inherit(getByName("client"))
+            sourceSet = testmod.name
+            displayName = "GUI Batch Benchmark (Batched)"
+            jvmArguments.add("-XstartOnFirstThread")
+            systemProperties.put("argentum.guiBenchmark", "true")
+            systemProperties.put("argentum.guiBenchmarkBatched", "true")
+        }
+        create("guiBenchmarkUnbatchedClient") {
+            inherit(getByName("client"))
+            sourceSet = testmod.name
+            displayName = "GUI Batch Benchmark (Unbatched)"
+            jvmArguments.add("-XstartOnFirstThread")
+            systemProperties.put("argentum.guiBenchmark", "true")
+            systemProperties.put("argentum.guiBenchmarkBatched", "false")
+        }
     }
 }
 
@@ -49,6 +65,10 @@ dependencies {
 
 tasks.named("runFontTestClient") {
     mustRunAfter("runFontTestVanillaClient")
+}
+
+tasks.named("runGuiBenchmarkBatchedClient") {
+    mustRunAfter("runGuiBenchmarkUnbatchedClient")
 }
 
 fun registerFontComparison(name: String, expected: String, actual: String) = tasks.register<Exec>(name) {
@@ -75,6 +95,11 @@ val verifyFontReload = registerFontComparison(
 tasks.register("verifyFontRendering") {
     group = "verification"
     dependsOn(verifyFontBeforeReload, verifyFontAfterReload, verifyFontReload)
+}
+
+tasks.register("benchmarkGuiBatching") {
+    group = "verification"
+    dependsOn("runGuiBenchmarkUnbatchedClient", "runGuiBenchmarkBatchedClient")
 }
 
 tasks.check {
