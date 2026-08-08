@@ -33,12 +33,6 @@ configurations.all {
     }
 }
 
-gradle.taskGraph.whenReady {
-    allTasks.filter { it.name == "net.fabricmc.devlaunchinjector.Main.main()" }.forEach {
-        it.notCompatibleWithConfigurationCache("loom weird?")
-    }
-}
-
 tasks.assemble {
     dependsOn("remapJar")
 }

@@ -14,7 +14,6 @@ A non-exhaustive list of features that currently exist:
 Along with that, some other optimizations are planned:
 
 - Block entity instancing (for chests, signs, etc)
-- Particle instancing
 - Caching item frame geometry
 - ...and more!
 

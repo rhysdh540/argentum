@@ -9,9 +9,7 @@ repositories {
     mavenCentral()
 }
 
-val loomVersion = "1.17.+"
-
 dependencies {
-    implementation("net.fabricmc:fabric-loom:$loomVersion")
-    implementation("net.ornithemc:ploceus:$loomVersion")
+    implementation("net.fabricmc:fabric-loom:1.17.19")
+    implementation("net.ornithemc:ploceus:1.17.6")
 }

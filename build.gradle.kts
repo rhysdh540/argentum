@@ -12,6 +12,12 @@ val testmod = sourceSets.create("testmod")
 testmod.compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
 testmod.runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 
+gradle.taskGraph.whenReady {
+    allTasks.filter { it.name == "net.fabricmc.devlaunchinjector.Main.main()" }.forEach {
+        it.notCompatibleWithConfigurationCache("loom weird?")
+    }
+}
+
 loom {
     accessWidenerPath = file("src/main/resources/argentum.classtweaker")
 
