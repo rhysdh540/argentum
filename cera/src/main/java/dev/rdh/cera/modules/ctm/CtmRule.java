@@ -78,12 +78,13 @@ record CtmRule(
                 && name.test(named.getName());
     }
 
-    Tile select(WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
+    Tile select(WorldView world, BlockState state, BlockPos pos, QuadGeometry geometry,
             TextureAtlasSprite sprite, CtmRenderContext context) {
-        Direction face = quad.getFace();
+        Direction face = geometry.face;
         int axis = axis(state);
         return switch (method) {
-            case CTM, OVERLAY_CTM -> tiles[tileIndex(connections(world, state, pos, quad, sprite, context))];
+            case CTM, OVERLAY_CTM -> tiles[tileIndex(connections(
+                    world, state, pos, geometry, sprite, context))];
             case CTM_COMPACT, OVERLAY -> throw new IllegalStateException();
             case HORIZONTAL -> line(world, state, pos, face, sprite,
                     horizontalDirections(face, axis), context);
@@ -98,17 +99,18 @@ record CtmRule(
 		};
     }
 
-    List<Tile> overlays(WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
+    List<Tile> overlays(WorldView world, BlockState state, BlockPos pos, QuadGeometry geometry,
             TextureAtlasSprite sprite, CtmRenderContext context) {
         if (method == Method.OVERLAY) {
-            return OverlayCtm.select(this, world, state, pos, quad.getFace(), sprite, context);
+            return OverlayCtm.select(this, world, state, pos, geometry.face, sprite, context);
         }
-        Tile tile = select(world, state, pos, quad, sprite, context);
+        Tile tile = select(world, state, pos, geometry, sprite, context);
         return tile == null || tile.action == TileAction.SKIP ? List.of() : List.of(tile);
     }
 
-    List<BakedQuad> compact(WorldView world, BlockState state, BlockPos pos, BakedQuad quad, TextureAtlasSprite sprite, CtmRenderContext context) {
-        int connections = connections(world, state, pos, quad, sprite, context);
+    List<BakedQuad> compact(WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
+            QuadGeometry geometry, TextureAtlasSprite sprite, CtmRenderContext context) {
+        int connections = connections(world, state, pos, geometry, sprite, context);
         List<BakedQuad> cached = context.compact(this, quad, connections);
         if (cached != null) return cached;
         int override = ctmOverrides[tileIndex(connections)];
@@ -127,7 +129,8 @@ record CtmRule(
             if (tiles[i].action == TileAction.SKIP) continue;
             compactSprites[i] = tiles[i].action == TileAction.DEFAULT ? sprite : tiles[i].sprite;
         }
-        List<BakedQuad> result = CompactCtm.transform(quad, sprite, compactSprites, connections);
+        List<BakedQuad> result = CompactCtm.transform(
+                quad, geometry, sprite, compactSprites, connections);
         if (result != null) context.putCompact(this, quad, connections, result);
         return result;
     }
@@ -205,21 +208,22 @@ record CtmRule(
         return tiles[Math.floorMod(ny, height) * width + Math.floorMod(nx, width)];
     }
 
-    private int connections(WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
+    private int connections(WorldView world, BlockState state, BlockPos pos, QuadGeometry geometry,
             TextureAtlasSprite sprite, CtmRenderContext context) {
-        Direction face = quad.getFace();
+        Direction face = geometry.face;
         int axis = axis(state);
         Direction[] directions = directions(face, axis);
         boolean pane = state.getBlock() instanceof PaneBlock;
         if (pane && face.getAxis() != Direction.Axis.Y
-                && isMirrored(quad, directions[0])) {
+                && geometry.mirrored(directions[0])) {
             directions = directions(face.getOpposite(), axis);
         }
         int connections = 0;
         for (int i = 0; i < 4; i++) {
             Direction direction = directions[i];
             if (connects(world, state, pos, context.offset(pos, direction), face, sprite, context)
-                    && (!pane || PaneCulling.covers(world, state, pos, direction, quad, context))) {
+                    && (!pane || PaneCulling.covers(
+                            world, state, pos, direction, geometry, context))) {
                 connections |= 1 << (i * 2);
             }
         }
@@ -229,7 +233,7 @@ record CtmRule(
                 if ((connections & 1 << (i * 2)) != 0 && (connections & 1 << (next * 2)) != 0) {
                     BlockPos corner = context.offset(pos, directions[i], directions[next]);
                     if ((!pane || PaneCulling.coversCorner(world, state, corner,
-                            directions[i], directions[next], quad))
+                            directions[i], directions[next], geometry))
                             && connects(world, state, pos, corner, face, sprite, context)) {
                         connections |= 1 << (i * 2 + 1);
                     }
@@ -248,7 +252,7 @@ record CtmRule(
             vertices[offset + 4] = Float.floatToRawIntBits(x);
         }
         BakedQuad quad = new BakedQuad(vertices, -1, Direction.SOUTH);
-        if (isMirrored(quad, Direction.WEST)) {
+        if (QuadGeometry.of(quad, null).mirrored(Direction.WEST)) {
             throw new IllegalStateException("Canonical pane UVs detected as mirrored");
         }
         for (int vertex = 0; vertex < 4; vertex++) {
@@ -256,31 +260,10 @@ record CtmRule(
             float u = Float.intBitsToFloat(vertices[offset + 4]);
             vertices[offset + 4] = Float.floatToRawIntBits(1 - u);
         }
-        if (!isMirrored(new BakedQuad(vertices, -1, Direction.SOUTH), Direction.WEST)) {
+        if (!QuadGeometry.of(new BakedQuad(vertices, -1, Direction.SOUTH), null)
+                .mirrored(Direction.WEST)) {
             throw new IllegalStateException("Mirrored pane UVs not detected");
         }
-    }
-
-    private static boolean isMirrored(BakedQuad quad, Direction left) {
-        int[] vertices = quad.getVertices();
-        int stride = vertices.length / 4;
-        float positionSum = 0;
-        float uSum = 0;
-        float productSum = 0;
-        for (int vertex = 0; vertex < 4; vertex++) {
-            int offset = vertex * stride;
-            float position = switch (left.getAxis()) {
-                case X -> Float.intBitsToFloat(vertices[offset]);
-                case Y -> Float.intBitsToFloat(vertices[offset + 1]);
-                case Z -> Float.intBitsToFloat(vertices[offset + 2]);
-            };
-            if (left.getAxisDirection() == Direction.AxisDirection.NEGATIVE) position = -position;
-            float u = Float.intBitsToFloat(vertices[offset + 4]);
-            positionSum += position;
-            uSum += u;
-            productSum += position * u;
-        }
-        return 4 * productSum > positionSum * uSum;
     }
 
     private boolean connects(WorldView world, BlockState state, BlockPos pos, BlockPos otherPos,

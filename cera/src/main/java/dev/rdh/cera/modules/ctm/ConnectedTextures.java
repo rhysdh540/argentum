@@ -13,18 +13,16 @@ import net.minecraft.client.render.block.BlockLayer;
 import net.minecraft.client.render.block.BlockModelShaper;
 import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
+import net.minecraft.client.resource.model.BakedModel;
 import net.minecraft.client.resource.model.BakedQuad;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldView;
-import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import static dev.rdh.cera.modules.ctm.CtmRule.sprite;
-import static org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFlags.IS_PARTIAL;
-
 public final class ConnectedTextures {
     private List<CtmRule> pending = List.of();
     private volatile State state = State.EMPTY;
@@ -51,23 +49,27 @@ public final class ConnectedTextures {
         blocks.replaceAll((_, rules) -> List.copyOf(rules));
         tiles.replaceAll((_, rules) -> List.copyOf(rules));
         state = pending.isEmpty() ? State.EMPTY
-                : new State(Map.copyOf(blocks), Map.copyOf(tiles), new PaneCulling());
+                : new State(Map.copyOf(blocks), Map.copyOf(tiles), new PaneCulling(),
+                        new QuadGeometry.Registry());
         Cera.LOGGER.info("Loaded {} connected texture rules", pending.size());
         pending = List.of();
     }
 
-    public void compilePaneGeometry(BlockModelShaper models) {
+    public void compileGeometry(BlockModelShaper models) {
         State state = this.state;
         if (state == State.EMPTY) return;
         PaneCulling panes = new PaneCulling();
+        QuadGeometry.Registry geometries = new QuadGeometry.Registry();
         for (Block block : Block.REGISTRY) {
-            if (!(block instanceof PaneBlock)) continue;
             for (BlockState blockState : block.stateDefinition().all()) {
-                panes.compile(models.getModel(blockState));
+                BakedModel model = models.getModel(blockState);
+                geometries.compile(model);
+                if (block instanceof PaneBlock) panes.compile(model, geometries);
             }
         }
         panes.validateCompiled();
-        this.state = new State(state.blocks, state.tiles, panes);
+        geometries.validateCompiled();
+        this.state = new State(state.blocks, state.tiles, panes, geometries);
     }
 
     public List<BakedQuad> transform(WorldView world, BlockState blockState, BlockPos pos,
@@ -83,7 +85,7 @@ public final class ConnectedTextures {
         for (int i = 0; i < quads.size(); i++) {
             BakedQuad original = quads.get(i);
             Result replacement = transform(state, world, blockState, pos, original,
-                    overlays, context, paneGeometry);
+                    state.geometries.get(original), overlays, context, paneGeometry);
             if (transformed == null && (!replacement.matched || replacement.quad == original)) {
                 continue;
             }
@@ -100,31 +102,32 @@ public final class ConnectedTextures {
     }
 
     private Result transform(State state, WorldView world, BlockState blockState,
-            BlockPos pos, BakedQuad quad, List<Overlay> overlays, CtmRenderContext context,
-            boolean paneGeometry) {
+            BlockPos pos, BakedQuad quad, QuadGeometry geometry, List<Overlay> overlays,
+            CtmRenderContext context, boolean paneGeometry) {
         TextureAtlasSprite sprite = sprite(quad);
         if (sprite == null) return Result.NO_MATCH;
         List<BakedQuad> visible = paneGeometry
-                ? state.panes.cull(world, blockState, pos, quad, sprite, context) : null;
+                ? state.panes.cull(world, blockState, pos, quad, geometry, sprite, context) : null;
         if (visible != null) {
             if (visible.isEmpty()) return Result.CULLED;
             if (visible.size() == 1) {
                 BakedQuad part = visible.getFirst();
                 Result result = transformVisible(state, world, blockState, pos,
-                        part, sprite, overlays, context);
+                        part, state.geometries.get(part), sprite, overlays, context);
                 return result.matched ? result : Result.of(part);
             }
             List<BakedQuad> transformed = new ObjectArrayList<>(visible.size());
             for (BakedQuad part : visible) {
                 Result result = transformVisible(state, world, blockState, pos,
-                        part, sprite, overlays, context);
+                        part, state.geometries.get(part), sprite, overlays, context);
                 if (!result.matched) transformed.add(part);
                 else if (result.quads == null) transformed.add(result.quad);
                 else transformed.addAll(result.quads);
             }
             return Result.split(transformed);
         }
-        return transformVisible(state, world, blockState, pos, quad, sprite, overlays, context);
+        return transformVisible(state, world, blockState, pos, quad, geometry, sprite,
+                overlays, context);
     }
 
     private static boolean usesPaneGeometry(State state, WorldView world, BlockState blockState,
@@ -153,13 +156,13 @@ public final class ConnectedTextures {
     }
 
     private Result transformVisible(State state, WorldView world, BlockState blockState,
-            BlockPos pos, BakedQuad quad, TextureAtlasSprite sprite,
+            BlockPos pos, BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite sprite,
             List<Overlay> overlays, CtmRenderContext context) {
         Result result = apply(state.tiles.get(sprite.getName()), world, blockState, pos,
-                quad, sprite, overlays, context);
+                quad, geometry, sprite, overlays, context);
         if (!result.matched) {
             result = apply(state.blocks.get(blockState.getBlock()), world, blockState, pos,
-                    quad, sprite, overlays, context);
+                    quad, geometry, sprite, overlays, context);
         }
         if (!result.matched || result.quads != null) return result;
 
@@ -169,7 +172,7 @@ public final class ConnectedTextures {
             sprite = sprite(transformed);
             if (sprite == null) break;
             Result next = apply(state.tiles.get(sprite.getName()), world, blockState, pos,
-                    transformed, sprite, overlays, context);
+                    transformed, geometry, sprite, overlays, context);
             if (!next.matched || next.quads != null || next.quad == transformed) break;
             result = next;
             transformed = next.quad;
@@ -178,13 +181,15 @@ public final class ConnectedTextures {
     }
 
     private Result apply(List<CtmRule> rules, WorldView world, BlockState blockState, BlockPos pos,
-            BakedQuad quad, TextureAtlasSprite sprite, List<Overlay> overlays, CtmRenderContext context) {
+            BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite sprite,
+            List<Overlay> overlays, CtmRenderContext context) {
         if (rules == null) return Result.NO_MATCH;
         for (CtmRule rule : rules) {
             if (!rule.matches(world, blockState, pos, quad.getFace(), sprite)) continue;
             if (rule.method().overlay()) {
-                if (overlays == null || (BakedQuadView.of(quad).getFlags() & IS_PARTIAL) != 0) continue;
-                for (Tile tile : rule.overlays(world, blockState, pos, quad, sprite, context)) {
+                if (overlays == null || geometry.partial()) continue;
+                for (Tile tile : rule.overlays(
+                        world, blockState, pos, geometry, sprite, context)) {
                     overlays.add(new Overlay(
                             context.remap(quad, sprite, tile.sprite(), rule.tintIndex()),
                             rule.layer(), rule.tintState()));
@@ -192,11 +197,12 @@ public final class ConnectedTextures {
                 continue;
             }
             if (rule.method() == Method.CTM_COMPACT) {
-                List<BakedQuad> compact = rule.compact(world, blockState, pos, quad, sprite, context);
+                List<BakedQuad> compact = rule.compact(world, blockState, pos, quad,
+                        geometry, sprite, context);
                 if (compact != null) return Result.split(compact);
                 continue;
             }
-            Tile tile = rule.select(world, blockState, pos, quad, sprite, context);
+            Tile tile = rule.select(world, blockState, pos, geometry, sprite, context);
             if (tile == null) continue;
             if (tile.action() == TileAction.SKIP) continue;
             if (tile.action() == TileAction.DEFAULT || tile.sprite() == sprite) return Result.of(quad);
@@ -206,8 +212,9 @@ public final class ConnectedTextures {
     }
 
     private record State(Map<Block, List<CtmRule>> blocks, Map<String, List<CtmRule>> tiles,
-            PaneCulling panes) {
-        private static final State EMPTY = new State(Map.of(), Map.of(), new PaneCulling());
+            PaneCulling panes, QuadGeometry.Registry geometries) {
+        private static final State EMPTY = new State(Map.of(), Map.of(), new PaneCulling(),
+                new QuadGeometry.Registry());
     }
 
     private record Result(BakedQuad quad, List<BakedQuad> quads, boolean matched) {

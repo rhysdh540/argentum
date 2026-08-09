@@ -20,8 +20,8 @@ public class ModelManagerMixin {
     private BlockModelShaper modelShaper;
 
     @Inject(method = "reload", at = @At("RETURN"))
-    private void cera$compilePaneGeometry(ResourceManager resources, CallbackInfo ci) {
+    private void cera$compileGeometry(ResourceManager resources, CallbackInfo ci) {
         ((CeraTextureAtlasExtension)this.blocksAtlas).cera$getConnectedTextures()
-                .compilePaneGeometry(this.modelShaper);
+                .compileGeometry(this.modelShaper);
     }
 }

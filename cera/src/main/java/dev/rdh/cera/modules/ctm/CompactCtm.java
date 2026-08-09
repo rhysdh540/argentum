@@ -31,8 +31,9 @@ public final class CompactCtm {
         vertex(vertices, 1, 0, 1, 0, sprite.getU(16), sprite.getV(0));
         vertex(vertices, 2, 0, 1, 9 / 16F, sprite.getU(7), sprite.getV(0));
         vertex(vertices, 3, 0, 0, 9 / 16F, sprite.getU(7), sprite.getV(16));
-        BakedQuad clipped = part(new BakedQuad(vertices, -1, Direction.WEST),
-                sprite, sprite, Region.LEFT);
+        BakedQuad quad = new BakedQuad(vertices, -1, Direction.WEST);
+        QuadGeometry geometry = QuadGeometry.of(quad, sprite);
+        BakedQuad clipped = part(quad, geometry, sprite, sprite, Region.LEFT);
         for (int vertex = 0; vertex < 4; vertex++) {
             float z = Float.intBitsToFloat(clipped.getVertices()[vertex * 7 + 2]);
             if (z < 0 || z > 9 / 16F) {
@@ -50,8 +51,9 @@ public final class CompactCtm {
         data[offset + 5] = Float.floatToRawIntBits(v);
     }
 
-    public static List<BakedQuad> transform(BakedQuad quad, TextureAtlasSprite from,
-            TextureAtlasSprite[] sprites, int connections) {
+    public static List<BakedQuad> transform(BakedQuad quad, QuadGeometry geometry,
+            TextureAtlasSprite from, TextureAtlasSprite[] sprites, int connections) {
+        if (geometry.positionTransform == null) return null;
         byte[] tiles = TILES[connections & 255];
         int nw = tiles[0];
         int ne = tiles[1];
@@ -61,47 +63,54 @@ public final class CompactCtm {
             return null;
         }
         if (nw == ne && nw == sw && nw == se) {
-            return List.of(part(quad, from, sprites[nw], Region.FULL));
+            return List.of(part(quad, geometry, from, sprites[nw], Region.FULL));
         }
         if (nw == ne && sw == se) {
             return List.of(
-                    part(quad, from, sprites[nw], Region.TOP),
-                    part(quad, from, sprites[sw], Region.BOTTOM));
+                    part(quad, geometry, from, sprites[nw], Region.TOP),
+                    part(quad, geometry, from, sprites[sw], Region.BOTTOM)
+            );
         }
         if (nw == sw && ne == se) {
             return List.of(
-                    part(quad, from, sprites[nw], Region.LEFT),
-                    part(quad, from, sprites[ne], Region.RIGHT));
+                    part(quad, geometry, from, sprites[nw], Region.LEFT),
+                    part(quad, geometry, from, sprites[ne], Region.RIGHT)
+            );
         }
         if (nw == ne) {
             return List.of(
-                    part(quad, from, sprites[nw], Region.TOP),
-                    part(quad, from, sprites[sw], Region.BOTTOM_LEFT),
-                    part(quad, from, sprites[se], Region.BOTTOM_RIGHT));
+                    part(quad, geometry, from, sprites[nw], Region.TOP),
+                    part(quad, geometry, from, sprites[sw], Region.BOTTOM_LEFT),
+                    part(quad, geometry, from, sprites[se], Region.BOTTOM_RIGHT)
+            );
         }
         if (sw == se) {
             return List.of(
-                    part(quad, from, sprites[nw], Region.TOP_LEFT),
-                    part(quad, from, sprites[ne], Region.TOP_RIGHT),
-                    part(quad, from, sprites[sw], Region.BOTTOM));
+                    part(quad, geometry, from, sprites[nw], Region.TOP_LEFT),
+                    part(quad, geometry, from, sprites[ne], Region.TOP_RIGHT),
+                    part(quad, geometry, from, sprites[sw], Region.BOTTOM)
+            );
         }
         if (nw == sw) {
             return List.of(
-                    part(quad, from, sprites[nw], Region.LEFT),
-                    part(quad, from, sprites[ne], Region.TOP_RIGHT),
-                    part(quad, from, sprites[se], Region.BOTTOM_RIGHT));
+                    part(quad, geometry, from, sprites[nw], Region.LEFT),
+                    part(quad, geometry, from, sprites[ne], Region.TOP_RIGHT),
+                    part(quad, geometry, from, sprites[se], Region.BOTTOM_RIGHT)
+            );
         }
         if (ne == se) {
             return List.of(
-                    part(quad, from, sprites[nw], Region.TOP_LEFT),
-                    part(quad, from, sprites[sw], Region.BOTTOM_LEFT),
-                    part(quad, from, sprites[ne], Region.RIGHT));
+                    part(quad, geometry, from, sprites[nw], Region.TOP_LEFT),
+                    part(quad, geometry, from, sprites[sw], Region.BOTTOM_LEFT),
+                    part(quad, geometry, from, sprites[ne], Region.RIGHT)
+            );
         }
         return List.of(
-                part(quad, from, sprites[nw], Region.TOP_LEFT),
-                part(quad, from, sprites[ne], Region.TOP_RIGHT),
-                part(quad, from, sprites[sw], Region.BOTTOM_LEFT),
-                part(quad, from, sprites[se], Region.BOTTOM_RIGHT));
+                part(quad, geometry, from, sprites[nw], Region.TOP_LEFT),
+                part(quad, geometry, from, sprites[ne], Region.TOP_RIGHT),
+                part(quad, geometry, from, sprites[sw], Region.BOTTOM_LEFT),
+                part(quad, geometry, from, sprites[se], Region.BOTTOM_RIGHT)
+        );
     }
 
     private static byte[][] createTiles() {
@@ -130,20 +139,19 @@ public final class CompactCtm {
         }
     }
 
-    private static BakedQuad part(BakedQuad quad, TextureAtlasSprite from,
-            TextureAtlasSprite to, Region region) {
+    private static BakedQuad part(BakedQuad quad, QuadGeometry geometry,
+            TextureAtlasSprite from, TextureAtlasSprite to, Region region) {
         int[] vertices = quad.getVertices().clone();
         int stride = vertices.length / 4;
-        UvTransform transform = UvTransform.of(vertices, stride, from);
         for (int vertex = 0; vertex < 4; vertex++) {
             int offset = vertex * stride;
-            clip(vertices, offset, from, to, transform, region);
+            clip(vertices, offset, from, to, geometry.positionTransform, region);
         }
         return new BakedQuad(vertices, quad.getTintIndex(), quad.getFace());
     }
 
     private static void clip(int[] data, int offset, TextureAtlasSprite from,
-            TextureAtlasSprite to, UvTransform transform, Region region) {
+            TextureAtlasSprite to, QuadGeometry.PositionTransform transform, Region region) {
         float u = local(Float.intBitsToFloat(data[offset + 4]), from.getUMin(), from.getUMax());
         float v = local(Float.intBitsToFloat(data[offset + 5]), from.getVMin(), from.getVMax());
         float x = Float.intBitsToFloat(data[offset]);
@@ -153,9 +161,9 @@ public final class CompactCtm {
         float clippedV = Math.clamp(v, region.y1, region.y2);
         float du = clippedU - u;
         float dv = clippedV - v;
-        x += transform.xu * du + transform.xv * dv;
-        y += transform.yu * du + transform.yv * dv;
-        z += transform.zu * du + transform.zv * dv;
+        x += transform.xu() * du + transform.xv() * dv;
+        y += transform.yu() * du + transform.yv() * dv;
+        z += transform.zu() * du + transform.zv() * dv;
 
         data[offset] = Float.floatToRawIntBits(x);
         data[offset + 1] = Float.floatToRawIntBits(y);
@@ -193,39 +201,6 @@ public final class CompactCtm {
             this.y1 = y1;
             this.x2 = x2;
             this.y2 = y2;
-        }
-    }
-
-    private record UvTransform(float xu, float xv, float yu, float yv, float zu, float zv) {
-        private static UvTransform of(int[] data, int stride, TextureAtlasSprite sprite) {
-            int first = stride;
-            int second = stride * 3;
-            float u = local(Float.intBitsToFloat(data[4]), sprite.getUMin(), sprite.getUMax());
-            float v = local(Float.intBitsToFloat(data[5]), sprite.getVMin(), sprite.getVMax());
-            float firstU = local(Float.intBitsToFloat(data[first + 4]),
-                    sprite.getUMin(), sprite.getUMax()) - u;
-            float firstV = local(Float.intBitsToFloat(data[first + 5]),
-                    sprite.getVMin(), sprite.getVMax()) - v;
-            float secondU = local(Float.intBitsToFloat(data[second + 4]),
-                    sprite.getUMin(), sprite.getUMax()) - u;
-            float secondV = local(Float.intBitsToFloat(data[second + 5]),
-                    sprite.getVMin(), sprite.getVMax()) - v;
-            float determinant = firstU * secondV - secondU * firstV;
-            if (Math.abs(determinant) < 1.0E-6F) return new UvTransform(0, 0, 0, 0, 0, 0);
-
-            float firstX = Float.intBitsToFloat(data[first]) - Float.intBitsToFloat(data[0]);
-            float secondX = Float.intBitsToFloat(data[second]) - Float.intBitsToFloat(data[0]);
-            float firstY = Float.intBitsToFloat(data[first + 1]) - Float.intBitsToFloat(data[1]);
-            float secondY = Float.intBitsToFloat(data[second + 1]) - Float.intBitsToFloat(data[1]);
-            float firstZ = Float.intBitsToFloat(data[first + 2]) - Float.intBitsToFloat(data[2]);
-            float secondZ = Float.intBitsToFloat(data[second + 2]) - Float.intBitsToFloat(data[2]);
-            return new UvTransform(
-                    (firstX * secondV - secondX * firstV) / determinant,
-                    (secondX * firstU - firstX * secondU) / determinant,
-                    (firstY * secondV - secondY * firstV) / determinant,
-                    (secondY * firstU - firstY * secondU) / determinant,
-                    (firstZ * secondV - secondZ * firstV) / determinant,
-                    (secondZ * firstU - firstZ * secondU) / determinant);
         }
     }
 

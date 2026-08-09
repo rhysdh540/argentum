@@ -13,14 +13,11 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.WorldView;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
-import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-
-import static org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFlags.IS_ALIGNED;
 
 final class PaneCulling {
     private static final float CENTER_MIN = 7 / 16F;
@@ -41,10 +38,12 @@ final class PaneCulling {
             vertical[offset + 4] = Float.floatToRawIntBits(x * 16);
             vertical[offset + 5] = Float.floatToRawIntBits(y * 16);
         }
-        UvTransform transform = UvTransform.of(vertical, 7, true);
         BakedQuad south = new BakedQuad(vertical, -1, Direction.SOUTH);
         BakedQuad north = new BakedQuad(vertical.clone(), -1, Direction.NORTH);
-        Parts compiled = compileQuad(south);
+        QuadGeometry southGeometry = QuadGeometry.of(south, null);
+        QuadGeometry northGeometry = QuadGeometry.of(north, null);
+        QuadGeometry.UvSlope transform = southGeometry.xUv;
+        Parts compiled = compileQuad(south, southGeometry);
         List<Range> disjoint = subtract(0, 1, new Range[] {
                 new Range(0.2F, 0.3F), new Range(0.7F, 0.8F)
         });
@@ -53,13 +52,13 @@ final class PaneCulling {
                 || visibleParts(0, CENTER_MIN, CENTER_MIN, CENTER_MAX) != -1
                 || !hasMinBoundary(0, true) || !hasMaxBoundary(0, true)
                 || hasMinBoundary(3, true) || hasMaxBoundary(3, true)
-                || transform == null || transform.u != 16 || transform.v != 0
-                || UvTransform.of(new int[28], 7, true) != null
+                || transform == null || transform.u() != 16 || transform.v() != 0
+                || QuadGeometry.of(new BakedQuad(new int[28], -1, Direction.SOUTH), null).xUv != null
                 || !equal(1, 1 + EPSILON / 2)
                 || compiled.side[1].size() != 2
                 || compiled.side[2].size() != 2
                 || compiled.side[3].size() != 3
-                || !innerFaces(south, BakedQuadView.of(south), north, BakedQuadView.of(north))
+                || !innerFaces(southGeometry, northGeometry)
                 || !disjoint.equals(List.of(new Range(0, 0.2F), new Range(0.3F, 0.7F),
                         new Range(0.8F, 1)))
                 || oppositeConnection(Direction.WEST) != 2
@@ -70,9 +69,9 @@ final class PaneCulling {
         }
     }
 
-    void compile(BakedModel model) {
-        compile(model.getQuads());
-        for (Direction face : Direction.values()) compile(model.getQuads(face));
+    void compile(BakedModel model, QuadGeometry.Registry geometries) {
+        compile(model.getQuads(), geometries);
+        for (Direction face : Direction.values()) compile(model.getQuads(face), geometries);
     }
 
     void validateCompiled() {
@@ -83,42 +82,51 @@ final class PaneCulling {
         return this.prepared.getOrDefault(quads, quads);
     }
 
-    private void compile(List<BakedQuad> quads) {
-        this.prepared.computeIfAbsent(quads, this::compileInnerFaces);
+    private void compile(List<BakedQuad> quads, QuadGeometry.Registry geometries) {
+        if (!this.prepared.containsKey(quads)) {
+            this.prepared.put(quads, compileInnerFaces(quads, geometries));
+        }
     }
 
-    private List<BakedQuad> compileInnerFaces(List<BakedQuad> quads) {
-        List<BakedQuad> prepared = cullInnerFaces(quads);
+    private List<BakedQuad> compileInnerFaces(List<BakedQuad> quads,
+            QuadGeometry.Registry geometries) {
+        geometries.compile(quads);
+        List<BakedQuad> prepared = cullInnerFaces(quads, geometries);
         for (BakedQuad quad : prepared) {
-            this.parts.computeIfAbsent(quad, PaneCulling::compileQuad);
+            this.parts.computeIfAbsent(quad, part -> {
+                Parts compiled = compileQuad(part, geometries.add(part));
+                compiled.register(geometries);
+                return compiled;
+            });
         }
         return prepared;
     }
 
-    private static List<BakedQuad> cullInnerFaces(List<BakedQuad> quads) {
+    private static List<BakedQuad> cullInnerFaces(List<BakedQuad> quads,
+            QuadGeometry.Registry geometries) {
         if (quads.size() < 2) return quads;
 
         List<BakedQuad> result = null;
         for (int i = 0; i < quads.size(); i++) {
             BakedQuad quad = quads.get(i);
-            Direction face = quad.getFace();
+            QuadGeometry geometry = geometries.get(quad);
+            Direction face = geometry.face;
             if (face.getAxis() == Direction.Axis.Y) {
                 if (result != null) result.add(quad);
                 continue;
             }
 
-            BakedQuadView view = BakedQuadView.of(quad);
             boolean alongX = face.getAxis() == Direction.Axis.Z;
-            float min = alongX ? minX(view) : minZ(view);
-            float max = alongX ? maxX(view) : maxZ(view);
+            float min = alongX ? geometry.minX : geometry.minZ;
+            float max = alongX ? geometry.maxX : geometry.maxZ;
             List<Range> covered = null;
             for (int j = 0; j < quads.size(); j++) {
                 if (i == j) continue;
                 BakedQuad other = quads.get(j);
-                BakedQuadView otherView = BakedQuadView.of(other);
-                if (!innerFaces(quad, view, other, otherView)) continue;
-                float otherMin = alongX ? minX(otherView) : minZ(otherView);
-                float otherMax = alongX ? maxX(otherView) : maxZ(otherView);
+                QuadGeometry otherGeometry = geometries.get(other);
+                if (!innerFaces(geometry, otherGeometry)) continue;
+                float otherMin = alongX ? otherGeometry.minX : otherGeometry.minZ;
+                float otherMax = alongX ? otherGeometry.maxX : otherGeometry.maxZ;
                 if (covered == null) covered = new ObjectArrayList<>();
                 covered.add(new Range(Math.max(min, otherMin), Math.min(max, otherMax)));
             }
@@ -133,8 +141,8 @@ final class PaneCulling {
                 result.addAll(quads.subList(0, i));
             }
             if (visible.isEmpty()) continue;
-            int[] vertices = quad.getVertices();
-            UvTransform transform = UvTransform.of(vertices, vertices.length / 4, alongX);
+            QuadGeometry.UvSlope transform = geometry.uv(
+                    alongX ? Direction.Axis.X : Direction.Axis.Z);
             if (transform == null) {
                 result.add(quad);
                 continue;
@@ -162,23 +170,20 @@ final class PaneCulling {
         return List.copyOf(visible);
     }
 
-    private static boolean innerFaces(BakedQuad first, BakedQuadView firstView,
-            BakedQuad second, BakedQuadView secondView) {
-        Direction face = first.getFace();
-        if (face.getOpposite() != second.getFace() || face.getAxis() == Direction.Axis.Y) return false;
+    private static boolean innerFaces(QuadGeometry first, QuadGeometry second) {
+        Direction face = first.face;
+        if (face.getOpposite() != second.face || face.getAxis() == Direction.Axis.Y) return false;
         return switch (face.getAxis()) {
-            case X -> equal(minX(firstView), maxX(firstView))
-                    && equal(minX(firstView), minX(secondView))
-                    && equal(minY(firstView), minY(secondView))
-                    && equal(maxY(firstView), maxY(secondView))
-                    && Math.max(minZ(firstView), minZ(secondView))
-                    < Math.min(maxZ(firstView), maxZ(secondView));
-            case Z -> equal(minZ(firstView), maxZ(firstView))
-                    && equal(minZ(firstView), minZ(secondView))
-                    && equal(minY(firstView), minY(secondView))
-                    && equal(maxY(firstView), maxY(secondView))
-                    && Math.max(minX(firstView), minX(secondView))
-                    < Math.min(maxX(firstView), maxX(secondView));
+            case X -> equal(first.minX, first.maxX)
+                    && equal(first.minX, second.minX)
+                    && equal(first.minY, second.minY)
+                    && equal(first.maxY, second.maxY)
+                    && Math.max(first.minZ, second.minZ) < Math.min(first.maxZ, second.maxZ);
+            case Z -> equal(first.minZ, first.maxZ)
+                    && equal(first.minZ, second.minZ)
+                    && equal(first.minY, second.minY)
+                    && equal(first.maxY, second.maxY)
+                    && Math.max(first.minX, second.minX) < Math.min(first.maxX, second.maxX);
             default -> false;
         };
     }
@@ -188,11 +193,12 @@ final class PaneCulling {
     }
 
     List<BakedQuad> cull(WorldView world, BlockState state, BlockPos pos,
-            BakedQuad quad, TextureAtlasSprite sprite, CtmRenderContext context) {
+            BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite sprite,
+            CtmRenderContext context) {
         Block block = state.getBlock();
         if (!(block instanceof PaneBlock)) return null;
 
-        Direction face = quad.getFace();
+        Direction face = geometry.face;
         if (face.getAxis() != Direction.Axis.Y) {
             if (sprite.getName().startsWith("minecraft:blocks/glass_pane_top")) {
                 return world.getBlockState(context.offset(pos, face)) == state
@@ -215,23 +221,23 @@ final class PaneCulling {
     }
 
     static boolean covers(WorldView world, BlockState state, BlockPos pos, Direction direction,
-            BakedQuad quad, CtmRenderContext context) {
-        if (direction.getAxis() != Direction.Axis.Y || quad.getFace().getAxis() == Direction.Axis.Y) {
+            QuadGeometry geometry, CtmRenderContext context) {
+        if (direction.getAxis() != Direction.Axis.Y || geometry.face.getAxis() == Direction.Axis.Y) {
             return true;
         }
         int mask = paneMask(world, state, pos, direction, context);
         if (mask < 0) return true;
-        BakedQuadView view = BakedQuadView.of(quad);
-        boolean alongX = quad.getFace().getAxis() == Direction.Axis.Z;
-        float middle = alongX ? (minX(view) + maxX(view)) / 2 : (minZ(view) + maxZ(view)) / 2;
+        boolean alongX = geometry.face.getAxis() == Direction.Axis.Z;
+        float middle = alongX ? (geometry.minX + geometry.maxX) / 2
+                : (geometry.minZ + geometry.maxZ) / 2;
         int axisMask = axisMask(mask, alongX);
         return middle >= coveredMin((axisMask & 1) != 0)
                 && middle <= coveredMax((axisMask & 2) != 0);
     }
 
     static boolean coversCorner(WorldView world, BlockState state, BlockPos corner,
-            Direction first, Direction second, BakedQuad quad) {
-        if (quad.getFace().getAxis() == Direction.Axis.Y) return true;
+            Direction first, Direction second, QuadGeometry geometry) {
+        if (geometry.face.getAxis() == Direction.Axis.Y) return true;
         Direction horizontal = first.getAxis() == Direction.Axis.Y ? second : first;
         if (horizontal.getAxis() == Direction.Axis.Y) return true;
         int mask = loadPaneMask(world, state, corner);
@@ -250,24 +256,23 @@ final class PaneCulling {
     }
 
     @SuppressWarnings("unchecked")
-    private static Parts compileQuad(BakedQuad quad) {
-        Direction face = quad.getFace();
-        BakedQuadView view = BakedQuadView.of(quad);
+    private static Parts compileQuad(BakedQuad quad, QuadGeometry geometry) {
+        Direction face = geometry.face;
         if (face.getAxis() == Direction.Axis.Y) {
-            if ((view.getFlags() & IS_ALIGNED) == 0) return Parts.NONE;
-            float lengthX = maxX(view) - minX(view);
-            float lengthZ = maxZ(view) - minZ(view);
+            if (!geometry.aligned()) return Parts.NONE;
+            float lengthX = geometry.maxX - geometry.minX;
+            float lengthZ = geometry.maxZ - geometry.minZ;
             List<BakedQuad>[] cap = new List[4];
             if (equal(lengthX, lengthZ)) {
                 for (int variant = 0; variant < cap.length; variant++) cap[variant] = List.of();
                 return new Parts(null, cap, false);
             }
             boolean alongX = lengthX > lengthZ;
-            int[] vertices = quad.getVertices();
-            UvTransform transform = UvTransform.of(vertices, vertices.length / 4, alongX);
+            QuadGeometry.UvSlope transform = geometry.uv(
+                    alongX ? Direction.Axis.X : Direction.Axis.Z);
             if (transform == null) return Parts.NONE;
-            float min = alongX ? minX(view) : minZ(view);
-            float max = alongX ? maxX(view) : maxZ(view);
+            float min = alongX ? geometry.minX : geometry.minZ;
+            float max = alongX ? geometry.maxX : geometry.maxZ;
             for (int variant = 0; variant < cap.length; variant++) {
                 cap[variant] = clipCap(quad, transform, alongX, min, max, variant);
             }
@@ -275,10 +280,10 @@ final class PaneCulling {
         }
 
         boolean alongX = face.getAxis() == Direction.Axis.Z;
-        float min = alongX ? minX(view) : minZ(view);
-        float max = alongX ? maxX(view) : maxZ(view);
-        int[] vertices = quad.getVertices();
-        UvTransform transform = UvTransform.of(vertices, vertices.length / 4, alongX);
+        float min = alongX ? geometry.minX : geometry.minZ;
+        float max = alongX ? geometry.maxX : geometry.maxZ;
+        QuadGeometry.UvSlope transform = geometry.uv(
+                alongX ? Direction.Axis.X : Direction.Axis.Z);
         if (transform == null) return Parts.NONE;
         List<BakedQuad>[] side = new List[4];
         for (int variant = 1; variant < side.length; variant++) {
@@ -301,7 +306,7 @@ final class PaneCulling {
         return new Parts(side, null, false);
     }
 
-    private static List<BakedQuad> clipCap(BakedQuad quad, UvTransform transform,
+    private static List<BakedQuad> clipCap(BakedQuad quad, QuadGeometry.UvSlope transform,
             boolean alongX, float min, float max, int variant) {
         float coveredMin = coveredMin((variant & 1) != 0);
         float coveredMax = coveredMax((variant & 2) != 0);
@@ -368,7 +373,7 @@ final class PaneCulling {
         return positive ? 1 : CENTER_MAX;
     }
 
-    private static BakedQuad clip(BakedQuad quad, UvTransform transform, boolean alongX,
+    private static BakedQuad clip(BakedQuad quad, QuadGeometry.UvSlope transform, boolean alongX,
             float min, float max) {
         int[] vertices = quad.getVertices().clone();
         int stride = vertices.length / 4;
@@ -382,34 +387,10 @@ final class PaneCulling {
             float u = Float.intBitsToFloat(vertices[offset + 4]);
             float v = Float.intBitsToFloat(vertices[offset + 5]);
             vertices[offset + (alongX ? 0 : 2)] = Float.floatToRawIntBits(clipped);
-            vertices[offset + 4] = Float.floatToRawIntBits(u + transform.u * delta);
-            vertices[offset + 5] = Float.floatToRawIntBits(v + transform.v * delta);
+            vertices[offset + 4] = Float.floatToRawIntBits(u + transform.u() * delta);
+            vertices[offset + 5] = Float.floatToRawIntBits(v + transform.v() * delta);
         }
         return new BakedQuad(vertices, quad.getTintIndex(), quad.getFace());
-    }
-
-    private static float minX(BakedQuadView quad) {
-        return Math.min(Math.min(quad.getX(0), quad.getX(1)), Math.min(quad.getX(2), quad.getX(3)));
-    }
-
-    private static float maxX(BakedQuadView quad) {
-        return Math.max(Math.max(quad.getX(0), quad.getX(1)), Math.max(quad.getX(2), quad.getX(3)));
-    }
-
-    private static float minY(BakedQuadView quad) {
-        return Math.min(Math.min(quad.getY(0), quad.getY(1)), Math.min(quad.getY(2), quad.getY(3)));
-    }
-
-    private static float maxY(BakedQuadView quad) {
-        return Math.max(Math.max(quad.getY(0), quad.getY(1)), Math.max(quad.getY(2), quad.getY(3)));
-    }
-
-    private static float minZ(BakedQuadView quad) {
-        return Math.min(Math.min(quad.getZ(0), quad.getZ(1)), Math.min(quad.getZ(2), quad.getZ(3)));
-    }
-
-    private static float maxZ(BakedQuadView quad) {
-        return Math.max(Math.max(quad.getZ(0), quad.getZ(1)), Math.max(quad.getZ(2), quad.getZ(3)));
     }
 
     private record Range(float min, float max) {
@@ -417,36 +398,18 @@ final class PaneCulling {
 
     private record Parts(List<BakedQuad>[] side, List<BakedQuad>[] cap, boolean alongX) {
         private static final Parts NONE = new Parts(null, null, false);
-    }
 
-    private record UvTransform(float u, float v) {
-        private static UvTransform of(int[] data, int stride, boolean alongX) {
-            int coordinateOffset = alongX ? 0 : 2;
-            for (int first = 0; first < 3; first++) {
-                int firstOffset = first * stride;
-                for (int second = first + 1; second < 4; second++) {
-                    int secondOffset = second * stride;
-                    float delta = Float.intBitsToFloat(data[secondOffset + coordinateOffset])
-                            - Float.intBitsToFloat(data[firstOffset + coordinateOffset]);
-                    if (Math.abs(delta) < EPSILON) continue;
-                    boolean edge = true;
-                    for (int coordinate = 0; coordinate < 3; coordinate++) {
-                        if (coordinate == coordinateOffset) continue;
-                        if (Math.abs(Float.intBitsToFloat(data[secondOffset + coordinate])
-                                - Float.intBitsToFloat(data[firstOffset + coordinate])) >= EPSILON) {
-                            edge = false;
-                            break;
-                        }
-                    }
-                    if (!edge) continue;
-                    return new UvTransform(
-                            (Float.intBitsToFloat(data[secondOffset + 4])
-                                    - Float.intBitsToFloat(data[firstOffset + 4])) / delta,
-                            (Float.intBitsToFloat(data[secondOffset + 5])
-                                    - Float.intBitsToFloat(data[firstOffset + 5])) / delta);
-                }
+        private void register(QuadGeometry.Registry geometries) {
+            register(this.side, geometries);
+            register(this.cap, geometries);
+        }
+
+        private static void register(List<BakedQuad>[] variants,
+                QuadGeometry.Registry geometries) {
+            if (variants == null) return;
+            for (List<BakedQuad> quads : variants) {
+                if (quads != null) geometries.compile(quads);
             }
-            return null;
         }
     }
 }
