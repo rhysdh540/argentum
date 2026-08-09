@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screen.Screen;
 public class FontVisualTestScreen extends Screen {
     private final String variant = System.getProperty("argentum.fontTestVariant", "batched");
     private final HudBatch.Colored backgroundBatch = HudBatch.colored(4 * 1024);
+    private HudBatch.Text textBatch;
     private int ticks;
 
     @Override
@@ -45,13 +46,13 @@ public class FontVisualTestScreen extends Screen {
             return;
         }
 
-        this.textRenderer.argentum$beginBatch(this.backgroundBatch);
+        if (this.textBatch == null) this.textBatch = HudBatch.text(this.textRenderer, this.backgroundBatch);
+        this.textBatch.begin();
         for (int i = 0; i < lines.length; i++) {
             this.backgroundBatch.fill(x - 2, y + i * 12 - 2, x + 250, y + i * 12 + 10, 0x80000000);
             this.textRenderer.draw(lines[i], x, y + i * 12, 0xFFFFFFFF);
         }
-        this.backgroundBatch.draw();
-        this.textRenderer.argentum$endBatch();
+        this.textBatch.draw();
     }
 
     @Override

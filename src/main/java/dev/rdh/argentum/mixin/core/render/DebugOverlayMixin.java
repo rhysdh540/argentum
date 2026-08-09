@@ -27,14 +27,18 @@ public class DebugOverlayMixin {
     @Unique
     private HudBatch.Colored argentum$backgroundBatch;
 
+    @Unique
+    private HudBatch.Text argentum$textBatch;
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void argentum$createBackgroundBatch(Minecraft minecraft, CallbackInfo ci) {
         this.argentum$backgroundBatch = HudBatch.colored(8 * 1024);
+        this.argentum$textBatch = HudBatch.text(this.textRenderer, this.argentum$backgroundBatch);
     }
 
     @Inject(method = "render", at = @At("HEAD"))
     private void argentum$beginTextBatch(Window window, CallbackInfo ci) {
-        this.textRenderer.argentum$beginBatch(this.argentum$backgroundBatch);
+        this.argentum$textBatch.begin();
     }
 
     @Inject(
@@ -42,8 +46,7 @@ public class DebugOverlayMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;popMatrix()V")
     )
     private void argentum$drawTextBatch(Window window, CallbackInfo ci) {
-        this.argentum$backgroundBatch.draw();
-        this.textRenderer.argentum$endBatch();
+        this.argentum$textBatch.draw();
     }
 
     @Redirect(

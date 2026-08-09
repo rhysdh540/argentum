@@ -19,14 +19,15 @@ public abstract class ChatGuiMixin extends GuiElement {
     private Minecraft minecraft;
 
     @Unique
-    private boolean argentum$textBatching;
+    private HudBatch.Colored argentum$backgroundBatch;
 
     @Unique
-    private HudBatch.Colored argentum$backgroundBatch;
+    private HudBatch.Text argentum$textBatch;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void argentum$createBackgroundBatch(Minecraft minecraft, CallbackInfo ci) {
         this.argentum$backgroundBatch = HudBatch.colored(4 * 1024);
+        this.argentum$textBatch = HudBatch.text(this.minecraft.textRenderer, this::argentum$prepareTextBatch);
     }
 
     @Inject(
@@ -34,8 +35,7 @@ public abstract class ChatGuiMixin extends GuiElement {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;scalef(FFF)V", shift = At.Shift.AFTER)
     )
     private void argentum$beginTextBatch(int ticks, CallbackInfo ci) {
-        this.minecraft.textRenderer.argentum$beginBatch(this.argentum$backgroundBatch);
-        this.argentum$textBatching = true;
+        this.argentum$textBatch.begin();
     }
 
     @Redirect(
@@ -43,7 +43,7 @@ public abstract class ChatGuiMixin extends GuiElement {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/chat/ChatGui;fill(IIIII)V")
     )
     private void argentum$captureBackground(int left, int top, int right, int bottom, int color) {
-        if (this.argentum$textBatching) {
+        if (this.argentum$textBatch.isDrawing()) {
             this.argentum$backgroundBatch.fill(left, top, right, bottom, color);
         } else {
             GuiElement.fill(left, top, right, bottom, color);
@@ -68,16 +68,19 @@ public abstract class ChatGuiMixin extends GuiElement {
 
     @Unique
     private void argentum$drawTextBatch() {
-        if (!this.argentum$textBatching) {
+        if (!this.argentum$textBatch.isDrawing()) {
             return;
         }
+        this.argentum$textBatch.draw();
+        GlStateManager.disableAlphaTest();
+        GlStateManager.disableBlend();
+    }
+
+    @Unique
+    private void argentum$prepareTextBatch() {
         this.argentum$backgroundBatch.draw();
         GlStateManager.enableBlend();
         GlStateManager.enableAlphaTest();
         GlStateManager.blendFuncSeparate(770, 771, 1, 0);
-        this.minecraft.textRenderer.argentum$endBatch();
-        GlStateManager.disableAlphaTest();
-        GlStateManager.disableBlend();
-        this.argentum$textBatching = false;
     }
 }

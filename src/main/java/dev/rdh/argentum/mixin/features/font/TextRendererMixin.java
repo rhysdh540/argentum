@@ -492,11 +492,6 @@ public abstract class TextRendererMixin implements TextRendererExtension {
     }
 
     @Override
-    public void argentum$beginBatch() {
-        this.argentum$beginBatch(null);
-    }
-
-    @Override
     public void argentum$beginBatch(Runnable beforeImmediateText) {
         if (this.celeritas$elementBatchDepth++ == 0) {
             this.celeritas$beforeImmediateText = beforeImmediateText;

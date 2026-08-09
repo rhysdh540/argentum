@@ -35,6 +35,9 @@ public abstract class PlayerTabOverlayMixin extends GuiElement {
     private HudBatch.Textured argentum$iconBatch;
 
     @Unique
+    private HudBatch.Text argentum$textBatch;
+
+    @Unique
     private final Identifier[] argentum$skinTextures = new Identifier[MAX_SKIN_QUADS];
 
     @Unique
@@ -51,12 +54,13 @@ public abstract class PlayerTabOverlayMixin extends GuiElement {
         this.argentum$backgroundBatch = HudBatch.colored(8 * 1024);
         this.argentum$textureBatch = HudBatch.textured(16 * 1024);
         this.argentum$iconBatch = HudBatch.textured(256 * 1024);
+        this.argentum$textBatch = HudBatch.text(this.minecraft.textRenderer, this.argentum$backgroundBatch);
     }
 
     @Inject(method = "render", at = @At("HEAD"))
     private void argentum$beginBatch(int width, Scoreboard scoreboard, ScoreboardObjective objective, CallbackInfo ci) {
         this.argentum$skinQuadCount = 0;
-        this.minecraft.textRenderer.argentum$beginBatch(this.argentum$backgroundBatch);
+        this.argentum$textBatch.begin();
     }
 
     @Redirect(
@@ -119,18 +123,21 @@ public abstract class PlayerTabOverlayMixin extends GuiElement {
     @Inject(method = "render", at = @At("RETURN"))
     private void argentum$drawBatch(int width, Scoreboard scoreboard, ScoreboardObjective objective,
             CallbackInfo ci) {
-        this.argentum$backgroundBatch.draw();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFuncSeparate(770, 771, 1, 0);
-        GlStateManager.color4f(1, 1, 1, 1);
-
-        this.argentum$drawSkins();
-        this.minecraft.textRenderer.argentum$endBatch();
+        this.argentum$textBatch.draw(this::argentum$prepareTextBatch);
 
         if (!this.argentum$iconBatch.isEmpty()) {
             this.minecraft.getTextureManager().bind(ICONS_LOCATION);
             this.argentum$iconBatch.draw();
         }
+    }
+
+    @Unique
+    private void argentum$prepareTextBatch() {
+        this.argentum$backgroundBatch.draw();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.color4f(1, 1, 1, 1);
+        this.argentum$drawSkins();
     }
 
     @Unique

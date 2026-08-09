@@ -1,5 +1,6 @@
 package dev.rdh.argentum.impl.render.hud;
 
+import net.minecraft.client.render.TextRenderer;
 import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.client.render.vertex.BufferBuilder;
 import net.minecraft.client.render.vertex.BufferUploader;
@@ -18,6 +19,49 @@ public final class HudBatch {
 
     public static Textured textured(int capacityBytes) {
         return new Textured(capacityBytes);
+    }
+
+    public static Text text(TextRenderer renderer) {
+        return new Text(renderer, null);
+    }
+
+    public static Text text(TextRenderer renderer, Runnable beforeText) {
+        return new Text(renderer, beforeText);
+    }
+
+    public static final class Text {
+        private final TextRenderer renderer;
+        private final Runnable beforeText;
+        private boolean drawing;
+
+        private Text(TextRenderer renderer, Runnable beforeText) {
+            this.renderer = renderer;
+            this.beforeText = beforeText;
+        }
+
+        public void begin() {
+            if (this.drawing) throw new IllegalStateException("Text batch already active");
+            this.renderer.argentum$beginBatch(this.beforeText);
+            this.drawing = true;
+        }
+
+        public boolean isDrawing() {
+            return this.drawing;
+        }
+
+        public void draw() {
+            this.draw(this.beforeText);
+        }
+
+        public void draw(Runnable beforeText) {
+            if (!this.drawing) return;
+            try {
+                if (beforeText != null) beforeText.run();
+            } finally {
+                this.drawing = false;
+                this.renderer.argentum$endBatch();
+            }
+        }
     }
 
     public static final class Colored implements Runnable {

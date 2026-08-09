@@ -25,6 +25,7 @@ public class GuiBatchBenchmarkScreen extends Screen {
     private final boolean batched = Boolean.getBoolean("argentum.guiBenchmarkBatched");
     private final HudBatch.Colored backgrounds = HudBatch.colored(256 * 1024);
     private final HudBatch.Textured icons = HudBatch.textured(256 * 1024);
+    private HudBatch.Text textBatch;
     private final long[] samples = new long[MEASURED_FRAMES];
     private int frames;
 
@@ -80,12 +81,13 @@ public class GuiBatchBenchmarkScreen extends Screen {
         }
         this.backgrounds.draw();
 
-        this.textRenderer.argentum$beginBatch();
+        if (this.textBatch == null) this.textBatch = HudBatch.text(this.textRenderer);
+        this.textBatch.begin();
         for (int i = 0; i < ITEMS; i++) {
             this.textRenderer.drawWithShadow(LABELS[i & 15],
                     i % COLUMNS * 18 + 1, i / COLUMNS * 14 + 2, 0xFFFFFFFF);
         }
-        this.textRenderer.argentum$endBatch();
+        this.textBatch.draw();
 
         this.minecraft.getTextureManager().bind(ICONS_LOCATION);
         GlStateManager.enableBlend();

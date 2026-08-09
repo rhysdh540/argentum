@@ -28,10 +28,15 @@ public abstract class GameGuiMixin extends GuiElement {
     @Unique
     private HudBatch.Colored argentum$scoreboardBackgroundBatch;
 
+    @Unique
+    private HudBatch.Text argentum$scoreboardTextBatch;
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void argentum$createBatches(Minecraft minecraft, CallbackInfo ci) {
         this.argentum$statusBatch = HudBatch.textured(16 * 1024);
         this.argentum$scoreboardBackgroundBatch = HudBatch.colored(4 * 1024);
+        this.argentum$scoreboardTextBatch = HudBatch.text(
+                this.getTextRenderer(), this.argentum$scoreboardBackgroundBatch);
     }
 
     @Redirect(
@@ -52,12 +57,11 @@ public abstract class GameGuiMixin extends GuiElement {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GameGui;renderScoreboardObjective(Lnet/minecraft/scoreboard/ScoreboardObjective;Lnet/minecraft/client/render/Window;)V")
     )
     private void argentum$batchScoreboard(GameGui gui, ScoreboardObjective objective, Window window, Operation<Void> original) {
-        this.getTextRenderer().argentum$beginBatch(this.argentum$scoreboardBackgroundBatch);
+        this.argentum$scoreboardTextBatch.begin();
         try {
             original.call(gui, objective, window);
         } finally {
-            this.argentum$scoreboardBackgroundBatch.draw();
-            this.getTextRenderer().argentum$endBatch();
+            this.argentum$scoreboardTextBatch.draw();
         }
     }
 
