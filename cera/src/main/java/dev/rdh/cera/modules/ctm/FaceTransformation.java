@@ -1,7 +1,9 @@
 package dev.rdh.cera.modules.ctm;
 
 import dev.rdh.cera.modules.ctm.ConnectedTextures.Overlay;
-import dev.rdh.cera.modules.ctm.CtmRule.Method;
+import dev.rdh.cera.modules.ctm.CtmRule.Compact;
+import dev.rdh.cera.modules.ctm.CtmRule.Decoration;
+import dev.rdh.cera.modules.ctm.CtmRule.Replacement;
 import dev.rdh.cera.modules.ctm.CtmRule.Tile;
 import dev.rdh.cera.modules.ctm.CtmRule.TileAction;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -122,8 +124,7 @@ final class FaceTransformation {
             BlockState state, BlockPos pos, BakedQuad quad, TextureAtlasSprite sprite) {
         if (rules == null) return false;
         for (CtmRule rule : rules) {
-            if ((rule.method() == Method.CTM || rule.method() == Method.CTM_COMPACT
-                    || rule.method() == Method.OVERLAY_CTM)
+            if (rule.action().paneGeometry()
                     && rule.matches(world, state, pos, quad.getFace(), sprite)) return true;
         }
         return false;
@@ -160,22 +161,25 @@ final class FaceTransformation {
         if (rules == null) return Result.NO_MATCH;
         for (CtmRule rule : rules) {
             if (!rule.matches(world, state, pos, quad.getFace(), sprite)) continue;
-            if (rule.method().overlay()) {
+            if (rule.action() instanceof Decoration action) {
                 if (overlays == null || geometry.partial()) continue;
-                for (Tile tile : rule.overlays(world, state, pos, geometry, sprite, context)) {
+                for (Tile tile : action.selector().select(
+                        rule, world, state, pos, geometry, sprite, context)) {
                     overlays.add(new Overlay(
-                            context.remap(quad, sprite, tile.sprite(), rule.tintIndex()),
-                            rule.layer(), rule.tintState()));
+                            context.remap(quad, sprite, tile.sprite(), action.tintIndex()),
+                            action.layer(), action.tintState()));
                 }
                 continue;
             }
-            if (rule.method() == Method.CTM_COMPACT) {
+            if (rule.action() instanceof Compact action) {
                 List<BakedQuad> compact = rule.compact(
-                        world, state, pos, quad, geometry, sprite, context);
+                        world, state, pos, quad, geometry, sprite, context, action);
                 if (compact != null) return Result.split(compact);
                 continue;
             }
-            Tile tile = rule.select(world, state, pos, geometry, sprite, context);
+            Replacement action = (Replacement)rule.action();
+            Tile tile = action.selector().select(
+                    rule, world, state, pos, geometry, sprite, context);
             if (tile == null || tile.action() == TileAction.SKIP) continue;
             if (tile.action() == TileAction.DEFAULT || tile.sprite() == sprite) {
                 return Result.of(quad);

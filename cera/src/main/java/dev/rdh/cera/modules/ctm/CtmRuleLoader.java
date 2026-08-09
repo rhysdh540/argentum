@@ -171,12 +171,38 @@ final class CtmRuleLoader {
             Cera.LOGGER.warn("Invalid randomLoops in {}", path);
             return null;
         }
+        int symmetry = parseSymmetry(properties.getProperty("symmetry"));
+        boolean linked = Boolean.parseBoolean(properties.getProperty("linked", "false"));
+        int width = parseInt(properties.getProperty("width"), -1);
+        int height = parseInt(properties.getProperty("height"), -1);
 
         BlockLayer layer = parseLayer(properties.getProperty("layer", "cutout_mipped"));
         if (method.overlay() && layer == null) {
             Cera.LOGGER.warn("Invalid overlay layer in {}", path);
             return null;
         }
+        int tintIndex = parseInt(properties.getProperty("tintIndex"), -1);
+        BlockState tintState = parseTintState(properties.getProperty("tintBlock"));
+        CtmRule.Action action = switch (method) {
+            case CTM -> CtmRule.ctm();
+            case CTM_COMPACT -> CtmRule.compact(parseCtmOverrides(properties, tiles.length));
+            case HORIZONTAL -> CtmRule.horizontal();
+            case VERTICAL -> CtmRule.vertical();
+            case TOP -> CtmRule.top();
+            case RANDOM -> CtmRule.random(weights, randomLoops, symmetry, linked);
+            case REPEAT -> CtmRule.repeat(width, height, symmetry);
+            case FIXED -> CtmRule.fixed();
+            case HORIZONTAL_VERTICAL -> CtmRule.combined(true);
+            case VERTICAL_HORIZONTAL -> CtmRule.combined(false);
+            case OVERLAY -> CtmRule.overlay(tintIndex, tintState, layer);
+            case OVERLAY_FIXED -> CtmRule.overlay(CtmRule.fixed(), tintIndex, tintState, layer);
+            case OVERLAY_RANDOM -> CtmRule.overlay(
+                    CtmRule.random(weights, randomLoops, symmetry, linked),
+                    tintIndex, tintState, layer);
+            case OVERLAY_REPEAT -> CtmRule.overlay(
+                    CtmRule.repeat(width, height, symmetry), tintIndex, tintState, layer);
+            case OVERLAY_CTM -> CtmRule.overlay(CtmRule.ctm(), tintIndex, tintState, layer);
+        };
 
         return new CtmRule(
                 path,
@@ -190,22 +216,12 @@ final class CtmRuleLoader {
                 parseName(properties.getProperty("name")),
                 Boolean.parseBoolean(properties.getProperty("innerSeams", "false")),
                 connect,
-                method,
                 tiles,
-                weights,
-                randomLoops,
-                parseSymmetry(properties.getProperty("symmetry")),
-                Boolean.parseBoolean(properties.getProperty("linked", "false")),
-                parseInt(properties.getProperty("width"), -1),
-                parseInt(properties.getProperty("height"), -1),
-                method == Method.CTM_COMPACT ? parseCtmOverrides(properties, tiles.length) : null,
+                action,
                 maxMetadata(metadata, matchBlocks),
                 Map.copyOf(parseBlocks(properties.getProperty("connectBlocks"))),
                 Set.copyOf(parseMatchTiles(
-                        properties.getProperty("connectTiles"), base, atlas, sourcedSprites)),
-                parseInt(properties.getProperty("tintIndex"), -1),
-                parseTintState(properties.getProperty("tintBlock")),
-                layer
+                        properties.getProperty("connectTiles"), base, atlas, sourcedSprites))
         );
     }
 

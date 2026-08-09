@@ -15,7 +15,6 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.Nameable;
 import net.minecraft.world.WorldView;
 
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 
 import java.util.List;
@@ -43,21 +42,11 @@ record CtmRule(
         Predicate<String> name,
         boolean innerSeams,
         Connect connect,
-        Method method,
         Tile[] tiles,
-        int[] weights,
-        int randomLoops,
-        int symmetry,
-        boolean linked,
-        int width,
-        int height,
-        int[] ctmOverrides,
+        Action action,
         int metadataMax,
         Map<Block, Integer> connectBlocks,
-        Set<String> connectTiles,
-        int tintIndex,
-        BlockState tintState,
-        BlockLayer layer
+        Set<String> connectTiles
 ) {
     boolean matches(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite) {
         int checkedMetadata = checkedMetadata(state);
@@ -77,42 +66,13 @@ record CtmRule(
                 && name.test(named.getName());
     }
 
-    Tile select(WorldView world, BlockState state, BlockPos pos, QuadGeometry geometry,
-            TextureAtlasSprite sprite, CtmRenderContext context) {
-        Direction face = geometry.face;
-        int axis = axis(state);
-        return switch (method) {
-            case CTM, OVERLAY_CTM -> tiles[tileIndex(connections(
-                    world, state, pos, geometry, sprite, context))];
-            case CTM_COMPACT, OVERLAY -> throw new IllegalStateException();
-            case HORIZONTAL -> line(world, state, pos, face, sprite,
-                    horizontalDirections(face, axis), context);
-            case VERTICAL -> line(world, state, pos, face, sprite,
-                    verticalDirections(face, axis), context);
-            case TOP -> top(world, state, pos, face, sprite, context);
-            case RANDOM, OVERLAY_RANDOM -> random(world, state, pos, face);
-            case REPEAT, OVERLAY_REPEAT -> repeat(pos, face);
-            case FIXED, OVERLAY_FIXED -> tiles[0];
-            case HORIZONTAL_VERTICAL -> combined(world, state, pos, face, sprite, true, context);
-            case VERTICAL_HORIZONTAL -> combined(world, state, pos, face, sprite, false, context);
-		};
-    }
-
-    List<Tile> overlays(WorldView world, BlockState state, BlockPos pos, QuadGeometry geometry,
-            TextureAtlasSprite sprite, CtmRenderContext context) {
-        if (method == Method.OVERLAY) {
-            return OverlayCtm.select(this, world, state, pos, geometry.face, sprite, context);
-        }
-        Tile tile = select(world, state, pos, geometry, sprite, context);
-        return tile == null || tile.action == TileAction.SKIP ? List.of() : List.of(tile);
-    }
-
     List<BakedQuad> compact(WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
-            QuadGeometry geometry, TextureAtlasSprite sprite, CtmRenderContext context) {
+            QuadGeometry geometry, TextureAtlasSprite sprite, CtmRenderContext context,
+            Compact action) {
         int connections = connections(world, state, pos, geometry, sprite, context);
         List<BakedQuad> cached = context.compact(this, quad, connections);
         if (cached != null) return cached;
-        int override = ctmOverrides[tileIndex(connections)];
+        int override = action.overrides[tileIndex(connections)];
         if (override >= 0) {
             Tile tile = tiles[override];
             if (tile.action == TileAction.SKIP) return null;
@@ -168,7 +128,8 @@ record CtmRule(
         );
     }
 
-    private Tile random(WorldView world, BlockState state, BlockPos pos, Direction face) {
+    private Tile random(WorldView world, BlockState state, BlockPos pos, Direction face,
+            int[] weights, int randomLoops, int symmetry, boolean linked) {
         if (linked) {
             BlockPos below = pos.offset(Direction.DOWN);
             while (below.getY() >= 0 && world.getBlockState(below).getBlock() == state.getBlock()) {
@@ -188,7 +149,7 @@ record CtmRule(
         return tiles[0];
     }
 
-    private Tile repeat(BlockPos pos, Direction face) {
+    private Tile repeat(BlockPos pos, Direction face, int width, int height, int symmetry) {
         int side = face.ordinal() / symmetry * symmetry;
         int x = pos.getX();
         int y = pos.getY();
@@ -343,6 +304,69 @@ record CtmRule(
         else return 3;
     }
 
+    static Replacement ctm() {
+        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+                rule.tiles[tileIndex(rule.connections(
+                        world, state, pos, geometry, sprite, context))], true);
+    }
+
+    static Compact compact(int[] overrides) {
+        return new Compact(overrides);
+    }
+
+    static Replacement horizontal() {
+        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+                rule.line(world, state, pos, geometry.face, sprite,
+                        horizontalDirections(geometry.face, axis(state)), context), false);
+    }
+
+    static Replacement vertical() {
+        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+                rule.line(world, state, pos, geometry.face, sprite,
+                        verticalDirections(geometry.face, axis(state)), context), false);
+    }
+
+    static Replacement top() {
+        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+                rule.top(world, state, pos, geometry.face, sprite, context), false);
+    }
+
+    static Replacement random(int[] weights, int randomLoops, int symmetry, boolean linked) {
+        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+                rule.random(world, state, pos, geometry.face,
+                        weights, randomLoops, symmetry, linked), false);
+    }
+
+    static Replacement repeat(int width, int height, int symmetry) {
+        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+                rule.repeat(pos, geometry.face, width, height, symmetry), false);
+    }
+
+    static Replacement fixed() {
+        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+                rule.tiles[0], false);
+    }
+
+    static Replacement combined(boolean horizontalFirst) {
+        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+                rule.combined(world, state, pos, geometry.face, sprite,
+                        horizontalFirst, context), false);
+    }
+
+    static Decoration overlay(int tintIndex, BlockState tintState, BlockLayer layer) {
+        return new Decoration((rule, world, state, pos, geometry, sprite, context) ->
+                OverlayCtm.select(rule, world, state, pos, geometry.face, sprite, context),
+                tintIndex, tintState, layer, false);
+    }
+
+    static Decoration overlay(Replacement action, int tintIndex, BlockState tintState,
+            BlockLayer layer) {
+        return new Decoration((rule, world, state, pos, geometry, sprite, context) -> {
+            Tile tile = action.selector.select(rule, world, state, pos, geometry, sprite, context);
+            return tile == null || tile.action == TileAction.SKIP ? List.of() : List.of(tile);
+        }, tintIndex, tintState, layer, action.paneGeometry);
+    }
+
     private static String spriteName(WorldView world, BlockState state, BlockPos pos, Direction face,
             CtmRenderContext context) {
         TextureAtlasSprite sprite = context.neighborSprite(world, state, pos, face);
@@ -350,6 +374,36 @@ record CtmRule(
     }
 
     record Tile(TextureAtlasSprite sprite, TileAction action) {
+    }
+
+    sealed interface Action permits Replacement, Compact, Decoration {
+        boolean paneGeometry();
+    }
+
+    record Replacement(Selector selector, boolean paneGeometry) implements Action {
+    }
+
+    record Compact(int[] overrides) implements Action {
+        @Override
+        public boolean paneGeometry() {
+            return true;
+        }
+    }
+
+    record Decoration(OverlaySelector selector, int tintIndex, BlockState tintState,
+            BlockLayer layer, boolean paneGeometry) implements Action {
+    }
+
+    @FunctionalInterface
+    interface Selector {
+        Tile select(CtmRule rule, WorldView world, BlockState state, BlockPos pos,
+                QuadGeometry geometry, TextureAtlasSprite sprite, CtmRenderContext context);
+    }
+
+    @FunctionalInterface
+    interface OverlaySelector {
+        List<Tile> select(CtmRule rule, WorldView world, BlockState state, BlockPos pos,
+                QuadGeometry geometry, TextureAtlasSprite sprite, CtmRenderContext context);
     }
 
     enum TileAction {
