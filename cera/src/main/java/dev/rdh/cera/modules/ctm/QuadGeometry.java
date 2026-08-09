@@ -25,7 +25,7 @@ final class QuadGeometry {
     final float maxZ;
     final UvSlope xUv;
     final UvSlope zUv;
-    final PositionTransform positionTransform;
+    final PositionTransform transform;
     private final int flags;
     private final float uX;
     private final float uY;
@@ -46,7 +46,7 @@ final class QuadGeometry {
         int stride = vertices.length / 4;
         this.xUv = uvSlope(vertices, stride, 0);
         this.zUv = uvSlope(vertices, stride, 2);
-        this.positionTransform = positionTransform(vertices, stride, sprite);
+        this.transform = positionTransform(vertices, stride, sprite);
 
         float xSum = 0;
         float ySum = 0;
@@ -158,7 +158,8 @@ final class QuadGeometry {
                 (firstY * secondV - secondY * firstV) / determinant,
                 (secondY * firstU - firstY * secondU) / determinant,
                 (firstZ * secondV - secondZ * firstV) / determinant,
-                (secondZ * firstU - firstZ * secondU) / determinant);
+                (secondZ * firstU - firstZ * secondU) / determinant
+        );
     }
 
     private static float local(float value, float min, float max) {
@@ -207,8 +208,7 @@ final class QuadGeometry {
         }
 
         private static QuadGeometry create(BakedQuad quad) {
-            return new QuadGeometry(quad,
-                    (TextureAtlasSprite)BakedQuadView.of(quad).celeritas$getSprite());
+            return new QuadGeometry(quad, (TextureAtlasSprite) BakedQuadView.of(quad).celeritas$getSprite());
         }
     }
 }

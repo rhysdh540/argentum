@@ -53,7 +53,7 @@ public final class CompactCtm {
 
     public static List<BakedQuad> transform(BakedQuad quad, QuadGeometry geometry,
             TextureAtlasSprite from, TextureAtlasSprite[] sprites, int connections) {
-        if (geometry.positionTransform == null) return null;
+        if (geometry.transform == null) return null;
         byte[] tiles = TILES[connections & 255];
         int nw = tiles[0];
         int ne = tiles[1];
@@ -145,7 +145,7 @@ public final class CompactCtm {
         int stride = vertices.length / 4;
         for (int vertex = 0; vertex < 4; vertex++) {
             int offset = vertex * stride;
-            clip(vertices, offset, from, to, geometry.positionTransform, region);
+            clip(vertices, offset, from, to, geometry.transform, region);
         }
         return new BakedQuad(vertices, quad.getTintIndex(), quad.getFace());
     }
