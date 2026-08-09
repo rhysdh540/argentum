@@ -27,6 +27,11 @@ final class PaneCulling {
     private final Map<List<BakedQuad>, List<BakedQuad>> prepared = new Reference2ReferenceOpenHashMap<>();
     private final Map<BakedQuad, Parts> parts = new Reference2ReferenceOpenHashMap<>();
 
+    static boolean supports(Block block) {
+        return block == Blocks.GLASS_PANE || block == Blocks.STAINED_GLASS_PANE
+                || block == Blocks.IRON_BARS;
+    }
+
     static void validate() {
         int[] vertical = new int[28];
         for (int vertex = 0; vertex < 4; vertex++) {
@@ -196,7 +201,7 @@ final class PaneCulling {
             BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite sprite,
             CtmRenderContext context) {
         Block block = state.getBlock();
-        if (!(block instanceof PaneBlock)) return null;
+        if (!supports(block)) return null;
 
         Direction face = geometry.face;
         if (face.getAxis() != Direction.Axis.Y) {

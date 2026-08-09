@@ -4,7 +4,6 @@ import dev.rdh.cera.Cera;
 import net.minecraft.block.AbstractLogBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.PaneBlock;
 import net.minecraft.block.QuartzBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.state.BlockState;
@@ -213,7 +212,7 @@ record CtmRule(
         Direction face = geometry.face;
         int axis = axis(state);
         Direction[] directions = directions(face, axis);
-        boolean pane = state.getBlock() instanceof PaneBlock;
+        boolean pane = PaneCulling.supports(state.getBlock());
         if (pane && face.getAxis() != Direction.Axis.Y
                 && geometry.mirrored(directions[0])) {
             directions = directions(face.getOpposite(), axis);

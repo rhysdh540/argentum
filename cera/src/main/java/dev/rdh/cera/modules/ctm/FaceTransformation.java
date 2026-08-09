@@ -6,7 +6,6 @@ import dev.rdh.cera.modules.ctm.CtmRule.Tile;
 import dev.rdh.cera.modules.ctm.CtmRule.TileAction;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.Block;
-import net.minecraft.block.PaneBlock;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.client.render.block.BlockModelShaper;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
@@ -44,7 +43,7 @@ final class FaceTransformation {
             for (BlockState state : block.stateDefinition().all()) {
                 BakedModel model = models.getModel(state);
                 geometries.compile(model);
-                if (block instanceof PaneBlock) panes.compile(model, geometries);
+                if (PaneCulling.supports(block)) panes.compile(model, geometries);
             }
         }
         panes.validateCompiled();
@@ -55,7 +54,7 @@ final class FaceTransformation {
     List<BakedQuad> transform(WorldView world, BlockState state, BlockPos pos,
             List<BakedQuad> quads, List<Overlay> overlays, CtmRenderContext context) {
         context.begin(this, world, pos);
-        boolean paneGeometry = state.getBlock() instanceof PaneBlock
+        boolean paneGeometry = PaneCulling.supports(state.getBlock())
                 && usesPaneGeometry(world, state, pos, quads);
         if (paneGeometry) quads = this.panes.prepare(quads);
 
