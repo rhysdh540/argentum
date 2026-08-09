@@ -18,8 +18,6 @@ import net.minecraft.world.WorldView;
 import java.util.List;
 
 public final class CtmRenderContext {
-    static final int UNKNOWN_PANE_MASK = -2;
-
     private final BetterGrass betterGrass;
     private final Reference2ObjectMap<BakedQuad, Reference2ObjectMap<TextureAtlasSprite, Int2ObjectMap<BakedQuad>>> remapped = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<CtmRule, Reference2ObjectMap<BakedQuad, List<BakedQuad>[]>> compact = new Reference2ObjectOpenHashMap<>();
@@ -28,14 +26,13 @@ public final class CtmRenderContext {
     private final Direction[] neighborFaces = new Direction[32];
     private final TextureAtlasSprite[] neighborSprites = new TextureAtlasSprite[32];
     private final boolean[] neighborPresent = new boolean[32];
+    final PaneCulling.Context panes = new PaneCulling.Context();
     private Object owner;
     private WorldView neighborWorld;
     private int blockX;
     private int blockY;
     private int blockZ;
     private int neighborCount;
-    private int paneUpMask = UNKNOWN_PANE_MASK;
-    private int paneDownMask = UNKNOWN_PANE_MASK;
 
     public CtmRenderContext(BetterGrass betterGrass) {
         this.betterGrass = betterGrass;
@@ -54,18 +51,8 @@ public final class CtmRenderContext {
             this.blockY = pos.getY();
             this.blockZ = pos.getZ();
             this.neighborCount = 0;
-            this.paneUpMask = UNKNOWN_PANE_MASK;
-            this.paneDownMask = UNKNOWN_PANE_MASK;
+            this.panes.reset();
         }
-    }
-
-    int paneMask(Direction face) {
-        return face == Direction.UP ? this.paneUpMask : this.paneDownMask;
-    }
-
-    void paneMask(Direction face, int mask) {
-        if (face == Direction.UP) this.paneUpMask = mask;
-        else this.paneDownMask = mask;
     }
 
     BakedQuad remap(BakedQuad quad, TextureAtlasSprite from, TextureAtlasSprite to, int tintIndex) {

@@ -328,11 +328,11 @@ final class PaneCulling {
 
     private static int paneMask(WorldView world, BlockState state, BlockPos pos,
             Direction face, CtmRenderContext context) {
-        int mask = context.paneMask(face);
-        if (mask == CtmRenderContext.UNKNOWN_PANE_MASK) {
+        int mask = context.panes.get(face);
+        if (mask == Context.UNKNOWN) {
             BlockPos neighborPos = context.offset(pos, face);
             mask = loadPaneMask(world, state, neighborPos);
-            context.paneMask(face, mask);
+            context.panes.set(face, mask);
         }
         return mask;
     }
@@ -415,6 +415,27 @@ final class PaneCulling {
             for (List<BakedQuad> quads : variants) {
                 if (quads != null) geometries.compile(quads);
             }
+        }
+    }
+
+    static final class Context {
+        private static final int UNKNOWN = -2;
+
+        private int up = UNKNOWN;
+        private int down = UNKNOWN;
+
+        int get(Direction face) {
+            return face == Direction.UP ? this.up : this.down;
+        }
+
+        void set(Direction face, int mask) {
+            if (face == Direction.UP) this.up = mask;
+            else this.down = mask;
+        }
+
+        void reset() {
+            this.up = UNKNOWN;
+            this.down = UNKNOWN;
         }
     }
 }
