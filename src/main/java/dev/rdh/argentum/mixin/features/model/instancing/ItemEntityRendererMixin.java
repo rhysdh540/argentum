@@ -20,13 +20,13 @@ public abstract class ItemEntityRendererMixin {
     private ItemRenderer itemRenderer;
 
     @Unique
-    private boolean celeritas$instancing;
+    private EntityInstancingRenderer.Capture celeritas$capture;
 
     @Inject(method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V", at = @At("HEAD"))
     private void celeritas$beginItemEntity(ItemEntity entity, double x, double y, double z,
             float yaw, float tickDelta, CallbackInfo ci) {
         BakedModel model = this.itemRenderer.getModelShaper().getModel(entity.getItem());
-        this.celeritas$instancing = EntityInstancingRenderer.beginItemEntity(entity, model);
+        this.celeritas$capture = EntityInstancingRenderer.beginItemEntity(entity, model);
     }
 
     @Inject(
@@ -35,18 +35,18 @@ public abstract class ItemEntityRendererMixin {
     )
     private void celeritas$endItemEntity(ItemEntity entity, double x, double y, double z,
             float yaw, float tickDelta, CallbackInfo ci) {
-        if (this.celeritas$instancing) {
-            EntityInstancingRenderer.endItemEntity();
-            this.celeritas$instancing = false;
+        if (this.celeritas$capture != null) {
+            this.celeritas$capture.close();
+            this.celeritas$capture = null;
         }
     }
 
     @Inject(method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V", at = @At("RETURN"))
     private void celeritas$finishItemEntity(ItemEntity entity, double x, double y, double z,
             float yaw, float tickDelta, CallbackInfo ci) {
-        if (this.celeritas$instancing) {
-            EntityInstancingRenderer.endItemEntity();
-            this.celeritas$instancing = false;
+        if (this.celeritas$capture != null) {
+            this.celeritas$capture.close();
+            this.celeritas$capture = null;
         }
     }
 }

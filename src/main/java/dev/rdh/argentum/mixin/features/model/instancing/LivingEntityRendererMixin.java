@@ -33,7 +33,7 @@ public abstract class LivingEntityRendererMixin {
     protected abstract int getOverlayColor(LivingEntity entity, float brightness, float tickDelta);
 
     @Unique
-    private boolean celeritas$instancingEntity;
+    private EntityInstancingRenderer.Capture celeritas$capture;
 
     @Inject(method = "render", at = @At("HEAD"))
     private void celeritas$beginEntity(LivingEntity entity, double x, double y, double z, float yaw,
@@ -59,15 +59,15 @@ public abstract class LivingEntityRendererMixin {
             }
         }
         Identifier texture = eligible ? ((EntityRendererAccessor)this).celeritas$getTextureLocation(entity) : null;
-        this.celeritas$instancingEntity = eligible && EntityInstancingRenderer.beginEntity(
+        this.celeritas$capture = eligible ? EntityInstancingRenderer.beginEntity(
                 this.model, texture, player, player || !this.layers.isEmpty(), entity.ticks + tickDelta,
-                overlayRed, overlayGreen, overlayBlue, overlayAlpha);
+                overlayRed, overlayGreen, overlayBlue, overlayAlpha) : null;
     }
 
     @Inject(method = "renderNameTag(Lnet/minecraft/entity/living/LivingEntity;DDD)V", at = @At("HEAD"), cancellable = true)
     private void celeritas$deferNameTag(LivingEntity entity, double x, double y, double z, CallbackInfo ci) {
-        if (this.celeritas$instancingEntity
-                && EntityInstancingRenderer.deferNameTag((LivingEntityRenderer<?>)(Object)this, entity, x, y, z)) {
+        if (this.celeritas$capture != null
+                && this.celeritas$capture.deferNameTag((LivingEntityRenderer<?>)(Object)this, entity, x, y, z)) {
             ci.cancel();
         }
     }
@@ -75,16 +75,16 @@ public abstract class LivingEntityRendererMixin {
     @Inject(method = "renderModel", at = @At("HEAD"))
     private void celeritas$beginModel(LivingEntity entity, float walkAnimationProgress, float walkAnimationSpeed,
             float bob, float yaw, float pitch, float scale, CallbackInfo ci) {
-        if (this.celeritas$instancingEntity) {
-            EntityInstancingRenderer.beginModel();
+        if (this.celeritas$capture != null) {
+            this.celeritas$capture.beginModel();
         }
     }
 
     @Inject(method = "renderModel", at = @At("RETURN"))
     private void celeritas$endModel(LivingEntity entity, float walkAnimationProgress, float walkAnimationSpeed,
             float bob, float yaw, float pitch, float scale, CallbackInfo ci) {
-        if (this.celeritas$instancingEntity) {
-            EntityInstancingRenderer.endModel();
+        if (this.celeritas$capture != null) {
+            this.celeritas$capture.endModel();
         }
     }
 
@@ -95,12 +95,12 @@ public abstract class LivingEntityRendererMixin {
     private void celeritas$captureLayer(EntityRenderLayer<LivingEntity> layer, LivingEntity entity,
             float walkAnimationProgress, float walkAnimationSpeed, float tickDelta, float bob,
             float yaw, float pitch, float scale) {
-        boolean capture = this.celeritas$instancingEntity && EntityInstancingRenderer.beginLayer(layer, entity);
+        boolean capture = this.celeritas$capture != null && this.celeritas$capture.beginLayer(layer, entity);
         try {
             layer.render(entity, walkAnimationProgress, walkAnimationSpeed, tickDelta, bob, yaw, pitch, scale);
         } finally {
             if (capture) {
-                EntityInstancingRenderer.endLayer();
+                this.celeritas$capture.endLayer();
             }
         }
     }
@@ -108,9 +108,9 @@ public abstract class LivingEntityRendererMixin {
     @Inject(method = "render", at = @At("RETURN"))
     private void celeritas$endEntity(LivingEntity entity, double x, double y, double z, float yaw,
             float tickDelta, CallbackInfo ci) {
-        if (this.celeritas$instancingEntity) {
-            EntityInstancingRenderer.endEntity();
-            this.celeritas$instancingEntity = false;
+        if (this.celeritas$capture != null) {
+            this.celeritas$capture.close();
+            this.celeritas$capture = null;
         }
     }
 }

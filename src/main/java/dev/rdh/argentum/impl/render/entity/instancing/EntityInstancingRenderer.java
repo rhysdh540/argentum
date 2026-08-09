@@ -50,7 +50,7 @@ public final class EntityInstancingRenderer {
     private static boolean supported;
     private static boolean textureArraysSupported;
     private static boolean frameActive;
-    private static boolean entityActive;
+    private static Capture activeCapture;
     private static boolean modelActive;
     private static boolean entityRecorded;
     private static boolean currentPlayer;
@@ -127,10 +127,10 @@ public final class EntityInstancingRenderer {
         frameActive = true;
     }
 
-    public static boolean beginEntity(Model model, Identifier texture, boolean player, boolean preserveFixedFunction,
+    public static Capture beginEntity(Model model, Identifier texture, boolean player, boolean preserveFixedFunction,
             float effectTime, float overlayRed, float overlayGreen, float overlayBlue, float overlayAlpha) {
-        if (!frameActive || entityActive || model == null || texture == null) {
-            return false;
+        if (!frameActive || activeCapture != null || model == null || texture == null) {
+            return null;
         }
 
         currentModel = BATCHER.model(model);
@@ -156,14 +156,13 @@ public final class EntityInstancingRenderer {
         EntityInstancingRenderer.overlayAlpha = overlayAlpha;
         currentOverlayAlpha = overlayAlpha;
         suppressFixedFunction = !preserveFixedFunction;
-        entityActive = true;
-        return true;
+        return activeCapture = new Capture(false);
     }
 
-    public static boolean beginItemEntity(ItemEntity entity, BakedModel model) {
+    public static Capture beginItemEntity(ItemEntity entity, BakedModel model) {
         ItemStack item = entity.getItem();
-        if (!frameActive || entityActive || item == null || !ITEM_GEOMETRY.supportsItem(model, item)) {
-            return false;
+        if (!frameActive || activeCapture != null || item == null || !ITEM_GEOMETRY.supportsItem(model, item)) {
+            return null;
         }
         currentPass = EntityRenderPass.ITEM;
         currentModel = null;
@@ -179,82 +178,8 @@ public final class EntityInstancingRenderer {
         effectTime = entity.getAge();
         itemGlintPass = 0;
         suppressFixedFunction = true;
-        entityActive = true;
         modelActive = true;
-        return true;
-    }
-
-    public static void endItemEntity() {
-        if (!entityActive) {
-            return;
-        }
-        if (entityRecorded) {
-            entityCount++;
-        }
-        modelActive = false;
-        entityActive = false;
-        suppressFixedFunction = false;
-        itemGlintPass = 0;
-        currentTexture = null;
-        currentBoundTexture = null;
-        currentPass = EntityRenderPass.NORMAL;
-    }
-
-    public static void beginModel() {
-        if (entityActive) {
-            selectTexture(currentEntityTexture);
-            currentModel.begin();
-            modelActive = true;
-            currentOverlayAlpha = overlayAlpha;
-        }
-    }
-
-    public static boolean beginLayer(Object layer, LivingEntity entity) {
-        EntityRenderPass pass = EntityLayerSupport.pass(layer, entity);
-        if (!entityActive || pass == null) {
-            return false;
-        }
-        currentPass = pass;
-        selectTexture(currentBoundTexture);
-        armorLayer = layer instanceof AbstractArmorLayer;
-        currentOverlayAlpha = layer instanceof EntityRenderLayer<?> renderLayer && renderLayer.colorsWhenDamaged()
-                ? overlayAlpha : 0.0F;
-        GLINT_PARTS.clear();
-        itemGlintPass = 0;
-        currentModel.begin();
-        modelActive = true;
-        red = green = blue = alpha = 1.0F;
-        return true;
-    }
-
-    public static void endLayer() {
-        modelActive = false;
-        currentPass = EntityRenderPass.NORMAL;
-        armorLayer = false;
-        red = green = blue = alpha = 1.0F;
-    }
-
-    public static void endModel() {
-        modelActive = false;
-    }
-
-    public static void endEntity() {
-        if (entityRecorded) {
-            entityCount++;
-            if (currentPlayer) {
-                playerCount++;
-            }
-        }
-        modelActive = false;
-        entityActive = false;
-        currentPlayer = false;
-        suppressFixedFunction = false;
-        currentModel = null;
-        currentTexture = null;
-        currentEntityTexture = null;
-        currentBoundTexture = null;
-        currentPass = EntityRenderPass.NORMAL;
-        armorLayer = false;
+        return activeCapture = new Capture(true);
     }
 
     public static boolean record(ModelPart part, float scale) {
@@ -407,11 +332,11 @@ public final class EntityInstancingRenderer {
     }
 
     private static boolean tracksModelView() {
-        return entityActive && matrixMode == GL11.GL_MODELVIEW;
+        return activeCapture != null && matrixMode == GL11.GL_MODELVIEW;
     }
 
     public static void setColor(float red, float green, float blue, float alpha) {
-        if (entityActive) {
+        if (activeCapture != null) {
             EntityInstancingRenderer.red = red;
             EntityInstancingRenderer.green = green;
             EntityInstancingRenderer.blue = blue;
@@ -420,7 +345,7 @@ public final class EntityInstancingRenderer {
     }
 
     public static void setTexture(Identifier texture) {
-        if (entityActive && texture != null) {
+        if (activeCapture != null && texture != null) {
             if (modelActive && armorLayer) {
                 currentPass = ENCHANTMENT_GLINT_TEXTURE.equals(texture)
                         ? EntityRenderPass.GLINT
@@ -428,15 +353,6 @@ public final class EntityInstancingRenderer {
             }
             selectTexture(texture);
         }
-    }
-
-    public static boolean deferNameTag(LivingEntityRenderer<?> renderer, LivingEntity entity,
-            double x, double y, double z) {
-        if (!entityActive || !entityRecorded) {
-            return false;
-        }
-        NAME_TAGS.add(renderer, entity, x, y, z);
-        return true;
     }
 
     public static void invalidateTexture(Texture texture) {
@@ -508,6 +424,77 @@ public final class EntityInstancingRenderer {
 
     public static boolean isInitialized() {
         return initialized;
+    }
+
+    public static final class Capture implements AutoCloseable {
+        private final boolean item;
+
+        private Capture(boolean item) {
+            this.item = item;
+        }
+
+        public void beginModel() {
+            if (activeCapture != this) return;
+            selectTexture(currentEntityTexture);
+            currentModel.begin();
+            modelActive = true;
+            currentOverlayAlpha = overlayAlpha;
+        }
+
+        public boolean beginLayer(Object layer, LivingEntity entity) {
+            EntityRenderPass pass = EntityLayerSupport.pass(layer, entity);
+            if (activeCapture != this || pass == null) return false;
+            currentPass = pass;
+            selectTexture(currentBoundTexture);
+            armorLayer = layer instanceof AbstractArmorLayer;
+            currentOverlayAlpha = layer instanceof EntityRenderLayer<?> renderLayer
+                    && renderLayer.colorsWhenDamaged() ? overlayAlpha : 0.0F;
+            GLINT_PARTS.clear();
+            itemGlintPass = 0;
+            currentModel.begin();
+            modelActive = true;
+            red = green = blue = alpha = 1.0F;
+            return true;
+        }
+
+        public void endLayer() {
+            if (activeCapture != this) return;
+            modelActive = false;
+            currentPass = EntityRenderPass.NORMAL;
+            armorLayer = false;
+            red = green = blue = alpha = 1.0F;
+        }
+
+        public void endModel() {
+            if (activeCapture == this) modelActive = false;
+        }
+
+        public boolean deferNameTag(LivingEntityRenderer<?> renderer, LivingEntity entity,
+                double x, double y, double z) {
+            if (activeCapture != this || !entityRecorded) return false;
+            NAME_TAGS.add(renderer, entity, x, y, z);
+            return true;
+        }
+
+        @Override
+        public void close() {
+            if (activeCapture != this) return;
+            if (entityRecorded) {
+                entityCount++;
+                if (!this.item && currentPlayer) playerCount++;
+            }
+            modelActive = false;
+            currentPlayer = false;
+            suppressFixedFunction = false;
+            itemGlintPass = 0;
+            currentModel = null;
+            currentTexture = null;
+            currentEntityTexture = null;
+            currentBoundTexture = null;
+            currentPass = EntityRenderPass.NORMAL;
+            armorLayer = false;
+            activeCapture = null;
+        }
     }
 
     private static void recordPart(ModelPart part, float scale) {
