@@ -61,8 +61,7 @@ final class EntityShader {
         FOG_COLOR[2] = GLStateManagerFogService.fogColorBlue;
         FOG_COLOR[3] = 1.0F;
         this.fogColor.set(FOG_COLOR);
-        this.fogParameters.set(GLStateManagerFogService.fogStart, GLStateManagerFogService.fogEnd,
-                GLStateManagerFogService.fogDensity);
+        this.fogParameters.set(GLStateManagerFogService.fogStart, GLStateManagerFogService.fogEnd, GLStateManagerFogService.fogDensity);
     }
 
     void setTextureArray(boolean enabled) {

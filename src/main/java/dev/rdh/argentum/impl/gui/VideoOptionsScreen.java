@@ -20,8 +20,7 @@ public final class VideoOptionsScreen extends Screen {
         this.parent = parent;
         this.controller = new CeleritasVideoOptionsController(
                 () -> this.minecraft.openScreen(this.parent),
-                List.of(ArgentumOptionPages.general(), ArgentumOptionPages.quality(),
-                        ArgentumOptionPages.performance(), ArgentumOptionPages.advanced()),
+                List.of(ArgentumOptionPages.general(), ArgentumOptionPages.quality(), ArgentumOptionPages.performance(), ArgentumOptionPages.advanced()),
                 this.context) {
             @Override
             protected void applyFlagSideEffects(Set<OptionFlag> flags) {
@@ -66,8 +65,7 @@ public final class VideoOptionsScreen extends Screen {
     @Override
     protected void mouseDragged(int mouseX, int mouseY, int button, long elapsed) {
         if (this.lastMouseX >= 0) {
-            this.controller.getFrame().mouseDragged(LegacyInteractionContext.INSTANCE, mouseX, mouseY, button,
-                    mouseX - this.lastMouseX, mouseY - this.lastMouseY);
+            this.controller.getFrame().mouseDragged(LegacyInteractionContext.INSTANCE, mouseX, mouseY, button, mouseX - this.lastMouseX, mouseY - this.lastMouseY);
         }
         this.lastMouseX = mouseX;
         this.lastMouseY = mouseY;
@@ -80,8 +78,7 @@ public final class VideoOptionsScreen extends Screen {
         if (wheel != 0) {
             int mouseX = Mouse.getEventX() * this.width / this.minecraft.width;
             int mouseY = this.height - Mouse.getEventY() * this.height / this.minecraft.height - 1;
-            this.controller.getFrame().mouseScrolled(LegacyInteractionContext.INSTANCE,
-                    mouseX, mouseY, 0, wheel > 0 ? 1.0D : -1.0D);
+            this.controller.getFrame().mouseScrolled(LegacyInteractionContext.INSTANCE, mouseX, mouseY, 0, wheel > 0 ? 1.0D : -1.0D);
         }
     }
 }

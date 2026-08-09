@@ -134,7 +134,8 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
         try {
             this.renderer.setupTerrain(((ViewportProvider)camera).sodium$createViewport(),
                     ArgentumWorldRenderer.captureCameraState(tick),
-                    this.frame++, this.minecraft.player.noClip, false);
+                    this.frame++, this.minecraft.player.noClip, false
+            );
         } finally {
             RenderDevice.exitManagedCode();
         }
@@ -168,8 +169,7 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
             method = "reload()V",
             at = @At(value = "NEW", target = "(Lnet/minecraft/world/World;ILnet/minecraft/client/render/world/WorldRenderer;Lnet/minecraft/client/render/world/RenderChunkFactory;)Lnet/minecraft/client/render/world/RenderChunkStorage;")
     )
-    private RenderChunkStorage celeritas$skipVanillaChunkStorage(World world, int viewDistance,
-            WorldRenderer renderer, RenderChunkFactory factory) {
+    private RenderChunkStorage celeritas$skipVanillaChunkStorage(World world, int viewDistance, WorldRenderer renderer, RenderChunkFactory factory) {
         return new NoopRenderChunkStorage(world, viewDistance, renderer, factory);
     }
 

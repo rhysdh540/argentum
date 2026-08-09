@@ -139,8 +139,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
     private Runnable celeritas$beforeImmediateText;
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void celeritas$createBatch(GameOptions options, Identifier fontLocation, TextureManager textureManager,
-            boolean unicode, CallbackInfo ci) {
+    private void celeritas$createBatch(GameOptions options, Identifier fontLocation, TextureManager textureManager, boolean unicode, CallbackInfo ci) {
         this.celeritas$buffer = new BufferBuilder(64 * 1024 / Integer.BYTES);
         this.celeritas$decorationBuffer = new BufferBuilder(4 * 1024 / Integer.BYTES);
         this.celeritas$elementBuffer = new BufferBuilder(128 * 1024 / Integer.BYTES);
@@ -180,8 +179,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
     }
 
     @Inject(method = "drawLayer(Ljava/lang/String;FFIZ)I", at = @At("HEAD"))
-    private void celeritas$flushBackgroundBeforeImmediateText(String text, float x, float y, int color,
-            boolean shadow, CallbackInfoReturnable<Integer> cir) {
+    private void celeritas$flushBackgroundBeforeImmediateText(String text, float x, float y, int color, boolean shadow, CallbackInfoReturnable<Integer> cir) {
         if (this.celeritas$elementBatchDepth > 0 && this.celeritas$beforeImmediateText != null && text != null
                 && (!Argentum.CONFIG.fontBatching || !this.celeritas$canCache(text))) {
             this.celeritas$beforeImmediateText.run();
@@ -202,7 +200,8 @@ public abstract class TextRendererMixin implements TextRendererExtension {
 
         GeometryKey key = this.celeritas$lookupKey.set(text, shadow,
                 Float.floatToIntBits(this.celeritas$red), Float.floatToIntBits(this.celeritas$green),
-                Float.floatToIntBits(this.celeritas$blue), Float.floatToIntBits(this.celeritas$alpha));
+                Float.floatToIntBits(this.celeritas$blue), Float.floatToIntBits(this.celeritas$alpha)
+        );
         Geometry geometry = this.celeritas$geometryCache.get(key);
         if (geometry != null) {
             if (this.celeritas$elementBatchDepth > 0) {
@@ -229,8 +228,8 @@ public abstract class TextRendererMixin implements TextRendererExtension {
         this.celeritas$flushDecorations();
         if (this.celeritas$pendingBuffer != null) {
             this.celeritas$geometryCache.put(this.celeritas$pendingKey,
-                    new Geometry(this.celeritas$pendingBuffer, this.celeritas$pendingVertices,
-                            this.x - this.celeritas$originX));
+                    new Geometry(this.celeritas$pendingBuffer, this.celeritas$pendingVertices, this.x - this.celeritas$originX)
+            );
             if (this.celeritas$geometryCache.size() > GEOMETRY_CACHE_SIZE) {
                 var iterator = this.celeritas$geometryCache.entrySet().iterator();
                 iterator.next().getValue().buffer().delete();

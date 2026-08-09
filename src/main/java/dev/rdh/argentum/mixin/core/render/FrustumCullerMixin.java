@@ -30,8 +30,7 @@ public class FrustumCullerMixin implements ViewportProvider {
         Vector3f offset = new Vector3f();
         modelMatrix.transformPosition(offset);
         Frustum cullTester = this::celeritas$isVisible;
-        return new Viewport(cullTester,
-                new org.joml.Vector3d(this.offsetX + offset.x, this.offsetY + offset.y, this.offsetZ + offset.z));
+        return new Viewport(cullTester, new org.joml.Vector3d(this.offsetX + offset.x, this.offsetY + offset.y, this.offsetZ + offset.z));
     }
 
     private boolean celeritas$isVisible(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {

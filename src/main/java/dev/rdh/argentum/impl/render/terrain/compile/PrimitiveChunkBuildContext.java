@@ -92,7 +92,8 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
             this.usedLayerBuffers[i] = false;
             try {
                 this.copyRawBuffer(buffer.getBuffer().asIntBuffer(), buffer.getVertexCount(), buffers,
-                        buffers.getRenderPassConfiguration().getMaterialForRenderType(LAYERS[i]));
+                        buffers.getRenderPassConfiguration().getMaterialForRenderType(LAYERS[i])
+                );
             } finally {
                 buffer.clear();
                 buffer.offset(0, 0, 0);

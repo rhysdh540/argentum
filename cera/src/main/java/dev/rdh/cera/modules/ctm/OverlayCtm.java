@@ -34,8 +34,7 @@ final class OverlayCtm {
     private OverlayCtm() {
     }
 
-    static List<CtmRule.Tile> select(CtmRule rule, WorldView world, BlockState state, BlockPos pos,
-            Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
+    static List<CtmRule.Tile> select(CtmRule rule, WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
         Direction[] directions = sides(face, axis(state));
         boolean[] sides = new boolean[4];
         for (int i = 0; i < sides.length; i++) {
@@ -95,8 +94,7 @@ final class OverlayCtm {
                 && exposed(world, pos, face, context);
     }
 
-    private static boolean exposed(WorldView world, BlockPos pos, Direction face,
-            CtmRenderContext context) {
+    private static boolean exposed(WorldView world, BlockPos pos, Direction face, CtmRenderContext context) {
         Block block = world.getBlockState(context.offset(pos, face)).getBlock();
         return !block.isOpaque() && (face != Direction.UP || block != Blocks.SNOW_LAYER);
     }

@@ -63,8 +63,7 @@ final class PartGeometry extends EntityGeometry {
             }
         }
         vertices.flip();
-        this.buffers = new InstancedGeometryBuffer(vertices, InstancedVertexFormats.ENTITY_VERTEX,
-                InstancedVertexFormats.ENTITY_INSTANCE);
+        this.buffers = new InstancedGeometryBuffer(vertices, InstancedVertexFormats.ENTITY_VERTEX, InstancedVertexFormats.ENTITY_INSTANCE);
     }
 
     ModelPart part() {

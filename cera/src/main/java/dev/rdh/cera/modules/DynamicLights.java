@@ -44,8 +44,7 @@ public final class DynamicLights {
         Object2IntMap<String> entities = new Object2IntOpenHashMap<>();
         Object2IntMap<Item> items = new Object2IntOpenHashMap<>();
 
-        resources.findResources("optifine", id -> CONFIG.equals(id.identifier())).forEach((id, resource) ->
-                load(resource, id.namespace(), entities, items));
+        resources.findResources("optifine", id -> CONFIG.equals(id.identifier())).forEach((id, resource) -> load(resource, id.namespace(), entities, items));
 
         rules = new Rules(Map.copyOf(entities), Map.copyOf(items));
         Cera.LOGGER.info("Loaded {} dynamic light entity rules and {} item rules", entities.size(), items.size());
@@ -145,8 +144,7 @@ public final class DynamicLights {
             try (var stream = resource.open()) {
                 properties.load(stream);
             }
-            parse(properties.getProperty("entities"), namespace, (name, level) ->
-                    entities.put("minecraft".equals(namespace) ? name : namespace + ":" + name, level));
+            parse(properties.getProperty("entities"), namespace, (name, level) -> entities.put("minecraft".equals(namespace) ? name : namespace + ":" + name, level));
             parse(properties.getProperty("items"), namespace, (name, level) -> {
                 Item item = Item.REGISTRY.get(new Identifier(namespace, name));
                 if (item == null) {
@@ -184,7 +182,8 @@ public final class DynamicLights {
         renderer.scheduleRebuildForBlockArea(
                 (int)Math.floor(x - MAX_DISTANCE), (int)Math.floor(y - MAX_DISTANCE), (int)Math.floor(z - MAX_DISTANCE),
                 (int)Math.floor(x + MAX_DISTANCE), (int)Math.floor(y + MAX_DISTANCE), (int)Math.floor(z + MAX_DISTANCE),
-                false);
+                false
+        );
     }
 
     private void clear() {

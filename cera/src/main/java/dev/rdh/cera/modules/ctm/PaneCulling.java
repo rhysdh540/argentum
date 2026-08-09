@@ -93,8 +93,7 @@ final class PaneCulling {
         }
     }
 
-    private List<BakedQuad> compileInnerFaces(List<BakedQuad> quads,
-            QuadGeometry.Registry geometries) {
+    private List<BakedQuad> compileInnerFaces(List<BakedQuad> quads, QuadGeometry.Registry geometries) {
         geometries.compile(quads);
         List<BakedQuad> prepared = cullInnerFaces(quads, geometries);
         for (BakedQuad quad : prepared) {
@@ -107,8 +106,7 @@ final class PaneCulling {
         return prepared;
     }
 
-    private static List<BakedQuad> cullInnerFaces(List<BakedQuad> quads,
-            QuadGeometry.Registry geometries) {
+    private static List<BakedQuad> cullInnerFaces(List<BakedQuad> quads, QuadGeometry.Registry geometries) {
         if (quads.size() < 2) return quads;
 
         List<BakedQuad> result = null;
@@ -197,9 +195,8 @@ final class PaneCulling {
         return Math.abs(first - second) < EPSILON;
     }
 
-    List<BakedQuad> cull(WorldView world, BlockState state, BlockPos pos,
-            BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite sprite,
-            CtmRenderContext context) {
+    List<BakedQuad> cull(WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
+               QuadGeometry geometry, TextureAtlasSprite sprite, CtmRenderContext context) {
         Block block = state.getBlock();
         if (!supports(block)) return null;
 
@@ -225,8 +222,7 @@ final class PaneCulling {
         return parts == null || parts.cap == null ? null : parts.cap[axisMask(mask, parts.alongX)];
     }
 
-    static boolean covers(WorldView world, BlockState state, BlockPos pos, Direction direction,
-            QuadGeometry geometry, CtmRenderContext context) {
+    static boolean covers(WorldView world, BlockState state, BlockPos pos, Direction direction, QuadGeometry geometry, CtmRenderContext context) {
         if (direction.getAxis() != Direction.Axis.Y || geometry.face.getAxis() == Direction.Axis.Y) {
             return true;
         }
@@ -240,8 +236,7 @@ final class PaneCulling {
                 && middle <= coveredMax((axisMask & 2) != 0);
     }
 
-    static boolean coversCorner(WorldView world, BlockState state, BlockPos corner,
-            Direction first, Direction second, QuadGeometry geometry) {
+    static boolean coversCorner(WorldView world, BlockState state, BlockPos corner, Direction first, Direction second, QuadGeometry geometry) {
         if (geometry.face.getAxis() == Direction.Axis.Y) return true;
         Direction horizontal = first.getAxis() == Direction.Axis.Y ? second : first;
         if (horizontal.getAxis() == Direction.Axis.Y) return true;
@@ -273,8 +268,7 @@ final class PaneCulling {
                 return new Parts(null, cap, false);
             }
             boolean alongX = lengthX > lengthZ;
-            QuadGeometry.UvSlope transform = geometry.uv(
-                    alongX ? Direction.Axis.X : Direction.Axis.Z);
+            QuadGeometry.UvSlope transform = geometry.uv(alongX ? Direction.Axis.X : Direction.Axis.Z);
             if (transform == null) return Parts.NONE;
             float min = alongX ? geometry.minX : geometry.minZ;
             float max = alongX ? geometry.maxX : geometry.maxZ;
@@ -311,8 +305,7 @@ final class PaneCulling {
         return new Parts(side, null, false);
     }
 
-    private static List<BakedQuad> clipCap(BakedQuad quad, QuadGeometry.UvSlope transform,
-            boolean alongX, float min, float max, int variant) {
+    private static List<BakedQuad> clipCap(BakedQuad quad, QuadGeometry.UvSlope transform, boolean alongX, float min, float max, int variant) {
         float coveredMin = coveredMin((variant & 1) != 0);
         float coveredMax = coveredMax((variant & 2) != 0);
         int parts = visibleParts(min, max, coveredMin, coveredMax);
@@ -326,8 +319,7 @@ final class PaneCulling {
                 : List.of(first);
     }
 
-    private static int paneMask(WorldView world, BlockState state, BlockPos pos,
-            Direction face, CtmRenderContext context) {
+    private static int paneMask(WorldView world, BlockState state, BlockPos pos, Direction face, CtmRenderContext context) {
         int mask = context.panes.get(face);
         if (mask == Context.UNKNOWN) {
             BlockPos neighborPos = context.offset(pos, face);
@@ -378,8 +370,7 @@ final class PaneCulling {
         return positive ? 1 : CENTER_MAX;
     }
 
-    private static BakedQuad clip(BakedQuad quad, QuadGeometry.UvSlope transform, boolean alongX,
-            float min, float max) {
+    private static BakedQuad clip(BakedQuad quad, QuadGeometry.UvSlope transform, boolean alongX, float min, float max) {
         int[] vertices = quad.getVertices().clone();
         int stride = vertices.length / 4;
         for (int vertex = 0; vertex < 4; vertex++) {
@@ -409,8 +400,7 @@ final class PaneCulling {
             register(this.cap, geometries);
         }
 
-        private static void register(List<BakedQuad>[] variants,
-                QuadGeometry.Registry geometries) {
+        private static void register(List<BakedQuad>[] variants, QuadGeometry.Registry geometries) {
             if (variants == null) return;
             for (List<BakedQuad> quads : variants) {
                 if (quads != null) geometries.compile(quads);

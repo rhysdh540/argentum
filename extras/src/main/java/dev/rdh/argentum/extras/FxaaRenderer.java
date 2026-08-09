@@ -45,8 +45,7 @@ public final class FxaaRenderer implements AutoCloseable {
         try {
             ResourceManager resources = minecraft.getResourceManager();
             RenderTarget target = minecraft.getRenderTarget();
-            this.chain = new PostChain(minecraft.getTextureManager(), resources, target,
-                    new Identifier("shaders/post/fxaa.json"));
+            this.chain = new PostChain(minecraft.getTextureManager(), resources, target, new Identifier("shaders/post/fxaa.json"));
             this.chain.resize(minecraft.width, minecraft.height);
         } catch (IOException | JsonSyntaxException e) {
             this.failed = true;

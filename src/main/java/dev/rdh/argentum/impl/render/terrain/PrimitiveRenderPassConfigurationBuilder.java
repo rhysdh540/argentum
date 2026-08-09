@@ -40,8 +40,7 @@ public class PrimitiveRenderPassConfigurationBuilder {
         return builder;
     }
 
-    public static RenderPassConfiguration<?> build(ChunkVertexType vertexType, boolean translucencySorting,
-            int chunkFadeInDuration) {
+    public static RenderPassConfiguration<?> build(ChunkVertexType vertexType, boolean translucencySorting, int chunkFadeInDuration) {
         Map<String, String> extraDefines = chunkFadeInDuration > 0
                 ? Map.of("CHUNK_FADE_IN_DURATION_MS", Integer.toString(chunkFadeInDuration))
                 : Map.of();
@@ -76,10 +75,6 @@ public class PrimitiveRenderPassConfigurationBuilder {
         renderTypeToMaterialMap.put(BlockLayer.CUTOUT_MIPPED, cutoutMippedMaterial);
         renderTypeToMaterialMap.put(BlockLayer.TRANSLUCENT, translucentMaterial);
 
-        return new RenderPassConfiguration<>(renderTypeToMaterialMap,
-                vanillaRenderStages,
-                cutoutMippedMaterial,
-                cutoutMippedMaterial,
-                translucentMaterial);
+        return new RenderPassConfiguration<>(renderTypeToMaterialMap, vanillaRenderStages, cutoutMippedMaterial, cutoutMippedMaterial, translucentMaterial);
     }
 }

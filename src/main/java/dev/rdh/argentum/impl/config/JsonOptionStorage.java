@@ -52,9 +52,8 @@ public final class JsonOptionStorage<T> implements OptionStorage<T> {
 
     public static <T> JsonOptionStorage<T> load(Path path, Class<T> type, Supplier<T> defaults, Consumer<T> validator) {
         return load(path, type, b -> b
-                        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                        .setPrettyPrinting(),
-                defaults, validator);
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .setPrettyPrinting(), defaults, validator);
     }
 
     @Override

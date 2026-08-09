@@ -116,8 +116,7 @@ final class ArgentumOptionPages {
                         .build())
                 .build();
 
-        return new OptionPage(StandardOptions.Pages.GENERAL, text("pages.general"),
-                List.of(rendering, window, indicators));
+        return new OptionPage(StandardOptions.Pages.GENERAL, text("pages.general"), List.of(rendering, window, indicators));
     }
 
     static OptionPage quality() {
@@ -213,8 +212,7 @@ final class ArgentumOptionPages {
                         .build())
                 .build();
 
-        return new OptionPage(StandardOptions.Pages.QUALITY, text("pages.quality"),
-                List.of(graphics, details));
+        return new OptionPage(StandardOptions.Pages.QUALITY, text("pages.quality"), List.of(graphics, details));
     }
 
     static OptionPage performance() {
@@ -302,8 +300,7 @@ final class ArgentumOptionPages {
                         OptionFlag.REQUIRES_RENDERER_RELOAD))
                 .build();
 
-        return new OptionPage(StandardOptions.Pages.PERFORMANCE, text("pages.performance"),
-                List.of(chunkUpdates, culling, rendering));
+        return new OptionPage(StandardOptions.Pages.PERFORMANCE, text("pages.performance"), List.of(chunkUpdates, culling, rendering));
     }
 
     static OptionPage advanced() {
@@ -326,8 +323,7 @@ final class ArgentumOptionPages {
                         (config, value) -> config.checkGlErrors = value, config -> config.checkGlErrors,
                         OptionFlag.REQUIRES_GAME_RESTART))
                 .build();
-        return new OptionPage(StandardOptions.Pages.ADVANCED, text("pages.advanced"),
-                List.of(cpuSaving, diagnostics));
+        return new OptionPage(StandardOptions.Pages.ADVANCED, text("pages.advanced"), List.of(cpuSaving, diagnostics));
     }
 
     private static OptionImpl<ArgentumConfig, Boolean> toggle(String id, OptionImpact impact,

@@ -87,8 +87,7 @@ public final class FastBlockRenderer {
             List<BakedQuad> quads = model.getQuads(direction);
             if (quads.isEmpty()) continue;
 
-            this.neighborPos.set(pos.getX() + direction.getOffsetX(), pos.getY() + direction.getOffsetY(),
-                    pos.getZ() + direction.getOffsetZ());
+            this.neighborPos.set(pos.getX() + direction.getOffsetX(), pos.getY() + direction.getOffsetY(), pos.getZ() + direction.getOffsetZ());
             if (!block.shouldRenderFace(world, this.neighborPos, direction)) continue;
 
             int flags = this.analyzer.getFlagsForRendering(PrimitiveModelUtil.fromDirection(direction), BakedQuadView.ofList(quads));
@@ -112,8 +111,7 @@ public final class FastBlockRenderer {
             BakedQuadView view = BakedQuadView.of(quad);
             TextureAtlasSprite sprite = (TextureAtlasSprite)view.celeritas$getSprite();
 
-            lighter.calculate(view, pos.getX(), pos.getY(), pos.getZ(), this.quadLight,
-                    cull, view.getLightFace(), true, false);
+            lighter.calculate(view, pos.getX(), pos.getY(), pos.getZ(), this.quadLight, cull, view.getLightFace(), true, false);
 
             if (quad.hasTint()) {
                 if (colorType != null && Argentum.CONFIG.biomeBlendRadius > 0) {
@@ -151,8 +149,7 @@ public final class FastBlockRenderer {
         }
     }
 
-    private static BiomeColorCache.ColorType getBiomeColorType(
-            BlockState state, ChunkRenderContext world, BlockPos pos) {
+    private static BiomeColorCache.ColorType getBiomeColorType(BlockState state, ChunkRenderContext world, BlockPos pos) {
         Block block = state.getBlock();
         if (block == Blocks.GRASS || block == Blocks.TALLGRASS || block == Blocks.REEDS) {
             return BiomeColorCache.ColorType.GRASS;
@@ -173,8 +170,7 @@ public final class FastBlockRenderer {
         return null;
     }
 
-    private void getVertexColors(ChunkRenderContext world, BlockPos pos, BakedQuadView quad,
-                                 BiomeColorCache.ColorType colorType) {
+    private void getVertexColors(ChunkRenderContext world, BlockPos pos, BakedQuadView quad, BiomeColorCache.ColorType colorType) {
         for (int vertex = 0; vertex < 4; vertex++) {
             float x = quad.getX(vertex) - 0.5F;
             float z = quad.getZ(vertex) - 0.5F;
@@ -198,8 +194,7 @@ public final class FastBlockRenderer {
         }
     }
 
-    private void writeQuad(BakedQuadView quad, BlockPos pos, Material material,
-                           ModelQuadOrientation orientation, ChunkBuildBuffers buffers) {
+    private void writeQuad(BakedQuadView quad, BlockPos pos, Material material, ModelQuadOrientation orientation, ChunkBuildBuffers buffers) {
         int localX = pos.getX() & 15;
         int localY = pos.getY() & 15;
         int localZ = pos.getZ() & 15;
@@ -211,8 +206,7 @@ public final class FastBlockRenderer {
             vertex.x = localX + quad.getX(source) + this.offsetX;
             vertex.y = localY + quad.getY(source) + this.offsetY;
             vertex.z = localZ + quad.getZ(source) + this.offsetZ;
-            vertex.color = ChunkColorWriter.EMBEDDIUM.writeColor(
-                    ModelQuadUtil.mixARGBColors(this.colors[source], quad.getColor(source)), this.quadLight.br[source]);
+            vertex.color = ChunkColorWriter.EMBEDDIUM.writeColor(ModelQuadUtil.mixARGBColors(this.colors[source], quad.getColor(source)), this.quadLight.br[source]);
             vertex.u = quad.getTexU(source);
             vertex.v = quad.getTexV(source);
             vertex.light = this.quadLight.lm[source];

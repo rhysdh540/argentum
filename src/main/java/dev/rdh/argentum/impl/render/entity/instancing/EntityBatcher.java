@@ -155,7 +155,8 @@ final class EntityBatcher {
                 && pass != EntityRenderPass.CULL_FRONT
                 && pass != EntityRenderPass.CULL_BACK
                 && pass != EntityRenderPass.ITEM
-                && pass != EntityRenderPass.TRANSLUCENT);
+                && pass != EntityRenderPass.TRANSLUCENT
+        );
         program.getInterface().setChargePass(pass.chargePass);
         for (TextureBatch texture : this.textures.get(pass).values()) {
             if (texture.count == 0) continue;
@@ -195,8 +196,7 @@ final class EntityBatcher {
         void add(EntityGeometry geometry, Matrix4f matrix, float u, float v, int layer,
                 float red, float green, float blue, float alpha, float effectTime,
                 float overlayRed, float overlayGreen, float overlayBlue, float overlayAlpha) {
-            geometry.instances(this).add(matrix, u, v, layer, red, green, blue, alpha, effectTime,
-                    overlayRed, overlayGreen, overlayBlue, overlayAlpha);
+            geometry.instances(this).add(matrix, u, v, layer, red, green, blue, alpha, effectTime, overlayRed, overlayGreen, overlayBlue, overlayAlpha);
             this.count++;
         }
 

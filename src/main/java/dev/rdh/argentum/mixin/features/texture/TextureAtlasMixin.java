@@ -42,7 +42,8 @@ public class TextureAtlasMixin implements TextureAtlasExtension {
         this.celeritas$height = nextPowerOfTwo(height);
         Rect2i bounds = new Rect2i(0, 0, this.celeritas$width, this.celeritas$height);
         this.celeritas$quadTree = new QuadTree<>(bounds, minSize, this.stitchedSprites.values(),
-                sprite -> new Rect2i(sprite.getX(), sprite.getY(), sprite.getWidth(), sprite.getHeight()));
+                sprite -> new Rect2i(sprite.getX(), sprite.getY(), sprite.getWidth(), sprite.getHeight())
+        );
     }
 
     @Redirect(method = "bindAndTick", at = @At(value = "INVOKE", target = "Ljava/util/List;iterator()Ljava/util/Iterator;"))

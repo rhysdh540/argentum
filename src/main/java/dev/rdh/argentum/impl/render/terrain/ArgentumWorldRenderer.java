@@ -130,8 +130,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
         return this.isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
     }
 
-    public int renderEntities(Entity camera, Culler culler, float tickDelta,
-            double cameraX, double cameraY, double cameraZ) {
+    public int renderEntities(Entity camera, Culler culler, float tickDelta, double cameraX, double cameraY, double cameraZ) {
         Minecraft minecraft = Minecraft.getInstance();
         var dispatcher = minecraft.getEntityRenderDispatcher();
         this.entityGatherer.clear();

@@ -27,8 +27,7 @@ public final class CloudRenderer {
     private int cloudX = Integer.MIN_VALUE;
     private int cloudZ = Integer.MIN_VALUE;
 
-    public void render(Minecraft minecraft, TextureManager textureManager, ClientWorld world,
-            int ticks, float tickDelta, int pass) {
+    public void render(Minecraft minecraft, TextureManager textureManager, ClientWorld world, int ticks, float tickDelta, int pass) {
         Entity camera = minecraft.getCamera();
         float cameraY = (float)(camera.lastY + (camera.y - camera.lastY) * tickDelta);
         double cloudTime = ticks + tickDelta;
@@ -41,8 +40,7 @@ public final class CloudRenderer {
         textureManager.bind(CLOUDS_LOCATION);
         GlStateManager.enableBlend();
         GlStateManager.blendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-        this.renderClouds(cameraX, cameraZ, world.dimension.getCloudHeight() - cameraY + 0.33F,
-                world.getCloudColor(tickDelta), pass);
+        this.renderClouds(cameraX, cameraZ, world.dimension.getCloudHeight() - cameraY + 0.33F, world.getCloudColor(tickDelta), pass);
         GlStateManager.disableBlend();
         GlStateManager.enableCull();
     }
@@ -148,7 +146,8 @@ public final class CloudRenderer {
                             x, y, z + 8.0F, x * TEXEL + textureX, (z + 8.0F) * TEXEL + textureZ,
                             x + 8.0F, y, z + 8.0F, (x + 8.0F) * TEXEL + textureX, (z + 8.0F) * TEXEL + textureZ,
                             x + 8.0F, y, z, (x + 8.0F) * TEXEL + textureX, z * TEXEL + textureZ,
-                            x, y, z, x * TEXEL + textureX, z * TEXEL + textureZ);
+                            x, y, z, x * TEXEL + textureX, z * TEXEL + textureZ
+                    );
                 } else {
                     this.buildEdge(builder, side, cellX, cellZ, x, z, textureX, textureZ);
                 }
@@ -156,8 +155,7 @@ public final class CloudRenderer {
         }
     }
 
-    private void buildEdge(BufferBuilder builder, int side, int cellX, int cellZ, float x, float z,
-            float textureX, float textureZ) {
+    private void buildEdge(BufferBuilder builder, int side, int cellX, int cellZ, float x, float z, float textureX, float textureZ) {
         if ((side == X_NEGATIVE && cellX <= -1) || (side == X_POSITIVE && cellX > 1)
                 || (side == Z_NEGATIVE && cellZ <= -1) || (side == Z_POSITIVE && cellZ > 1)) {
             return;
@@ -171,7 +169,8 @@ public final class CloudRenderer {
                         edgeX, 0.0F, z + 8.0F, u, (z + 8.0F) * TEXEL + textureZ,
                         edgeX, 4.0F, z + 8.0F, u, (z + 8.0F) * TEXEL + textureZ,
                         edgeX, 4.0F, z, u, z * TEXEL + textureZ,
-                        edgeX, 0.0F, z, u, z * TEXEL + textureZ);
+                        edgeX, 0.0F, z, u, z * TEXEL + textureZ
+                );
             } else {
                 float edgeZ = z + strip + (side == Z_POSITIVE ? 1.0F - INSET : 0.0F);
                 float v = (z + strip + 0.5F) * TEXEL + textureZ;
@@ -179,7 +178,8 @@ public final class CloudRenderer {
                         x, 4.0F, edgeZ, x * TEXEL + textureX, v,
                         x + 8.0F, 4.0F, edgeZ, (x + 8.0F) * TEXEL + textureX, v,
                         x + 8.0F, 0.0F, edgeZ, (x + 8.0F) * TEXEL + textureX, v,
-                        x, 0.0F, edgeZ, x * TEXEL + textureX, v);
+                        x, 0.0F, edgeZ, x * TEXEL + textureX, v
+                );
             }
         }
     }

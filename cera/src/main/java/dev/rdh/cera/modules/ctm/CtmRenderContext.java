@@ -111,8 +111,7 @@ public final class CtmRenderContext {
         return sprite;
     }
 
-    private TextureAtlasSprite loadNeighborSprite(WorldView world, BlockState state,
-            BlockPos pos, Direction face) {
+    private TextureAtlasSprite loadNeighborSprite(WorldView world, BlockState state, BlockPos pos, Direction face) {
         state = state.getBlock().resolveVirtualProperties(state, world, pos);
         BakedModel model = Minecraft.getInstance().getBlockRenderDispatcher().getModel(state, world, pos);
         List<BakedQuad> quads = this.betterGrass.getFaceQuads(world, state, pos, face, model.getQuads(face));

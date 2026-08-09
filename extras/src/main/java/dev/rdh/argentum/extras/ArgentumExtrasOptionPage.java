@@ -154,8 +154,7 @@ final class ArgentumExtrasOptionPage {
                 new OptionPage(id("camera_effects"), text("pages.camera_effects"), List.of(camera)),
                 new OptionPage(id("particles"), text("pages.particles"), List.of(particles)),
                 new OptionPage(id("debug_hud"), text("pages.debug_hud"), List.of(debug)),
-                new OptionPage(id("entities"), text("pages.entities"),
-                        List.of(entities, equipment, playerCosmetics, attachments)),
+                new OptionPage(id("entities"), text("pages.entities"), List.of(entities, equipment, playerCosmetics, attachments)),
                 new OptionPage(id("quality"), text("pages.quality"), List.of(quality)),
                 new OptionPage(id("misc"), text("pages.misc"), List.of(misc))
         );

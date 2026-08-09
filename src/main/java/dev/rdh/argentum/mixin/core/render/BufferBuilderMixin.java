@@ -39,10 +39,8 @@ public abstract class BufferBuilderMixin implements BufferBuilderExtension {
         this.intBuffer.position(start);
         this.vertices(vertices);
         for (int offset = 0; offset < vertices.length; offset += stride) {
-            this.intBuffer.put(start + offset,
-                    Float.floatToRawIntBits(Float.intBitsToFloat(vertices[offset]) + x));
-            this.intBuffer.put(start + offset + 1,
-                    Float.floatToRawIntBits(Float.intBitsToFloat(vertices[offset + 1]) + y));
+            this.intBuffer.put(start + offset, Float.floatToRawIntBits(Float.intBitsToFloat(vertices[offset]) + x));
+            this.intBuffer.put(start + offset + 1, Float.floatToRawIntBits(Float.intBitsToFloat(vertices[offset + 1]) + y));
         }
     }
 }

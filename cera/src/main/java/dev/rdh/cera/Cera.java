@@ -21,9 +21,9 @@ public class Cera implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ResourcePackRepository.registerBundledModResourcePack("cera-default", "Cera Default Connected Textures",
-                FabricLoader.getInstance().getModContainer("cera").orElseThrow(), "resourcepacks/default");
-        CONFIG_STORAGE = JsonOptionStorage.load(FabricLoader.getInstance().getConfigDir().resolve("cera.json"),
-                CeraConfig.class, CeraConfig::new, CeraConfig::validate);
+                FabricLoader.getInstance().getModContainer("cera").orElseThrow(), "resourcepacks/default"
+        );
+        CONFIG_STORAGE = JsonOptionStorage.load(FabricLoader.getInstance().getConfigDir().resolve("cera.json"), CeraConfig.class, CeraConfig::new, CeraConfig::validate);
         CONFIG = CONFIG_STORAGE.getData();
         OptionGUIConstructionEvent.BUS.addListener(event -> event.addPage(CeraOptionPage.create()));
         ClientResourceLoaderEvents.END_RESOURCE_RELOAD.register((resources, context) -> {

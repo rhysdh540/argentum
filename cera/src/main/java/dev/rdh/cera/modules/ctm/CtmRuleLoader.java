@@ -80,8 +80,7 @@ final class CtmRuleLoader {
         rules.addAll(packRules);
     }
 
-    private static void collectProperties(ResourcePack pack, String directory,
-            Map<String, IOSupplier<InputStream>> files) {
+    private static void collectProperties(ResourcePack pack, String directory, Map<String, IOSupplier<InputStream>> files) {
         pack.findResources(ResourceType.CLIENT_ASSETS, "minecraft", directory,
                 (location, resource) -> {
                     String path = location.identifier();
@@ -147,7 +146,8 @@ final class CtmRuleLoader {
             } else {
                 tiles[i] = new Tile(
                         register(atlas, sourcedSprites, resolveSprite(tile, base, true)),
-                        TileAction.REPLACE);
+                        TileAction.REPLACE
+                );
             }
         }
 
@@ -220,18 +220,16 @@ final class CtmRuleLoader {
                 action,
                 maxMetadata(metadata, matchBlocks),
                 Map.copyOf(parseBlocks(properties.getProperty("connectBlocks"))),
-                Set.copyOf(parseMatchTiles(
-                        properties.getProperty("connectTiles"), base, atlas, sourcedSprites))
+                Set.copyOf(parseMatchTiles(properties.getProperty("connectTiles"), base, atlas, sourcedSprites))
         );
     }
 
     private static int requiredTiles(Method method, Properties properties) {
         return switch (method) {
-            case CTM -> 47;
+            case CTM, OVERLAY_CTM -> 47;
             case CTM_COMPACT -> 5;
             case OVERLAY -> 17;
-            case OVERLAY_CTM -> 47;
-            case HORIZONTAL, VERTICAL -> 4;
+			case HORIZONTAL, VERTICAL -> 4;
             case TOP, FIXED, OVERLAY_FIXED -> 1;
             case HORIZONTAL_VERTICAL, VERTICAL_HORIZONTAL -> 7;
             case RANDOM, OVERLAY_RANDOM -> expand(properties.getProperty("tiles", "")).size();

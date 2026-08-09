@@ -89,8 +89,7 @@ public class GameRendererMixin {
 
     @WrapOperation(method = "render(IFJ)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/GameRenderer;setupFog(IF)V"))
-    private void argentumExtras$changeTerrainFog(GameRenderer instance, int mode, float tickDelta,
-            Operation<Void> original) {
+    private void argentumExtras$changeTerrainFog(GameRenderer instance, int mode, float tickDelta, Operation<Void> original) {
         original.call(instance, mode, tickDelta);
         int density = ArgentumExtras.CONFIG.terrainFogDensity;
         Entity camera = this.minecraft.getCamera();

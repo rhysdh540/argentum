@@ -11,8 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MobRenderer.class)
 public class MobRendererMixin {
     @Inject(method = "renderRiders", at = @At("HEAD"), cancellable = true)
-    private void argentumExtras$hideLeashes(MobEntity entity, double x, double y, double z,
-            float yaw, float tickDelta, CallbackInfo ci) {
+    private void argentumExtras$hideLeashes(MobEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
         if (!ArgentumExtras.CONFIG.leashes) {
             ci.cancel();
         }

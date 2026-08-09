@@ -61,8 +61,10 @@ public class DebugOverlayMixin {
     private void appendArgentumSystemInfo(CallbackInfoReturnable<List<String>> cir) {
         var strings = cir.getReturnValue();
         strings.add("");
-        strings.addAll(DebugStrings.getStringsToRender().stream()
-                .map(pair -> pair.right().toString() + pair.left()).toList()
+        strings.addAll(
+                DebugStrings.getStringsToRender().stream()
+                        .map(pair -> pair.right().toString() + pair.left())
+                        .toList()
         );
     }
 }

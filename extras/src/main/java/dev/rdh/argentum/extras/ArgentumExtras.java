@@ -12,9 +12,9 @@ public class ArgentumExtras implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		CONFIG_STORAGE = JsonOptionStorage.load(FabricLoader.getInstance().getConfigDir().resolve("argentum-extras.json"),
-                ArgentumExtrasConfig.class, ArgentumExtrasConfig::new, ArgentumExtrasConfig::validate);
+                ArgentumExtrasConfig.class, ArgentumExtrasConfig::new, ArgentumExtrasConfig::validate
+		);
         CONFIG = CONFIG_STORAGE.getData();
-        OptionGUIConstructionEvent.BUS.addListener(event ->
-                ArgentumExtrasOptionPage.create().forEach(event::addPage));
+        OptionGUIConstructionEvent.BUS.addListener(event -> ArgentumExtrasOptionPage.create().forEach(event::addPage));
 	}
 }

@@ -18,8 +18,7 @@ public abstract class ArrowRendererMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void celeritas$instanceArrow(ArrowEntity arrow, double x, double y, double z,
-            float yaw, float tickDelta, CallbackInfo ci) {
+    private void celeritas$instanceArrow(ArrowEntity arrow, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
         if (EntityInstancingRenderer.recordArrow(arrow, x, y, z, tickDelta, CELERITAS$ARROW_TEXTURE)) {
             ci.cancel();
         }

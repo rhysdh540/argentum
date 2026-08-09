@@ -67,7 +67,6 @@ public class TextureAtlasMixin implements CeraTextureAtlasExtension {
     private Identifier cera$resolveConnectedTexture(Identifier original, Identifier texture, int mipmap) {
         String path = texture.getPath();
         if (!path.startsWith("optifine/") && !path.startsWith("mcpatcher/")) return original;
-        return new Identifier(texture.getNamespace(),
-                mipmap == 0 ? path + ".png" : path + "mipmap" + mipmap + ".png");
+        return new Identifier(texture.getNamespace(), mipmap == 0 ? path + ".png" : path + "mipmap" + mipmap + ".png");
     }
 }

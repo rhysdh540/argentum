@@ -126,8 +126,7 @@ public final class HudBatch {
             return !this.drawing;
         }
 
-        public void quad(float x, float y, float u, float v, int sourceWidth, int sourceHeight,
-                int width, int height, float textureWidth, float textureHeight, float z) {
+        public void quad(float x, float y, float u, float v, int sourceWidth, int sourceHeight, int width, int height, float textureWidth, float textureHeight, float z) {
             if (!this.drawing) {
                 this.buffer.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
                 this.drawing = true;

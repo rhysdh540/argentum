@@ -53,8 +53,7 @@ public enum LeafQuality {
 
         BlockPos.Mutable neighborPos = new BlockPos.Mutable();
         for (Direction direction : DIRECTIONS) {
-            neighborPos.set(pos.getX() + direction.getOffsetX(), pos.getY() + direction.getOffsetY(),
-                    pos.getZ() + direction.getOffsetZ());
+            neighborPos.set(pos.getX() + direction.getOffsetX(), pos.getY() + direction.getOffsetY(), pos.getZ() + direction.getOffsetZ());
             Block neighbor = world.getBlockState(neighborPos).getBlock();
             if (!(neighbor instanceof AbstractLeavesBlock)
                     && !neighbor.isFaceSolid(world, neighborPos, direction.getOpposite())) {

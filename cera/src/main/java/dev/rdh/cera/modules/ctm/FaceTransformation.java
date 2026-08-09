@@ -22,8 +22,7 @@ import java.util.Map;
 import static dev.rdh.cera.modules.ctm.CtmRule.sprite;
 
 final class FaceTransformation {
-    static final FaceTransformation EMPTY = new FaceTransformation(Map.of(), Map.of(),
-            new PaneCulling(), new QuadGeometry.Registry());
+    static final FaceTransformation EMPTY = new FaceTransformation(Map.of(), Map.of(), new PaneCulling(), new QuadGeometry.Registry());
 
     private final Map<Block, List<CtmRule>> blocks;
     private final Map<String, List<CtmRule>> tiles;
@@ -81,8 +80,7 @@ final class FaceTransformation {
     }
 
     private Result transform(WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
-            QuadGeometry geometry, List<Overlay> overlays, CtmRenderContext context,
-            boolean paneGeometry) {
+            QuadGeometry geometry, List<Overlay> overlays, CtmRenderContext context, boolean paneGeometry) {
         TextureAtlasSprite sprite = sprite(quad);
         if (sprite == null) return Result.NO_MATCH;
         List<BakedQuad> visible = paneGeometry
@@ -108,8 +106,7 @@ final class FaceTransformation {
         return transformVisible(world, state, pos, quad, geometry, sprite, overlays, context);
     }
 
-    private boolean usesPaneGeometry(WorldView world, BlockState state, BlockPos pos,
-            List<BakedQuad> quads) {
+    private boolean usesPaneGeometry(WorldView world, BlockState state, BlockPos pos, List<BakedQuad> quads) {
         List<CtmRule> blockRules = this.blocks.get(state.getBlock());
         for (BakedQuad quad : quads) {
             TextureAtlasSprite sprite = sprite(quad);
@@ -130,9 +127,8 @@ final class FaceTransformation {
         return false;
     }
 
-    private Result transformVisible(WorldView world, BlockState state, BlockPos pos,
-            BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite sprite,
-            List<Overlay> overlays, CtmRenderContext context) {
+    private Result transformVisible(WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
+            QuadGeometry geometry, TextureAtlasSprite sprite, List<Overlay> overlays, CtmRenderContext context) {
         Result result = apply(this.tiles.get(sprite.getName()), world, state, pos,
                 quad, geometry, sprite, overlays, context);
         if (!result.matched) {
@@ -155,9 +151,8 @@ final class FaceTransformation {
         return result;
     }
 
-    private static Result apply(List<CtmRule> rules, WorldView world, BlockState state,
-            BlockPos pos, BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite sprite,
-            List<Overlay> overlays, CtmRenderContext context) {
+    private static Result apply(List<CtmRule> rules, WorldView world, BlockState state, BlockPos pos, BakedQuad quad,
+                   QuadGeometry geometry, TextureAtlasSprite sprite, List<Overlay> overlays, CtmRenderContext context) {
         if (rules == null) return Result.NO_MATCH;
         for (CtmRule rule : rules) {
             if (!rule.matches(world, state, pos, quad.getFace(), sprite)) continue;

@@ -71,8 +71,7 @@ public final class EntityShadowBatch {
         active = initialize();
     }
 
-    public static boolean record(World renderWorld, Entity entity, double dx, double dy, double dz,
-            float opacity, float tickDelta, float shadowSize) {
+    public static boolean record(World renderWorld, Entity entity, double dx, double dy, double dz, float opacity, float tickDelta, float shadowSize) {
         if (!active) {
             return false;
         }
@@ -225,8 +224,7 @@ public final class EntityShadowBatch {
             program.unbind();
             FloatBuffer corners = BufferUtils.createFloatBuffer(8);
             corners.put(new float[]{0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F}).flip();
-            geometry = new InstancedGeometryBuffer(corners, InstancedVertexFormats.SHADOW_VERTEX,
-                    InstancedVertexFormats.SHADOW_INSTANCE);
+            geometry = new InstancedGeometryBuffer(corners, InstancedVertexFormats.SHADOW_VERTEX, InstancedVertexFormats.SHADOW_INSTANCE);
 
             LOGGER.info("Instanced entity shadows enabled");
         } catch (RuntimeException exception) {
@@ -261,7 +259,8 @@ public final class EntityShadowBatch {
     private static GlProgram<ShadowShader> createProgram() {
         List<GlShader> shaders = List.of(
                 ShaderLoader.loadShader(ShaderType.VERTEX, "argentum:entity_shadow.vert", ShaderConstants.EMPTY),
-                ShaderLoader.loadShader(ShaderType.FRAGMENT, "argentum:entity_shadow.frag", ShaderConstants.EMPTY));
+                ShaderLoader.loadShader(ShaderType.FRAGMENT, "argentum:entity_shadow.frag", ShaderConstants.EMPTY)
+        );
         try {
             GlProgram.Builder builder = GlProgram.builder("argentum:entity_shadow");
             shaders.forEach(builder::attachShader);
@@ -300,8 +299,7 @@ public final class EntityShadowBatch {
             FOG_COLOR[2] = GLStateManagerFogService.fogColorBlue;
             FOG_COLOR[3] = 1.0F;
             this.fogColor.set(FOG_COLOR);
-            this.fogParameters.set(GLStateManagerFogService.fogStart, GLStateManagerFogService.fogEnd,
-                    GLStateManagerFogService.fogDensity);
+            this.fogParameters.set(GLStateManagerFogService.fogStart, GLStateManagerFogService.fogEnd, GLStateManagerFogService.fogDensity);
         }
     }
 }

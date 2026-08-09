@@ -19,8 +19,7 @@ public abstract class EntityRendererMixin {
     protected float shadowSize;
 
     @Inject(method = "renderShadow", at = @At("HEAD"), cancellable = true)
-    private void celeritas$batchShadow(Entity entity, double dx, double dy, double dz, float opacity,
-            float tickDelta, CallbackInfo ci) {
+    private void celeritas$batchShadow(Entity entity, double dx, double dy, double dz, float opacity, float tickDelta, CallbackInfo ci) {
         if (EntityShadowBatch.record(this.dispatcher.world, entity, dx, dy, dz, opacity, tickDelta, this.shadowSize)) {
             ci.cancel();
         }

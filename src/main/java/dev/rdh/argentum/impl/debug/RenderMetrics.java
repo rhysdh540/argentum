@@ -21,8 +21,7 @@ public final class RenderMetrics {
     private static long culledParticles;
     private static long fontBatches;
     private static boolean frameStarted;
-    private static List<String> debugStrings = format(new double[Category.values().length],
-            0, 0, 0, 0, 0, 0, 0, 0, 0);
+    private static List<String> debugStrings = format(new double[Category.values().length], 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     private RenderMetrics() {
     }
@@ -110,7 +109,8 @@ public final class RenderMetrics {
                 (double)culledParticles / frames, (double)fontBatches / frames,
                 builds * 1_000_000_000.0D / elapsed,
                 builds == 0 ? 0.0D : buildNanos / (builds * 1_000_000.0D),
-                longestChunkBuild.getAndSet(0) / 1_000_000.0D);
+                longestChunkBuild.getAndSet(0) / 1_000_000.0D
+        );
 
         sampledFrames = 0;
         renderedEntities = 0;
@@ -129,12 +129,13 @@ public final class RenderMetrics {
                 "Tracked draws/frame: T %.1f | E %.1f | BE %.1f | P %.1f | Txt %.1f | HUD %.1f | O %.1f".formatted(
                         draws[Category.TERRAIN.ordinal()], draws[Category.ENTITY.ordinal()],
                         draws[Category.BLOCK_ENTITY.ordinal()], draws[Category.PARTICLE.ordinal()],
-                        draws[Category.TEXT.ordinal()], draws[Category.HUD.ordinal()], draws[Category.OTHER.ordinal()]),
+                        draws[Category.TEXT.ordinal()], draws[Category.HUD.ordinal()], draws[Category.OTHER.ordinal()]
+                ),
                 "Objects/frame: E %.1f rendered / %.1f culled | BE %.1f | P %.1f / %.1f | Font %.1f batches".formatted(
                         renderedEntities, culledEntities, renderedBlockEntities, renderedParticles, culledParticles,
-                        fontBatches),
-                "Chunk builds: %.1f/s | %.2f ms avg | %.2f ms max".formatted(
-                        chunkBuildsPerSecond, averageChunkBuildMillis, longestChunkBuildMillis)
+                        fontBatches
+                ),
+                "Chunk builds: %.1f/s | %.2f ms avg | %.2f ms max".formatted(chunkBuildsPerSecond, averageChunkBuildMillis, longestChunkBuildMillis)
         );
     }
 

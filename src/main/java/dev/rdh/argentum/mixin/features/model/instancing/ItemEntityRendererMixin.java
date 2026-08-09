@@ -23,8 +23,7 @@ public abstract class ItemEntityRendererMixin {
     private EntityInstancingRenderer.Capture celeritas$capture;
 
     @Inject(method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V", at = @At("HEAD"))
-    private void celeritas$beginItemEntity(ItemEntity entity, double x, double y, double z,
-            float yaw, float tickDelta, CallbackInfo ci) {
+    private void celeritas$beginItemEntity(ItemEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
         BakedModel model = this.itemRenderer.getModelShaper().getModel(entity.getItem());
         this.celeritas$capture = EntityInstancingRenderer.beginItemEntity(entity, model);
     }
@@ -33,8 +32,7 @@ public abstract class ItemEntityRendererMixin {
             method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/EntityRenderer;render(Lnet/minecraft/entity/Entity;DDDFF)V")
     )
-    private void celeritas$endItemEntity(ItemEntity entity, double x, double y, double z,
-            float yaw, float tickDelta, CallbackInfo ci) {
+    private void celeritas$endItemEntity(ItemEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
         if (this.celeritas$capture != null) {
             this.celeritas$capture.close();
             this.celeritas$capture = null;
@@ -42,8 +40,7 @@ public abstract class ItemEntityRendererMixin {
     }
 
     @Inject(method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V", at = @At("RETURN"))
-    private void celeritas$finishItemEntity(ItemEntity entity, double x, double y, double z,
-            float yaw, float tickDelta, CallbackInfo ci) {
+    private void celeritas$finishItemEntity(ItemEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
         if (this.celeritas$capture != null) {
             this.celeritas$capture.close();
             this.celeritas$capture = null;

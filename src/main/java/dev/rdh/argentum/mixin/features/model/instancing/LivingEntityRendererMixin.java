@@ -36,8 +36,7 @@ public abstract class LivingEntityRendererMixin {
     private EntityInstancingRenderer.Capture celeritas$capture;
 
     @Inject(method = "render", at = @At("HEAD"))
-    private void celeritas$beginEntity(LivingEntity entity, double x, double y, double z, float yaw,
-            float tickDelta, CallbackInfo ci) {
+    private void celeritas$beginEntity(LivingEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
         boolean player = entity instanceof PlayerEntity && this.model instanceof PlayerModel;
         boolean eligible = !this.solidRender
                 && !entity.isInvisible()
@@ -106,8 +105,7 @@ public abstract class LivingEntityRendererMixin {
     }
 
     @Inject(method = "render", at = @At("RETURN"))
-    private void celeritas$endEntity(LivingEntity entity, double x, double y, double z, float yaw,
-            float tickDelta, CallbackInfo ci) {
+    private void celeritas$endEntity(LivingEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
         if (this.celeritas$capture != null) {
             this.celeritas$capture.close();
             this.celeritas$capture = null;

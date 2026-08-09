@@ -83,8 +83,7 @@ public abstract class PlayerTabOverlayMixin extends GuiElement {
             method = "render",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiElement;drawTexture(IIFFIIIIFF)V")
     )
-    private void argentum$captureSkin(int x, int y, float u, float v, int sourceWidth, int sourceHeight,
-            int width, int height, float textureWidth, float textureHeight) {
+    private void argentum$captureSkin(int x, int y, float u, float v, int sourceWidth, int sourceHeight, int width, int height, float textureWidth, float textureHeight) {
         int index = this.argentum$skinQuadCount++;
         this.argentum$skinTextures[index] = this.argentum$skinTexture;
         int offset = index * 10;
@@ -106,23 +105,19 @@ public abstract class PlayerTabOverlayMixin extends GuiElement {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/overlay/PlayerTabOverlay;drawTexture(IIIIII)V")
     )
     private void argentum$capturePing(PlayerTabOverlay overlay, int x, int y, int u, int v, int width, int height) {
-        this.argentum$iconBatch.quad(x, y, u, v, width, height, width, height,
-                256, 256, this.drawOffset);
+        this.argentum$iconBatch.quad(x, y, u, v, width, height, width, height, 256, 256, this.drawOffset);
     }
 
     @Redirect(
             method = "renderDisplayScore",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/overlay/PlayerTabOverlay;drawTexture(FFIIII)V")
     )
-    private void argentum$captureHeart(PlayerTabOverlay overlay, float x, float y, int u, int v, int width,
-            int height) {
-        this.argentum$iconBatch.quad(x, y, u, v, width, height, width, height,
-                256, 256, this.drawOffset);
+    private void argentum$captureHeart(PlayerTabOverlay overlay, float x, float y, int u, int v, int width, int height) {
+        this.argentum$iconBatch.quad(x, y, u, v, width, height, width, height, 256, 256, this.drawOffset);
     }
 
     @Inject(method = "render", at = @At("RETURN"))
-    private void argentum$drawBatch(int width, Scoreboard scoreboard, ScoreboardObjective objective,
-            CallbackInfo ci) {
+    private void argentum$drawBatch(int width, Scoreboard scoreboard, ScoreboardObjective objective, CallbackInfo ci) {
         this.argentum$textBatch.draw(this::argentum$prepareTextBatch);
 
         if (!this.argentum$iconBatch.isEmpty()) {
@@ -156,7 +151,8 @@ public abstract class PlayerTabOverlayMixin extends GuiElement {
             this.argentum$textureBatch.quad(
                     quad[offset], quad[offset + 1], quad[offset + 2], quad[offset + 3],
                     (int)quad[offset + 4], (int)quad[offset + 5], (int)quad[offset + 6], (int)quad[offset + 7],
-                    quad[offset + 8], quad[offset + 9], 0);
+                    quad[offset + 8], quad[offset + 9], 0
+            );
         }
 
         this.argentum$textureBatch.draw();

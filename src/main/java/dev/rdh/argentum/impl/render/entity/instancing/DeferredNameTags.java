@@ -35,7 +35,8 @@ final class DeferredNameTags {
         for (int i = 0; i < this.count; i++) {
             int offset = i * 3;
             ((LivingEntityRenderer<LivingEntity>)this.renderers[i]).renderNameTag(this.entities[i],
-                    this.positions[offset], this.positions[offset + 1], this.positions[offset + 2]);
+                    this.positions[offset], this.positions[offset + 1], this.positions[offset + 2]
+            );
             this.renderers[i] = null;
             this.entities[i] = null;
         }

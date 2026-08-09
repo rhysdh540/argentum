@@ -21,8 +21,7 @@ public final class InstancedGeometryBuffer {
     private GlMutableBuffer instanceBuffer;
     private GlVertexArrayTessellation tessellation;
 
-    public InstancedGeometryBuffer(FloatBuffer vertices, GlVertexAttributeBinding[] vertexFormat,
-            GlVertexAttributeBinding[] instanceFormat) {
+    public InstancedGeometryBuffer(FloatBuffer vertices, GlVertexAttributeBinding[] vertexFormat, GlVertexAttributeBinding[] instanceFormat) {
         this.vertices = vertices;
         this.vertexFormat = vertexFormat;
         this.instanceFormat = instanceFormat;
@@ -36,12 +35,12 @@ public final class InstancedGeometryBuffer {
         try {
             this.vertexBuffer = commandList.createMutableBuffer();
             this.instanceBuffer = commandList.createMutableBuffer();
-            commandList.uploadData(this.vertexBuffer, MemoryUtil.memAddress(this.vertices),
-                    (long)this.vertices.remaining() * Float.BYTES, GlBufferUsage.STATIC_DRAW);
+            commandList.uploadData(this.vertexBuffer, MemoryUtil.memAddress(this.vertices), (long)this.vertices.remaining() * Float.BYTES, GlBufferUsage.STATIC_DRAW);
             this.tessellation = new GlVertexArrayTessellation(new GlVertexArray(), new TessellationBinding[]{
                     TessellationBinding.forVertexBuffer(this.vertexBuffer, this.vertexFormat),
                     TessellationBinding.forVertexBuffer(this.instanceBuffer, this.instanceFormat)
-            });
+            }
+            );
             this.tessellation.init(commandList);
             this.vertices = null;
         } catch (RuntimeException exception) {
@@ -52,8 +51,7 @@ public final class InstancedGeometryBuffer {
 
     public void draw(CommandList commandList, FloatBuffer instances, int vertexCount, int instanceCount) {
         this.initialize(commandList);
-        commandList.uploadData(this.instanceBuffer, MemoryUtil.memAddress(instances),
-                (long)instances.remaining() * Float.BYTES, GlBufferUsage.STREAM_DRAW);
+        commandList.uploadData(this.instanceBuffer, MemoryUtil.memAddress(instances), (long)instances.remaining() * Float.BYTES, GlBufferUsage.STREAM_DRAW);
         this.tessellation.bind(commandList);
         try {
             ARBDrawInstanced.glDrawArraysInstancedARB(GL11.GL_QUADS, 0, vertexCount, instanceCount);

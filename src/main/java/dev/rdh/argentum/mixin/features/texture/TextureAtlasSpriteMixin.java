@@ -30,9 +30,7 @@ public abstract class TextureAtlasSpriteMixin implements TextureAtlasSpriteExten
             for (int color : frame[0]) {
                 int alpha = color >>> 24;
                 if (alpha != 255) {
-                    level = level.chooseNextLevel(alpha == 0
-                            ? SpriteTransparencyLevel.TRANSPARENT
-                            : SpriteTransparencyLevel.TRANSLUCENT);
+                    level = level.chooseNextLevel(alpha == 0 ? SpriteTransparencyLevel.TRANSPARENT : SpriteTransparencyLevel.TRANSLUCENT);
                     if (level == SpriteTransparencyLevel.TRANSLUCENT) break;
                 }
             }

@@ -215,7 +215,8 @@ public final class EntityInstancingRenderer {
         }
         currentTexture.add(geometry, MATRICES[matrixDepth], lightU, lightV, currentTextureLayer,
                 red, green, blue, alpha, effectTime,
-                overlayRed, overlayGreen, overlayBlue, currentOverlayAlpha);
+                overlayRed, overlayGreen, overlayBlue, currentOverlayAlpha
+        );
         if (item != null) {
             currentPass = previousPass;
             selectTexture(currentBoundTexture);
@@ -235,14 +236,14 @@ public final class EntityInstancingRenderer {
         }
         currentTexture.add(geometry, MATRICES[matrixDepth], lightU, lightV, currentTextureLayer,
                 EntityInstancingRenderer.red, EntityInstancingRenderer.green, EntityInstancingRenderer.blue,
-                alpha, effectTime, overlayRed, overlayGreen, overlayBlue, currentOverlayAlpha);
+                alpha, effectTime, overlayRed, overlayGreen, overlayBlue, currentOverlayAlpha
+        );
         entityRecorded = true;
         instanceCount++;
         return true;
     }
 
-    public static boolean recordArrow(ArrowEntity arrow, double x, double y, double z, float tickDelta,
-            Identifier texture) {
+    public static boolean recordArrow(ArrowEntity arrow, double x, double y, double z, float tickDelta, Identifier texture) {
         boolean attached = modelActive;
         if (!attached && !frameActive) {
             return false;
@@ -264,9 +265,7 @@ public final class EntityInstancingRenderer {
         if (arrowGeometry == null) {
             arrowGeometry = new ArrowGeometry();
         }
-        currentTexture.add(arrowGeometry, matrix, lightU, lightV, currentTextureLayer,
-                1.0F, 1.0F, 1.0F, 1.0F, arrow.ticks + tickDelta,
-                0.0F, 0.0F, 0.0F, 0.0F);
+        currentTexture.add(arrowGeometry, matrix, lightU, lightV, currentTextureLayer, 1.0F, 1.0F, 1.0F, 1.0F, arrow.ticks + tickDelta, 0.0F, 0.0F, 0.0F, 0.0F);
         if (attached) {
             entityRecorded = true;
         } else {
@@ -405,7 +404,8 @@ public final class EntityInstancingRenderer {
         }
 
         debugString = "Entity instancing: %d entities (%d players, %d array/%d fallback) | %d parts | %d draws | %d textures".formatted(
-                entityCount, playerCount, arrayPlayerCount, fallbackPlayerCount, instanceCount, drawCount, textureCount);
+                entityCount, playerCount, arrayPlayerCount, fallbackPlayerCount, instanceCount, drawCount, textureCount
+        );
         NAME_TAGS.render();
     }
 
@@ -469,8 +469,7 @@ public final class EntityInstancingRenderer {
             if (activeCapture == this) modelActive = false;
         }
 
-        public boolean deferNameTag(LivingEntityRenderer<?> renderer, LivingEntity entity,
-                double x, double y, double z) {
+        public boolean deferNameTag(LivingEntityRenderer<?> renderer, LivingEntity entity, double x, double y, double z) {
             if (activeCapture != this || !entityRecorded) return false;
             NAME_TAGS.add(renderer, entity, x, y, z);
             return true;
@@ -514,7 +513,8 @@ public final class EntityInstancingRenderer {
         if (!part.boxes.isEmpty()) {
             currentTexture.add(geometry, MATRICES[matrixDepth], lightU, lightV, currentTextureLayer,
                     red, green, blue, alpha, effectTime,
-                    overlayRed, overlayGreen, overlayBlue, currentOverlayAlpha);
+                    overlayRed, overlayGreen, overlayBlue, currentOverlayAlpha
+            );
             entityRecorded = true;
             instanceCount++;
         }
@@ -625,7 +625,8 @@ public final class EntityInstancingRenderer {
                 : ShaderConstants.EMPTY;
         List<GlShader> shaders = List.of(
                 ShaderLoader.loadShader(ShaderType.VERTEX, "argentum:entity_instancing.vert", constants),
-                ShaderLoader.loadShader(ShaderType.FRAGMENT, "argentum:entity_instancing.frag", constants));
+                ShaderLoader.loadShader(ShaderType.FRAGMENT, "argentum:entity_instancing.frag", constants)
+        );
         try {
             GlProgram.Builder builder = GlProgram.builder("argentum:entity_instancing");
             shaders.forEach(builder::attachShader);

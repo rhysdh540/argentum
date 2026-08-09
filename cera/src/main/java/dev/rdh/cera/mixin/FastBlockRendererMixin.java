@@ -62,15 +62,16 @@ public class FastBlockRendererMixin {
         this.cera$overlays.clear();
         List<BakedQuad> transformed = this.cera$connectedTextures.transform(world, state, pos,
                 this.cera$betterGrass.getFaceQuads(world, state, pos, cullFace, quads),
-                this.cera$overlays, this.cera$ctmContext);
-        original.call(renderer, transformed, pos, colorState, world, lighter, cullFace, flags,
-                colorType, material, buffers, renderData);
+                this.cera$overlays, this.cera$ctmContext
+        );
+        original.call(renderer, transformed, pos, colorState, world, lighter, cullFace, flags, colorType, material, buffers, renderData);
         for (ConnectedTextures.Overlay overlay : this.cera$overlays) {
             Material overlayMaterial = buffers.getRenderPassConfiguration()
                     .getMaterialForRenderType(overlay.layer());
             original.call(renderer, List.of(overlay.quad()), pos, overlay.tintState(), world, lighter,
                     cullFace, flags, cera$getBiomeColorType(overlay.tintState()),
-                    overlayMaterial, buffers, renderData);
+                    overlayMaterial, buffers, renderData
+            );
         }
     }
 

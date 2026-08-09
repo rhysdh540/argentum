@@ -52,7 +52,8 @@ final class BakedItemGeometryCache {
         int color = toByte(brightness) << 24 | toByte(red) << 16 | toByte(green) << 8 | toByte(blue);
         return this.blockGeometries.computeIfAbsent(model, ignored -> new Int2ObjectOpenHashMap<>())
                 .computeIfAbsent(color, ignored -> new BakedItemGeometry(
-                        model, brightness, red, green, blue, true));
+                        model, brightness, red, green, blue, true)
+                );
     }
 
     void delete(CommandList commandList) {
@@ -61,8 +62,7 @@ final class BakedItemGeometryCache {
         delete(this.blockGeometries, commandList);
     }
 
-    private static void delete(Map<BakedModel, Int2ObjectOpenHashMap<EntityGeometry>> geometries,
-            CommandList commandList) {
+    private static void delete(Map<BakedModel, Int2ObjectOpenHashMap<EntityGeometry>> geometries, CommandList commandList) {
         geometries.values().forEach(map -> map.values().forEach(geometry -> geometry.delete(commandList)));
         geometries.clear();
     }
@@ -98,8 +98,7 @@ final class BakedItemGeometryCache {
         private final InstancedGeometryBuffer buffers;
         private final int vertexCount;
 
-        private BakedItemGeometry(BakedModel model, float brightness, float red, float green, float blue,
-                boolean block) {
+        private BakedItemGeometry(BakedModel model, float brightness, float red, float green, float blue, boolean block) {
             this(model, brightness, red, green, blue, block, -1, false);
         }
 
@@ -107,8 +106,7 @@ final class BakedItemGeometryCache {
             this(model, 1.0F, 1.0F, 1.0F, 1.0F, false, color, fixed);
         }
 
-        private BakedItemGeometry(BakedModel model, float brightness, float red, float green, float blue,
-                boolean block, int itemColor, boolean fixed) {
+        private BakedItemGeometry(BakedModel model, float brightness, float red, float green, float blue, boolean block, int itemColor, boolean fixed) {
             int quads = model.getQuads().size();
             for (Direction direction : Direction.values()) {
                 quads += model.getQuads(direction).size();
@@ -120,8 +118,7 @@ final class BakedItemGeometryCache {
             }
             putQuads(vertices, model.getQuads(), brightness, red, green, blue, block, itemColor, fixed);
             vertices.flip();
-            this.buffers = new InstancedGeometryBuffer(vertices, InstancedVertexFormats.ENTITY_VERTEX,
-                    InstancedVertexFormats.ENTITY_INSTANCE);
+            this.buffers = new InstancedGeometryBuffer(vertices, InstancedVertexFormats.ENTITY_VERTEX, InstancedVertexFormats.ENTITY_INSTANCE);
         }
 
         @Override

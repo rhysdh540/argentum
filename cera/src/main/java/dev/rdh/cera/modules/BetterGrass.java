@@ -32,8 +32,7 @@ public final class BetterGrass {
     private Pending pending;
     private volatile State state = State.EMPTY;
 
-    public void reload(ResourceManager resources, TextureAtlas atlas,
-            Map<String, TextureAtlasSprite> sourcedSprites) {
+    public void reload(ResourceManager resources, TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
         Properties properties = new Properties();
         try {
             Resource resource = resources.getResource(CONFIG);
@@ -87,8 +86,7 @@ public final class BetterGrass {
         );
     }
 
-    public List<BakedQuad> getFaceQuads(WorldView world, BlockState blockState, BlockPos pos,
-            Direction face, List<BakedQuad> original) {
+    public List<BakedQuad> getFaceQuads(WorldView world, BlockState blockState, BlockPos pos, Direction face, List<BakedQuad> original) {
         Mode mode = Cera.CONFIG.betterGrass;
         if (mode == Mode.OFF || face == null || !face.getAxis().isHorizontal()) return original;
 
@@ -166,8 +164,7 @@ public final class BetterGrass {
         for (Direction direction : Direction.values()) {
             BlockElementTexture texture = new BlockElementTexture(new float[]{0.0F, 0.0F, 16.0F, 16.0F}, 0);
             BlockElementFace face = new BlockElementFace(direction, tintIndex, "", texture);
-            faces.put(direction, List.of(bakery.bakeQuad(
-                    from, to, face, sprite, direction, ModelRotation.X0_Y0, null, false, true)));
+            faces.put(direction, List.of(bakery.bakeQuad(from, to, face, sprite, direction, ModelRotation.X0_Y0, null, false, true)));
         }
         return Map.copyOf(faces);
     }
@@ -200,8 +197,7 @@ public final class BetterGrass {
             Map<Direction, List<BakedQuad>> podzol,
             Map<Direction, List<BakedQuad>> snow
     ) {
-        private static final State EMPTY = new State(
-                false, false, false, false, false, false, Map.of(), Map.of(), Map.of(), Map.of());
+        private static final State EMPTY = new State(false, false, false, false, false, false, Map.of(), Map.of(), Map.of(), Map.of());
     }
 
     public enum Mode {

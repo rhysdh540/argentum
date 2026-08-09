@@ -10,10 +10,8 @@ final class ArrowGeometry extends EntityGeometry {
 
     ArrowGeometry() {
         FloatBuffer vertices = BufferUtils.createFloatBuffer(24 * 12);
-        quad(vertices, 1.0F, 0.0F, 0.0F, 0.0F, 0.15625F, 0.15625F, 0.3125F,
-                -7, -2, -2, -7, -2, 2, -7, 2, 2, -7, 2, -2);
-        quad(vertices, -1.0F, 0.0F, 0.0F, 0.0F, 0.15625F, 0.15625F, 0.3125F,
-                -7, 2, -2, -7, 2, 2, -7, -2, 2, -7, -2, -2);
+        quad(vertices, 1.0F, 0.0F, 0.0F, 0.0F, 0.15625F, 0.15625F, 0.3125F, -7, -2, -2, -7, -2, 2, -7, 2, 2, -7, 2, -2);
+        quad(vertices, -1.0F, 0.0F, 0.0F, 0.0F, 0.15625F, 0.15625F, 0.3125F, -7, 2, -2, -7, 2, 2, -7, -2, 2, -7, -2, -2);
         for (int i = 1; i <= 4; i++) {
             float angle = i * (float)Math.PI * 0.5F;
             float sin = (float)Math.sin(angle);
@@ -21,8 +19,7 @@ final class ArrowGeometry extends EntityGeometry {
             side(vertices, sin, cos);
         }
         vertices.flip();
-        this.buffers = new InstancedGeometryBuffer(vertices, InstancedVertexFormats.ENTITY_VERTEX,
-                InstancedVertexFormats.ENTITY_INSTANCE);
+        this.buffers = new InstancedGeometryBuffer(vertices, InstancedVertexFormats.ENTITY_VERTEX, InstancedVertexFormats.ENTITY_INSTANCE);
     }
 
     @Override
@@ -42,16 +39,13 @@ final class ArrowGeometry extends EntityGeometry {
         vertex(vertices, -8, 2 * cos, 2 * sin, 0.0F, 0.15625F, 0.0F, -sin, cos);
     }
 
-    private static void quad(FloatBuffer vertices, float nx, float ny, float nz,
-            float minU, float maxU, float minV, float maxV, float... positions) {
+    private static void quad(FloatBuffer vertices, float nx, float ny, float nz, float minU, float maxU, float minV, float maxV, float... positions) {
         for (int i = 0; i < 4; i++) {
-            vertex(vertices, positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2],
-                    i == 0 || i == 3 ? minU : maxU, i < 2 ? minV : maxV, nx, ny, nz);
+            vertex(vertices, positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2], i == 0 || i == 3 ? minU : maxU, i < 2 ? minV : maxV, nx, ny, nz);
         }
     }
 
-    private static void vertex(FloatBuffer vertices, float x, float y, float z, float u, float v,
-            float nx, float ny, float nz) {
+    private static void vertex(FloatBuffer vertices, float x, float y, float z, float u, float v, float nx, float ny, float nz) {
         vertices.put(x).put(y).put(z).put(u).put(v).put(nx).put(ny).put(nz)
                 .put(1.0F).put(1.0F).put(1.0F).put(1.0F);
     }

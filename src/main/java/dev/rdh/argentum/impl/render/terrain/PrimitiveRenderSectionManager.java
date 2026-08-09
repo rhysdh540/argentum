@@ -48,7 +48,8 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
         return new PrimitiveRenderSectionManager(PrimitiveRenderPassConfigurationBuilder.build(vertexType,
                 Argentum.CONFIG.translucencySorting, Argentum.CONFIG.chunkFadeInDuration), world, renderDistance, commandList,
                 0, maxSection,
-                Argentum.CONFIG.chunkBuilderThreads);
+                Argentum.CONFIG.chunkBuilderThreads
+        );
     }
 
     @Override
@@ -88,7 +89,8 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
     @Override
     protected @Nullable ChunkBuilderTask<ChunkBuildOutput> createRebuildTask(RenderSection render, int frame) {
         ChunkRenderContext context = ChunkRenderContext.prepare(this.world,
-                new SectionPos(render.getChunkX(), render.getChunkY(), render.getChunkZ()), this.sectionCache);
+                new SectionPos(render.getChunkX(), render.getChunkY(), render.getChunkZ()), this.sectionCache
+        );
         if (context == null) {
             return null;
         }

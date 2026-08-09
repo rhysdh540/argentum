@@ -40,8 +40,7 @@ final class TextureArrayManager {
             GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
             GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
             GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL12C.GL_TEXTURE_MAX_LEVEL, 0);
-            GL12C.glTexImage3D(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, 0, GL11.GL_RGBA8,
-                    1, 1, 1, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L);
+            GL12C.glTexImage3D(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, 0, GL11.GL_RGBA8, 1, 1, 1, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L);
         } finally {
             GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, previous);
             GlStateManager.activeTexture(activeTexture);
@@ -91,11 +90,11 @@ final class TextureArrayManager {
         PoolKey key = new PoolKey(width, height, minFilter,
                 GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER),
                 GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S),
-                GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T));
+                GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T)
+        );
         Pool pool = this.pools.get(key);
         if (pool == null) {
-            int capacity = (int)Math.min(this.maxLayers,
-                    Math.max(2L, MAX_POOL_BYTES / Math.max(1L, (long)width * height * 4)));
+            int capacity = (int)Math.min(this.maxLayers, Math.max(2L, MAX_POOL_BYTES / Math.max(1L, (long)width * height * 4)));
             pool = new Pool(key, capacity);
             this.pools.put(key, pool);
         }
@@ -135,7 +134,8 @@ final class TextureArrayManager {
                 GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_WRAP_T, key.wrapT);
                 GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL12C.GL_TEXTURE_MAX_LEVEL, 0);
                 GL12C.glTexImage3D(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, 0, GL11.GL_RGBA8,
-                        key.width, key.height, capacity, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L);
+                        key.width, key.height, capacity, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L
+                );
             } finally {
                 GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, previous);
                 GlStateManager.activeTexture(activeTexture);
@@ -198,14 +198,14 @@ final class TextureArrayManager {
             try {
                 EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, framebuffer);
                 EXTFramebufferObject.glFramebufferTexture2DEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT,
-                        EXTFramebufferObject.GL_COLOR_ATTACHMENT0_EXT, GL11.GL_TEXTURE_2D, sourceTexture, 0);
+                        EXTFramebufferObject.GL_COLOR_ATTACHMENT0_EXT, GL11.GL_TEXTURE_2D, sourceTexture, 0
+                );
                 if (EXTFramebufferObject.glCheckFramebufferStatusEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT)
                         != EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT) {
                     return false;
                 }
                 GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, this.texture);
-                GL12C.glCopyTexSubImage3D(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, 0,
-                        0, 0, layer, 0, 0, this.key.width, this.key.height);
+                GL12C.glCopyTexSubImage3D(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, 0, 0, 0, layer, 0, 0, this.key.width, this.key.height);
                 return true;
             } finally {
                 GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, previousArray);

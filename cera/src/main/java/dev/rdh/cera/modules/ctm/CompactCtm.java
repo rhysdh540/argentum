@@ -51,8 +51,8 @@ public final class CompactCtm {
         data[offset + 5] = Float.floatToRawIntBits(v);
     }
 
-    public static List<BakedQuad> transform(BakedQuad quad, QuadGeometry geometry,
-            TextureAtlasSprite from, TextureAtlasSprite[] sprites, int connections) {
+    static List<BakedQuad> transform(BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite from,
+                                     TextureAtlasSprite[] sprites, int connections) {
         if (geometry.transform == null) return null;
         byte[] tiles = TILES[connections & 255];
         int nw = tiles[0];
@@ -139,8 +139,7 @@ public final class CompactCtm {
         }
     }
 
-    private static BakedQuad part(BakedQuad quad, QuadGeometry geometry,
-            TextureAtlasSprite from, TextureAtlasSprite to, Region region) {
+    private static BakedQuad part(BakedQuad quad, QuadGeometry geometry, TextureAtlasSprite from, TextureAtlasSprite to, Region region) {
         int[] vertices = quad.getVertices().clone();
         int stride = vertices.length / 4;
         for (int vertex = 0; vertex < 4; vertex++) {
@@ -150,8 +149,7 @@ public final class CompactCtm {
         return new BakedQuad(vertices, quad.getTintIndex(), quad.getFace());
     }
 
-    private static void clip(int[] data, int offset, TextureAtlasSprite from,
-            TextureAtlasSprite to, QuadGeometry.PositionTransform transform, Region region) {
+    private static void clip(int[] data, int offset, TextureAtlasSprite from, TextureAtlasSprite to, QuadGeometry.PositionTransform transform, Region region) {
         float u = local(Float.intBitsToFloat(data[offset + 4]), from.getUMin(), from.getUMax());
         float v = local(Float.intBitsToFloat(data[offset + 5]), from.getVMin(), from.getVMax());
         float x = Float.intBitsToFloat(data[offset]);

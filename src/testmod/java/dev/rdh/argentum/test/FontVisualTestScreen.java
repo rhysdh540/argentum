@@ -71,7 +71,8 @@ public class FontVisualTestScreen extends Screen {
 
     private void takeScreenshot(String stage) {
         Screenshot.take(this.minecraft.gameDir, "font-" + this.variant + "-" + stage + ".png",
-                this.minecraft.width, this.minecraft.height, this.minecraft.getRenderTarget());
+                this.minecraft.width, this.minecraft.height, this.minecraft.getRenderTarget()
+        );
     }
 
     @Override

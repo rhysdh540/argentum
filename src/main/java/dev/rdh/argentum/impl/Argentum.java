@@ -30,8 +30,7 @@ public class Argentum implements ClientModInitializer {
         };
         FabricLoader loader = FabricLoader.getInstance();
         VERSION = loader.getModContainer(MODID).orElseThrow().getMetadata().getVersion().toString();
-        CONFIG_STORAGE = JsonOptionStorage.load(getConfigPath(loader.getConfigDir()),
-                ArgentumConfig.class, ArgentumConfig::new, ArgentumConfig::validate);
+        CONFIG_STORAGE = JsonOptionStorage.load(getConfigPath(loader.getConfigDir()), ArgentumConfig.class, ArgentumConfig::new, ArgentumConfig::validate);
         CONFIG = CONFIG_STORAGE.getData();
     }
 

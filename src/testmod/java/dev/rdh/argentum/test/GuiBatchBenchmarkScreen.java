@@ -61,8 +61,7 @@ public class GuiBatchBenchmarkScreen extends Screen {
         }
 
         for (int i = 0; i < ITEMS; i++) {
-            this.textRenderer.drawWithShadow(LABELS[i & 15],
-                    i % COLUMNS * 18 + 1, i / COLUMNS * 14 + 2, 0xFFFFFFFF);
+            this.textRenderer.drawWithShadow(LABELS[i & 15], i % COLUMNS * 18 + 1, i / COLUMNS * 14 + 2, 0xFFFFFFFF);
         }
 
         this.minecraft.getTextureManager().bind(ICONS_LOCATION);
@@ -84,8 +83,7 @@ public class GuiBatchBenchmarkScreen extends Screen {
         if (this.textBatch == null) this.textBatch = HudBatch.text(this.textRenderer);
         this.textBatch.begin();
         for (int i = 0; i < ITEMS; i++) {
-            this.textRenderer.drawWithShadow(LABELS[i & 15],
-                    i % COLUMNS * 18 + 1, i / COLUMNS * 14 + 2, 0xFFFFFFFF);
+            this.textRenderer.drawWithShadow(LABELS[i & 15], i % COLUMNS * 18 + 1, i / COLUMNS * 14 + 2, 0xFFFFFFFF);
         }
         this.textBatch.draw();
 
@@ -112,7 +110,8 @@ public class GuiBatchBenchmarkScreen extends Screen {
         String result = String.format(Locale.ROOT,
                 "variant=%s%nitems=%d%nframes=%d%nmeanNanos=%d%nmedianNanos=%d%np95Nanos=%d%nminNanos=%d%n",
                 variant, ITEMS, MEASURED_FRAMES, total / this.samples.length, median,
-                this.samples[this.samples.length * 95 / 100], this.samples[0]);
+                this.samples[this.samples.length * 95 / 100], this.samples[0]
+        );
         Path output = this.minecraft.gameDir.toPath().resolve("gui-benchmark-" + variant + ".txt");
         try {
             Path baselinePath = this.minecraft.gameDir.toPath().resolve("gui-benchmark-unbatched.txt");
@@ -123,7 +122,8 @@ public class GuiBatchBenchmarkScreen extends Screen {
                 }
                 long unbatchedMedian = Long.parseLong(baseline.getProperty("medianNanos"));
                 result += String.format(Locale.ROOT, "medianSpeedup=%.2f%nmedianReductionPercent=%.1f%n",
-                        (double)unbatchedMedian / median, 100.0 * (unbatchedMedian - median) / unbatchedMedian);
+                        (double)unbatchedMedian / median, 100.0 * (unbatchedMedian - median) / unbatchedMedian
+                );
             }
             Files.writeString(output, result);
         } catch (IOException e) {
