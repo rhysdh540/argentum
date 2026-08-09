@@ -10,14 +10,21 @@ import org.embeddedt.embeddium.impl.render.terrain.SimpleWorldRenderer;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.entity.EntityOcclusionCuller;
+import dev.rdh.argentum.impl.render.entity.EntityGatherer;
 import dev.rdh.argentum.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.client.entity.particle.Particle;
 import net.minecraft.client.render.block.BlockLayer;
+import net.minecraft.client.render.Culler;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.living.LivingEntity;
+import net.minecraft.entity.projectile.WitherSkullEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 
 import java.util.List;
@@ -27,6 +34,7 @@ import java.util.Objects;
  * Provides an extension to vanilla's world renderer.
  */
 public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveRenderSectionManager, BlockLayer, BlockEntity, Float> {
+    private final EntityGatherer entityGatherer = new EntityGatherer();
     private final EntityOcclusionCuller entityOcclusionCuller = new EntityOcclusionCuller(this);
 
     /**
@@ -122,9 +130,52 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
         return this.isBoxVisible(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
     }
 
-    public void prepareEntityCulling(List<Entity> entities, Entity camera,
+    public int renderEntities(Entity camera, Culler culler, float tickDelta,
             double cameraX, double cameraY, double cameraZ) {
+        Minecraft minecraft = Minecraft.getInstance();
+        var dispatcher = minecraft.getEntityRenderDispatcher();
+        this.entityGatherer.clear();
+        List<Entity> entities = this.entityGatherer.getLoadedEntityList((ClientWorld)this.world);
         this.entityOcclusionCuller.prepare(entities, camera, cameraX, cameraY, cameraZ);
+
+        int rendered = 0;
+        BlockPos.Mutable entityBlockPos = new BlockPos.Mutable();
+        for (Entity entity : entities) {
+            boolean visible = dispatcher.shouldRender(entity, culler, cameraX, cameraY, cameraZ);
+            if (visible && !this.isEntityVisible(entity)) {
+                RenderMetrics.recordCulledEntity();
+                visible = false;
+            }
+
+            if (!visible && entity.rider != minecraft.player) {
+                if (entity instanceof WitherSkullEntity) {
+                    dispatcher.renderNameTag(entity, tickDelta);
+                }
+                continue;
+            }
+
+            boolean isSelfSleeping = minecraft.getCamera() instanceof LivingEntity living && living.isSleeping();
+            if (entity == minecraft.getCamera() && minecraft.options.perspective == 0 && !isSelfSleeping) {
+                continue;
+            }
+
+            if (entity.y >= 0.0 && entity.y < 256.0) {
+                entityBlockPos.set(MathHelper.floor(entity.x), MathHelper.floor(entity.y), MathHelper.floor(entity.z));
+                if (!this.world.isChunkLoaded(entityBlockPos)) {
+                    continue;
+                }
+            }
+
+            rendered++;
+            RenderMetrics.recordRenderedEntity();
+            RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
+            try {
+                dispatcher.render(entity, tickDelta);
+            } finally {
+                RenderMetrics.setCategory(previous);
+            }
+        }
+        return rendered;
     }
 
     public boolean isParticleVisible(Particle particle) {

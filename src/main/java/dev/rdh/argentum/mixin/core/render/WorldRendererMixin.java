@@ -15,25 +15,18 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import dev.rdh.argentum.impl.extensions.WorldRendererExtension;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.render.entity.EntityGatherer;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 import dev.rdh.argentum.impl.render.terrain.NoopRenderChunkStorage;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.Culler;
 import net.minecraft.client.render.block.BlockLayer;
-import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.platform.Lighting;
 import net.minecraft.client.render.world.RenderChunkFactory;
 import net.minecraft.client.render.world.RenderChunkStorage;
 import net.minecraft.client.render.world.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.living.LivingEntity;
-import net.minecraft.entity.projectile.WitherSkullEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 
 import java.util.Collections;
@@ -55,10 +48,6 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
 
     @Shadow
     private ClientWorld world;
-    @Shadow
-    @Final
-    private EntityRenderDispatcher entityRenderDispatcher;
-
     @Shadow
     private int renderedEntityCount;
 
@@ -198,51 +187,9 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
         this.renderer.renderBlockEntities(partialTicks);
     }
 
-    private final EntityGatherer celeritas$entityGatherer = new EntityGatherer();
-
     @Inject(method = "renderEntities", at = @At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiler/Profiler;swap(Ljava/lang/String;)V", args = "ldc=entities"))
     private void celeritas$renderEntities(Entity camera, Culler culler, float tickDelta, CallbackInfo ci, @Local(ordinal = 0) double d, @Local(ordinal = 1) double e, @Local(ordinal = 2) double g) {
-        celeritas$entityGatherer.clear();
-        var entityList = celeritas$entityGatherer.getLoadedEntityList(this.world);
-        this.renderer.prepareEntityCulling(entityList, camera, d, e, g);
-
-        BlockPos.Mutable entityBlockPos = new BlockPos.Mutable();
-
-        for (Entity entity : entityList) {
-            boolean visible = this.entityRenderDispatcher.shouldRender(entity, culler, d, e, g);
-            if (visible && !this.renderer.isEntityVisible(entity)) {
-                RenderMetrics.recordCulledEntity();
-                visible = false;
-            }
-
-            if (!visible && entity.rider != this.minecraft.player) {
-                if (entity instanceof WitherSkullEntity) {
-                    this.minecraft.getEntityRenderDispatcher().renderNameTag(entity, tickDelta);
-                }
-                continue;
-            }
-
-            boolean isSelfSleeping = this.minecraft.getCamera() instanceof LivingEntity le && le.isSleeping();
-            if (entity == this.minecraft.getCamera() && this.minecraft.options.perspective == 0 && !isSelfSleeping) {
-                continue;
-            }
-
-            if (entity.y >= 0.0 && entity.y < 256.0) {
-                entityBlockPos.set(MathHelper.floor(entity.x), MathHelper.floor(entity.y), MathHelper.floor(entity.z));
-                if (!this.world.isChunkLoaded(entityBlockPos)) {
-                    continue;
-                }
-            }
-
-            this.renderedEntityCount++;
-            RenderMetrics.recordRenderedEntity();
-            RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
-            try {
-                this.entityRenderDispatcher.render(entity, tickDelta);
-            } finally {
-                RenderMetrics.setCategory(previous);
-            }
-        }
+        this.renderedEntityCount += this.renderer.renderEntities(camera, culler, tickDelta, d, e, g);
     }
 
     @Redirect(method = "renderEntities", at = @At(value = "INVOKE", target = "Ljava/util/List;iterator()Ljava/util/Iterator;", ordinal = 0))
