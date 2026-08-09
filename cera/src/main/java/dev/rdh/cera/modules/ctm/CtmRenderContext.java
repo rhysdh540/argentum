@@ -18,9 +18,13 @@ import net.minecraft.world.WorldView;
 import java.util.List;
 
 public final class CtmRenderContext {
+    static final int UNKNOWN_PANE_MASK = -2;
+
     private final BetterGrass betterGrass;
     private final Reference2ObjectMap<BakedQuad, Reference2ObjectMap<TextureAtlasSprite, Int2ObjectMap<BakedQuad>>> remapped = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<CtmRule, Reference2ObjectMap<BakedQuad, List<BakedQuad>[]>> compact = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<List<BakedQuad>, List<BakedQuad>> paneInnerFaces = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<BakedQuad, List<BakedQuad>[]> paneParts = new Reference2ObjectOpenHashMap<>();
     private final BlockPos.Mutable neighborPos = new BlockPos.Mutable();
     private final long[] neighborPositions = new long[32];
     private final Direction[] neighborFaces = new Direction[32];
@@ -32,6 +36,8 @@ public final class CtmRenderContext {
     private int blockY;
     private int blockZ;
     private int neighborCount;
+    private int paneUpMask = UNKNOWN_PANE_MASK;
+    private int paneDownMask = UNKNOWN_PANE_MASK;
 
     public CtmRenderContext(BetterGrass betterGrass) {
         this.betterGrass = betterGrass;
@@ -42,6 +48,8 @@ public final class CtmRenderContext {
             this.owner = owner;
             this.remapped.clear();
             this.compact.clear();
+            this.paneInnerFaces.clear();
+            this.paneParts.clear();
         }
         if (this.neighborWorld != world || this.blockX != pos.getX()
                 || this.blockY != pos.getY() || this.blockZ != pos.getZ()) {
@@ -50,7 +58,37 @@ public final class CtmRenderContext {
             this.blockY = pos.getY();
             this.blockZ = pos.getZ();
             this.neighborCount = 0;
+            this.paneUpMask = UNKNOWN_PANE_MASK;
+            this.paneDownMask = UNKNOWN_PANE_MASK;
         }
+    }
+
+    int paneMask(Direction face) {
+        return face == Direction.UP ? this.paneUpMask : this.paneDownMask;
+    }
+
+    void paneMask(Direction face, int mask) {
+        if (face == Direction.UP) this.paneUpMask = mask;
+        else this.paneDownMask = mask;
+    }
+
+    List<BakedQuad> paneInnerFaces(List<BakedQuad> quads) {
+        return this.paneInnerFaces.get(quads);
+    }
+
+    void putPaneInnerFaces(List<BakedQuad> quads, List<BakedQuad> result) {
+        this.paneInnerFaces.put(quads, result);
+    }
+
+    @SuppressWarnings("unchecked")
+    List<BakedQuad> paneParts(BakedQuad quad, int variant) {
+        List<BakedQuad>[] variants = this.paneParts.get(quad);
+        return variants == null ? null : variants[variant];
+    }
+
+    @SuppressWarnings("unchecked")
+    void putPaneParts(BakedQuad quad, int variant, List<BakedQuad> parts) {
+        this.paneParts.computeIfAbsent(quad, _ -> new List[4])[variant] = parts;
     }
 
     BakedQuad remap(BakedQuad quad, TextureAtlasSprite from, TextureAtlasSprite to, int tintIndex) {

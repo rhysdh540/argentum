@@ -7,6 +7,7 @@ import dev.rdh.cera.modules.ctm.CtmRule.TileAction;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.Block;
+import net.minecraft.block.PaneBlock;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.client.render.block.BlockLayer;
 import net.minecraft.client.render.texture.TextureAtlas;
@@ -31,6 +32,7 @@ public final class ConnectedTextures {
         CtmLookup.validate();
         CompactCtm.validate();
         PaneCulling.validate();
+        CtmRule.validate();
         pending = CtmRuleLoader.load(atlas, sourcedSprites);
     }
 
@@ -57,11 +59,15 @@ public final class ConnectedTextures {
         State state = this.state;
         if (Cera.CONFIG.connectedTextures == Mode.OFF || state == State.EMPTY) return quads;
         context.begin(state, world, pos);
+        boolean paneGeometry = blockState.getBlock() instanceof PaneBlock
+                && usesPaneGeometry(state, world, blockState, pos, quads);
+        if (paneGeometry) quads = PaneCulling.cullInnerFaces(blockState, quads, context);
 
         List<BakedQuad> transformed = null;
         for (int i = 0; i < quads.size(); i++) {
             BakedQuad original = quads.get(i);
-            Result replacement = transform(state, world, blockState, pos, original, overlays, context);
+            Result replacement = transform(state, world, blockState, pos, original,
+                    overlays, context, paneGeometry);
             if (transformed == null && (!replacement.matched || replacement.quad == original)) {
                 continue;
             }
@@ -78,11 +84,20 @@ public final class ConnectedTextures {
     }
 
     private Result transform(State state, WorldView world, BlockState blockState,
-            BlockPos pos, BakedQuad quad, List<Overlay> overlays, CtmRenderContext context) {
+            BlockPos pos, BakedQuad quad, List<Overlay> overlays, CtmRenderContext context,
+            boolean paneGeometry) {
         TextureAtlasSprite sprite = sprite(quad);
         if (sprite == null) return Result.NO_MATCH;
-        List<BakedQuad> visible = PaneCulling.cull(world, blockState, pos, quad, sprite);
+        List<BakedQuad> visible = paneGeometry
+                ? PaneCulling.cull(world, blockState, pos, quad, sprite, context) : null;
         if (visible != null) {
+            if (visible.isEmpty()) return Result.CULLED;
+            if (visible.size() == 1) {
+                BakedQuad part = visible.getFirst();
+                Result result = transformVisible(state, world, blockState, pos,
+                        part, sprite, overlays, context);
+                return result.matched ? result : Result.of(part);
+            }
             List<BakedQuad> transformed = new ObjectArrayList<>(visible.size());
             for (BakedQuad part : visible) {
                 Result result = transformVisible(state, world, blockState, pos,
@@ -94,6 +109,31 @@ public final class ConnectedTextures {
             return Result.split(transformed);
         }
         return transformVisible(state, world, blockState, pos, quad, sprite, overlays, context);
+    }
+
+    private static boolean usesPaneGeometry(State state, WorldView world, BlockState blockState,
+            BlockPos pos, List<BakedQuad> quads) {
+        List<CtmRule> blockRules = state.blocks.get(blockState.getBlock());
+        for (BakedQuad quad : quads) {
+            TextureAtlasSprite sprite = sprite(quad);
+            if (sprite == null) continue;
+            if (usesPaneGeometry(state.tiles.get(sprite.getName()), world, blockState, pos,
+                    quad, sprite) || usesPaneGeometry(blockRules, world, blockState, pos, quad, sprite)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean usesPaneGeometry(List<CtmRule> rules, WorldView world,
+            BlockState blockState, BlockPos pos, BakedQuad quad, TextureAtlasSprite sprite) {
+        if (rules == null) return false;
+        for (CtmRule rule : rules) {
+            if ((rule.method() == Method.CTM || rule.method() == Method.CTM_COMPACT
+                    || rule.method() == Method.OVERLAY_CTM)
+                    && rule.matches(world, blockState, pos, quad.getFace(), sprite)) return true;
+        }
+        return false;
     }
 
     private Result transformVisible(State state, WorldView world, BlockState blockState,
@@ -128,7 +168,7 @@ public final class ConnectedTextures {
             if (!rule.matches(world, blockState, pos, quad.getFace(), sprite)) continue;
             if (rule.method().overlay()) {
                 if (overlays == null || (BakedQuadView.of(quad).getFlags() & IS_PARTIAL) != 0) continue;
-                for (Tile tile : rule.overlays(world, blockState, pos, quad.getFace(), sprite, context)) {
+                for (Tile tile : rule.overlays(world, blockState, pos, quad, sprite, context)) {
                     overlays.add(new Overlay(
                             context.remap(quad, sprite, tile.sprite(), rule.tintIndex()),
                             rule.layer(), rule.tintState()));
@@ -140,7 +180,7 @@ public final class ConnectedTextures {
                 if (compact != null) return Result.split(compact);
                 continue;
             }
-            Tile tile = rule.select(world, blockState, pos, quad.getFace(), sprite, context);
+            Tile tile = rule.select(world, blockState, pos, quad, sprite, context);
             if (tile == null) continue;
             if (tile.action() == TileAction.SKIP) continue;
             if (tile.action() == TileAction.DEFAULT || tile.sprite() == sprite) return Result.of(quad);
@@ -155,6 +195,7 @@ public final class ConnectedTextures {
 
     private record Result(BakedQuad quad, List<BakedQuad> quads, boolean matched) {
         private static final Result NO_MATCH = new Result(null, null, false);
+        private static final Result CULLED = new Result(null, List.of(), true);
 
         private static Result of(BakedQuad quad) {
             return new Result(quad, null, true);
