@@ -1,22 +1,18 @@
 package dev.rdh.argentum.extras.mixin;
 
-import com.google.gson.JsonSyntaxException;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import dev.rdh.argentum.extras.ArgentumExtras;
+import dev.rdh.argentum.extras.FxaaRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.PostChain;
 import net.minecraft.client.render.platform.GlStateManager;
-import net.minecraft.client.render.pipeline.RenderTarget;
 import net.minecraft.client.render.world.WorldRenderer;
 import net.minecraft.client.resource.manager.ResourceManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.living.LivingEntity;
 import net.minecraft.entity.living.effect.StatusEffect;
-import net.minecraft.resource.Identifier;
-import org.apache.logging.log4j.LogManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -29,15 +25,12 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
-import java.io.IOException;
-
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
     @Shadow private Minecraft minecraft;
     @Shadow private float renderDistance;
     @Shadow private boolean thiccFog;
-    @Unique private PostChain argentumExtras$fxaa;
-    @Unique private boolean argentumExtras$fxaaFailed;
+    @Unique private final FxaaRenderer argentumExtras$fxaa = new FxaaRenderer();
 
     @ModifyExpressionValue(method = "tickFov",
             at = @At(value = "INVOKE",
@@ -118,53 +111,17 @@ public class GameRendererMixin {
                     target = "Lnet/minecraft/client/render/pipeline/RenderTarget;bindWrite(Z)V",
                     shift = At.Shift.AFTER))
     private void argentumExtras$applyFxaa(float tickDelta, long startTime, CallbackInfo ci) {
-        if (!ArgentumExtras.CONFIG.fxaa) {
-            this.argentumExtras$closeFxaa();
-            return;
-        }
-
-        if (this.argentumExtras$fxaa == null && !this.argentumExtras$fxaaFailed) {
-            try {
-                ResourceManager resources = this.minecraft.getResourceManager();
-                RenderTarget target = this.minecraft.getRenderTarget();
-                this.argentumExtras$fxaa = new PostChain(this.minecraft.getTextureManager(), resources, target,
-                        new Identifier("shaders/post/fxaa.json"));
-                this.argentumExtras$fxaa.resize(this.minecraft.width, this.minecraft.height);
-            } catch (IOException | JsonSyntaxException e) {
-                this.argentumExtras$fxaaFailed = true;
-                LogManager.getLogger("Argentum Extras").warn("Failed to load FXAA", e);
-            }
-        }
-
-        if (this.argentumExtras$fxaa != null) {
-            GlStateManager.matrixMode(5890);
-            GlStateManager.pushMatrix();
-            GlStateManager.loadIdentity();
-            this.argentumExtras$fxaa.process(tickDelta);
-            GlStateManager.popMatrix();
-            this.minecraft.getRenderTarget().bindWrite(true);
-        }
+        this.argentumExtras$fxaa.render(this.minecraft, tickDelta);
     }
 
     @Inject(method = "reload", at = @At("HEAD"))
     private void argentumExtras$reloadFxaa(ResourceManager resourceManager, CallbackInfo ci) {
-        this.argentumExtras$closeFxaa();
+        this.argentumExtras$fxaa.close();
     }
 
     @Inject(method = "onResolutionChanged", at = @At("RETURN"))
     private void argentumExtras$resizeFxaa(int width, int height, CallbackInfo ci) {
-        if (this.argentumExtras$fxaa != null) {
-            this.argentumExtras$fxaa.resize(width, height);
-        }
-    }
-
-    @Unique
-    private void argentumExtras$closeFxaa() {
-        if (this.argentumExtras$fxaa != null) {
-            this.argentumExtras$fxaa.close();
-            this.argentumExtras$fxaa = null;
-        }
-        this.argentumExtras$fxaaFailed = false;
+        this.argentumExtras$fxaa.resize(width, height);
     }
 
     @ModifyExpressionValue(method = {"tickRain", "renderSnowAndRain"},
