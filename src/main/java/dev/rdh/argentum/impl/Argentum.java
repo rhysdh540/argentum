@@ -16,20 +16,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Argentum implements ClientModInitializer {
-    public static final String MODID = "argentum";
+    public static final String ID = "argentum";
     public static String VERSION;
     public static ArgentumConfig CONFIG = new ArgentumConfig();
     public static JsonOptionStorage<ArgentumConfig> CONFIG_STORAGE;
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(MODID);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ID);
 
     @Override
     public void onInitializeClient() {
-        GLRenderDevice.VANILLA_STATE_RESETTER = () -> {
-            GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
-        };
+        GLRenderDevice.VANILLA_STATE_RESETTER = () -> GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
         FabricLoader loader = FabricLoader.getInstance();
-        VERSION = loader.getModContainer(MODID).orElseThrow().getMetadata().getVersion().toString();
+        VERSION = loader.getModContainer(ID).orElseThrow().getMetadata().getVersion().toString();
         CONFIG_STORAGE = JsonOptionStorage.load(getConfigPath(loader.getConfigDir()), ArgentumConfig.class, ArgentumConfig::new, ArgentumConfig::validate);
         CONFIG = CONFIG_STORAGE.getData();
     }

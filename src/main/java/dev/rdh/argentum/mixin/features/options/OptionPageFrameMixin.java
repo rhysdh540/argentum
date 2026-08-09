@@ -9,6 +9,6 @@ import org.spongepowered.asm.mixin.injection.At;
 abstract class OptionPageFrameMixin {
     @ModifyReturnValue(method = "normalizeModForTooltip", at = @At("RETURN"))
     private static String celeritas$normalizeModId(String modId) {
-        return "embeddium".equals(modId) ? "argentum" : modId;
+        return "embeddium".equals(modId) || "celeritas".equals(modId) ? "argentum" : modId;
     }
 }
