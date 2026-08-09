@@ -10,6 +10,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.PaneBlock;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.client.render.block.BlockLayer;
+import net.minecraft.client.render.block.BlockModelShaper;
 import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.resource.model.BakedQuad;
@@ -49,9 +50,24 @@ public final class ConnectedTextures {
         }
         blocks.replaceAll((_, rules) -> List.copyOf(rules));
         tiles.replaceAll((_, rules) -> List.copyOf(rules));
-        state = pending.isEmpty() ? State.EMPTY : new State(Map.copyOf(blocks), Map.copyOf(tiles));
+        state = pending.isEmpty() ? State.EMPTY
+                : new State(Map.copyOf(blocks), Map.copyOf(tiles), new PaneCulling());
         Cera.LOGGER.info("Loaded {} connected texture rules", pending.size());
         pending = List.of();
+    }
+
+    public void compilePaneGeometry(BlockModelShaper models) {
+        State state = this.state;
+        if (state == State.EMPTY) return;
+        PaneCulling panes = new PaneCulling();
+        for (Block block : Block.REGISTRY) {
+            if (!(block instanceof PaneBlock)) continue;
+            for (BlockState blockState : block.stateDefinition().all()) {
+                panes.compile(models.getModel(blockState));
+            }
+        }
+        panes.validateCompiled();
+        this.state = new State(state.blocks, state.tiles, panes);
     }
 
     public List<BakedQuad> transform(WorldView world, BlockState blockState, BlockPos pos,
@@ -61,7 +77,7 @@ public final class ConnectedTextures {
         context.begin(state, world, pos);
         boolean paneGeometry = blockState.getBlock() instanceof PaneBlock
                 && usesPaneGeometry(state, world, blockState, pos, quads);
-        if (paneGeometry) quads = PaneCulling.cullInnerFaces(blockState, quads, context);
+        if (paneGeometry) quads = state.panes.prepare(quads);
 
         List<BakedQuad> transformed = null;
         for (int i = 0; i < quads.size(); i++) {
@@ -89,7 +105,7 @@ public final class ConnectedTextures {
         TextureAtlasSprite sprite = sprite(quad);
         if (sprite == null) return Result.NO_MATCH;
         List<BakedQuad> visible = paneGeometry
-                ? PaneCulling.cull(world, blockState, pos, quad, sprite, context) : null;
+                ? state.panes.cull(world, blockState, pos, quad, sprite, context) : null;
         if (visible != null) {
             if (visible.isEmpty()) return Result.CULLED;
             if (visible.size() == 1) {
@@ -189,8 +205,9 @@ public final class ConnectedTextures {
         return Result.NO_MATCH;
     }
 
-    private record State(Map<Block, List<CtmRule>> blocks, Map<String, List<CtmRule>> tiles) {
-        private static final State EMPTY = new State(Map.of(), Map.of());
+    private record State(Map<Block, List<CtmRule>> blocks, Map<String, List<CtmRule>> tiles,
+            PaneCulling panes) {
+        private static final State EMPTY = new State(Map.of(), Map.of(), new PaneCulling());
     }
 
     private record Result(BakedQuad quad, List<BakedQuad> quads, boolean matched) {
