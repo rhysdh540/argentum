@@ -50,8 +50,8 @@ public final class RenderMetrics {
         frameDraws[category.ordinal()]++;
     }
 
-    public static void recordTerrainDraws(int count) {
-        frameDraws[Category.TERRAIN.ordinal()] += count;
+    public static void recordTerrainDraw() {
+        frameDraws[Category.TERRAIN.ordinal()]++;
     }
 
     public static void recordRenderedEntity() {

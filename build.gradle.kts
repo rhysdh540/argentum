@@ -2,7 +2,7 @@ plugins {
     id("mc")
 }
 
-version = "2.4.0-dev.5"
+version = "2.4.0-dev.6"
 
 java.toolchain {
     languageVersion = JavaLanguageVersion.of(25)

@@ -1,6 +1,8 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttribute;
 import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttributeBinding;
+import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttributeFormat;
 
 public final class InstancedVertexFormats {
     private static final int ENTITY_VERTEX_STRIDE = 12 * Float.BYTES;
@@ -36,6 +38,7 @@ public final class InstancedVertexFormats {
     }
 
     private static GlVertexAttributeBinding binding(int index, int count, int stride, int pointer, int divisor) {
-        return new InstancedVertexAttributeBinding(index, count, stride, pointer, divisor);
+        return new GlVertexAttributeBinding(index,
+                new GlVertexAttribute(GlVertexAttributeFormat.FLOAT, "", count, false, pointer, stride, false), divisor);
     }
 }

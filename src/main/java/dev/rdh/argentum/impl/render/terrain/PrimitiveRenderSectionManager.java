@@ -2,18 +2,15 @@ package dev.rdh.argentum.impl.render.terrain;
 
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.device.RenderDevice;
-import org.embeddedt.embeddium.impl.gl.functions.MultidrawFunctions;
-import org.embeddedt.embeddium.impl.gl.tessellation.GlPrimitiveType;
-import org.embeddedt.embeddium.impl.gl.tessellation.GlTessellation;
 import org.embeddedt.embeddium.impl.render.chunk.DefaultChunkRenderer;
 import org.embeddedt.embeddium.impl.render.chunk.RenderPassConfiguration;
 import org.embeddedt.embeddium.impl.render.chunk.RenderSection;
 import org.embeddedt.embeddium.impl.render.chunk.RenderSectionManager;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildOutput;
 import org.embeddedt.embeddium.impl.render.chunk.compile.tasks.ChunkBuilderTask;
+import org.embeddedt.embeddium.impl.render.chunk.multidraw.DirectMultiDrawEmitter;
 import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
 import org.embeddedt.embeddium.impl.render.chunk.lists.SectionTicker;
-import org.embeddedt.embeddium.impl.render.chunk.multidraw.DirectMultiDrawEmitter;
 import org.embeddedt.embeddium.impl.render.chunk.multidraw.MultiDrawEmitter;
 import org.embeddedt.embeddium.impl.render.chunk.sprite.GenericSectionSpriteTicker;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderInterface;
@@ -59,15 +56,10 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected @Nullable SectionTicker createSectionTicker() {
-        return new GenericSectionSpriteTicker<TextureAtlasSprite>(TextureAtlasSprite::argentum$markActive);
+        return new GenericSectionSpriteTicker<>(TextureAtlasSprite::argentum$markActive);
     }
 
-    @Override
-    protected boolean shouldRespectUpdateTaskQueueSizeLimit() {
-        return true;
-    }
-
-    @Override
+	@Override
     protected boolean useFogOcclusion() {
         return Argentum.CONFIG.fogCulling;
     }
@@ -111,7 +103,7 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
     private static class ChunkRenderer extends DefaultChunkRenderer {
 
         public ChunkRenderer(RenderDevice device, RenderPassConfiguration<?> renderPassConfiguration) {
-            super(device, renderPassConfiguration, new CountingMultiDrawEmitter(device));
+            super(device, renderPassConfiguration, counting(new DirectMultiDrawEmitter()));
         }
 
         @Override
@@ -126,43 +118,10 @@ public class PrimitiveRenderSectionManager extends RenderSectionManager {
         }
     }
 
-    private static class CountingMultiDrawEmitter implements MultiDrawEmitter {
-        private final DirectMultiDrawEmitter delegate = new DirectMultiDrawEmitter();
-        private final boolean nativeMultiDraw;
-
-        private CountingMultiDrawEmitter(RenderDevice device) {
-            this.nativeMultiDraw = device.getDeviceFunctions().multidrawFunctions() == MultidrawFunctions.CORE;
-        }
-
-        @Override
-        public void addDrawCommands(long meshData, int facingMask, int indexPointerMask) {
-            this.delegate.addDrawCommands(meshData, facingMask, indexPointerMask);
-        }
-
-        @Override
-        public void executeBatch(CommandList commandList, GlTessellation tessellation, GlPrimitiveType primitiveType) {
-            RenderMetrics.recordTerrainDraws(this.nativeMultiDraw ? 1 : this.delegate.batch().size());
-            this.delegate.executeBatch(commandList, tessellation, primitiveType);
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return this.delegate.isEmpty();
-        }
-
-        @Override
-        public int getIndexBufferSize() {
-            return this.delegate.getIndexBufferSize();
-        }
-
-        @Override
-        public void clear() {
-            this.delegate.clear();
-        }
-
-        @Override
-        public void delete() {
-            this.delegate.delete();
-        }
+    private static MultiDrawEmitter counting(MultiDrawEmitter delegate) {
+        return (commandList, tessellation, primitiveType, batch) -> {
+            RenderMetrics.recordTerrainDraw();
+            delegate.executeBatch(commandList, tessellation, primitiveType, batch);
+        };
     }
 }
