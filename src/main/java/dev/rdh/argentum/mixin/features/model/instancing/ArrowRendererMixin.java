@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
+import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancing;
 
 @Mixin(ArrowRenderer.class)
 public abstract class ArrowRendererMixin {
@@ -19,7 +19,9 @@ public abstract class ArrowRendererMixin {
             cancellable = true
     )
     private void celeritas$instanceArrow(ArrowEntity arrow, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
-        if (EntityInstancingRenderer.recordArrow(arrow, x, y, z, tickDelta, CELERITAS$ARROW_TEXTURE)) {
+        EntityInstancing instancing = EntityInstancing.current();
+        if (instancing != null && instancing.recordArrow(arrow, x, y, z, tickDelta,
+                CELERITAS$ARROW_TEXTURE, EntityInstancing.packedLight(arrow, tickDelta))) {
             ci.cancel();
         }
     }

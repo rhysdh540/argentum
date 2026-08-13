@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
+import dev.rdh.argentum.impl.render.entity.instancing.EntityCapture;
 
 @Mixin(ItemRenderer.class)
 public abstract class ItemRendererMixin {
@@ -17,7 +17,8 @@ public abstract class ItemRendererMixin {
             cancellable = true
     )
     private void celeritas$instanceHeldItem(BakedModel model, int color, ItemStack item, CallbackInfo ci) {
-        if (EntityInstancingRenderer.recordItem(model, item, color)) {
+        EntityCapture capture = EntityCapture.current();
+        if (capture != null && capture.recordItem(model, item, color)) {
             ci.cancel();
         }
     }

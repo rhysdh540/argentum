@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
+import dev.rdh.argentum.impl.render.entity.instancing.EntityCapture;
 
 import java.util.Map;
 
@@ -21,7 +21,10 @@ public abstract class TextureManagerMixin {
 
     @Inject(method = "bind", at = @At("HEAD"))
     private void celeritas$captureEntityTexture(Identifier identifier, CallbackInfo ci) {
-        EntityInstancingRenderer.setTexture(identifier);
+        EntityCapture capture = EntityCapture.current();
+        if (capture != null) {
+            capture.setTexture(identifier);
+        }
     }
 
     @Inject(

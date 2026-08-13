@@ -1,6 +1,7 @@
 package dev.rdh.argentum.impl.render.terrain;
 
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
+import org.embeddedt.embeddium.impl.gl.device.RenderDevice;
 import org.embeddedt.embeddium.impl.render.chunk.ChunkRenderMatrices;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderFogComponent;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkMeshFormats;
@@ -11,6 +12,9 @@ import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.entity.EntityOcclusionCuller;
 import dev.rdh.argentum.impl.render.entity.EntityGatherer;
+import dev.rdh.argentum.impl.render.entity.EntityShadowBatch;
+import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancing;
+import dev.rdh.argentum.impl.render.entity.instancing.ModelInstancer;
 import dev.rdh.argentum.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
 
 import net.minecraft.block.entity.BlockEntity;
@@ -36,6 +40,8 @@ import java.util.Objects;
 public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveRenderSectionManager, BlockLayer, BlockEntity, Float> {
     private final EntityGatherer entityGatherer = new EntityGatherer();
     private final EntityOcclusionCuller entityOcclusionCuller = new EntityOcclusionCuller(this);
+    private final ModelInstancer modelInstancer = new ModelInstancer();
+    private final EntityInstancing entityInstancing = new EntityInstancing(this.modelInstancer);
 
     /**
      * @return The ArgentumWorldRenderer based on the current dimension
@@ -62,7 +68,35 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
     @Override
     protected void unloadWorld() {
         this.entityOcclusionCuller.clear();
+        this.entityInstancing.discardBatch();
+        try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
+            this.modelInstancer.close(commandList);
+        }
         super.unloadWorld();
+    }
+
+    @Override
+    public void reload() {
+        if (this.modelInstancer.isInitialized()) {
+            this.entityInstancing.discardBatch();
+            try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
+                this.modelInstancer.reload(commandList);
+            }
+        }
+        super.reload();
+    }
+
+    public EntityInstancing getEntityInstancing() {
+        return this.entityInstancing;
+    }
+
+    public ModelInstancer getModelInstancer() {
+        return this.modelInstancer;
+    }
+
+    public void beginEntityRendering() {
+        EntityShadowBatch.beginFrame();
+        this.entityInstancing.beginBatch();
     }
 
     public boolean isRenderingWorld(World world) {
@@ -133,46 +167,61 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
     public int renderEntities(Entity camera, Culler culler, float tickDelta, double cameraX, double cameraY, double cameraZ) {
         Minecraft minecraft = Minecraft.getInstance();
         var dispatcher = minecraft.getEntityRenderDispatcher();
+        boolean batching = this.entityInstancing.isBatchActive();
         this.entityGatherer.clear();
         List<Entity> entities = this.entityGatherer.getLoadedEntityList((ClientWorld)this.world);
         this.entityOcclusionCuller.prepare(entities, camera, cameraX, cameraY, cameraZ);
 
         int rendered = 0;
         BlockPos.Mutable entityBlockPos = new BlockPos.Mutable();
-        for (Entity entity : entities) {
-            boolean visible = dispatcher.shouldRender(entity, culler, cameraX, cameraY, cameraZ);
-            if (visible && !this.isEntityVisible(entity)) {
-                RenderMetrics.recordCulledEntity();
-                visible = false;
-            }
-
-            if (!visible && entity.rider != minecraft.player) {
-                if (entity instanceof WitherSkullEntity) {
-                    dispatcher.renderNameTag(entity, tickDelta);
+        try {
+            for (Entity entity : entities) {
+                boolean visible = dispatcher.shouldRender(entity, culler, cameraX, cameraY, cameraZ);
+                if (visible && !this.isEntityVisible(entity)) {
+                    RenderMetrics.recordCulledEntity();
+                    visible = false;
                 }
-                continue;
-            }
 
-            boolean isSelfSleeping = minecraft.getCamera() instanceof LivingEntity living && living.isSleeping();
-            if (entity == minecraft.getCamera() && minecraft.options.perspective == 0 && !isSelfSleeping) {
-                continue;
-            }
-
-            if (entity.y >= 0.0 && entity.y < 256.0) {
-                entityBlockPos.set(MathHelper.floor(entity.x), MathHelper.floor(entity.y), MathHelper.floor(entity.z));
-                if (!this.world.isChunkLoaded(entityBlockPos)) {
+                if (!visible && entity.rider != minecraft.player) {
+                    if (entity instanceof WitherSkullEntity) {
+                        dispatcher.renderNameTag(entity, tickDelta);
+                    }
                     continue;
                 }
-            }
 
-            rendered++;
-            RenderMetrics.recordRenderedEntity();
-            RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
-            try {
-                dispatcher.render(entity, tickDelta);
-            } finally {
-                RenderMetrics.setCategory(previous);
+                boolean isSelfSleeping = minecraft.getCamera() instanceof LivingEntity living && living.isSleeping();
+                if (entity == minecraft.getCamera() && minecraft.options.perspective == 0 && !isSelfSleeping) {
+                    continue;
+                }
+
+                if (entity.y >= 0.0 && entity.y < 256.0) {
+                    entityBlockPos.set(MathHelper.floor(entity.x), MathHelper.floor(entity.y), MathHelper.floor(entity.z));
+                    if (!this.world.isChunkLoaded(entityBlockPos)) {
+                        continue;
+                    }
+                }
+
+                rendered++;
+                RenderMetrics.recordRenderedEntity();
+                RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
+                try {
+                    dispatcher.render(entity, tickDelta);
+                } finally {
+                    RenderMetrics.setCategory(previous);
+                }
             }
+        } catch (RuntimeException | Error exception) {
+            this.entityInstancing.discardBatch();
+            throw exception;
+        }
+        RenderDevice.enterManagedCode();
+        try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
+            EntityShadowBatch.flush(commandList);
+            if (batching) {
+                this.entityInstancing.flush(commandList);
+            }
+        } finally {
+            RenderDevice.exitManagedCode();
         }
         return rendered;
     }

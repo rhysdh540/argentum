@@ -67,6 +67,11 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
         return this.renderer;
     }
 
+    @Inject(method = "renderEntities", at = @At("HEAD"))
+    private void celeritas$beginEntityRendering(Entity camera, Culler culler, float tickDelta, CallbackInfo ci) {
+        this.renderer.beginEntityRendering();
+    }
+
     @Inject(method = "setWorld", at = @At("RETURN"))
     private void onWorldChanged(@Coerce World world, CallbackInfo ci) {
         RenderDevice.enterManagedCode();

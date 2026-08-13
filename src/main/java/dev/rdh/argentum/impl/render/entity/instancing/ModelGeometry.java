@@ -1,11 +1,14 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
+
 import net.minecraft.client.render.model.Box;
 import net.minecraft.client.render.model.ModelPart;
 import net.minecraft.client.render.model.Polygon;
 import net.minecraft.client.render.model.Vertex;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.joml.Matrix4f;
+import org.joml.Vector4fc;
 import org.lwjgl.BufferUtils;
 import dev.rdh.argentum.mixin.features.model.instancing.BoxAccessor;
 import dev.rdh.argentum.mixin.features.model.instancing.PolygonAccessor;
@@ -15,15 +18,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-final class ModelBatch {
+public final class ModelGeometry {
     private final List<PartGeometry> parts = new ArrayList<>();
     private int partIndex;
 
-    void begin() {
+    public void begin() {
         this.partIndex = 0;
     }
 
-    PartGeometry getGeometry(ModelPart part, float scale) {
+    public InstanceGeometry getGeometry(ModelPart part, float scale) {
         if (this.partIndex < this.parts.size()) {
             PartGeometry geometry = this.parts.get(this.partIndex++);
             if (geometry.part() == part) {
@@ -48,7 +51,7 @@ final class ModelBatch {
     }
 }
 
-final class PartGeometry extends EntityGeometry {
+final class PartGeometry extends InstanceGeometry {
     private final ModelPart part;
     private final InstancedGeometryBuffer buffers;
     private final int vertexCount;
@@ -105,24 +108,6 @@ final class PartGeometry extends EntityGeometry {
     }
 }
 
-abstract class EntityGeometry {
-    private EntityBatcher.TextureBatch batch;
-    private Instances instances;
-
-    final Instances instances(EntityBatcher.TextureBatch batch) {
-        if (this.batch != batch) {
-            Instances instances = batch.instances(this);
-            this.batch = batch;
-            this.instances = instances;
-        }
-        return this.instances;
-    }
-
-    abstract void render(CommandList commandList, Instances instances);
-
-    abstract void delete(CommandList commandList);
-}
-
 final class Instances {
     private static final int FLOATS = 28;
 
@@ -136,8 +121,7 @@ final class Instances {
         this.count = 0;
     }
 
-    void add(Matrix4f matrix, float u, float v, int layer, float red, float green, float blue, float alpha,
-            float effectTime, float overlayRed, float overlayGreen, float overlayBlue, float overlayAlpha) {
+    void add(Matrix4f matrix, float u, float v, int layer, Vector4fc color, float effectTime, Vector4fc overlayColor) {
         if (this.size + FLOATS > this.data.length) {
             this.data = Arrays.copyOf(this.data, this.data.length * 2);
         }
@@ -161,15 +145,15 @@ final class Instances {
         this.data[i++] = u;
         this.data[i++] = v;
         this.data[i++] = layer;
-        this.data[i++] = red;
-        this.data[i++] = green;
-        this.data[i++] = blue;
-        this.data[i++] = alpha;
+        this.data[i++] = color.x();
+        this.data[i++] = color.y();
+        this.data[i++] = color.z();
+        this.data[i++] = color.w();
         this.data[i++] = effectTime;
-        this.data[i++] = overlayRed;
-        this.data[i++] = overlayGreen;
-        this.data[i++] = overlayBlue;
-        this.data[i++] = overlayAlpha;
+        this.data[i++] = overlayColor.x();
+        this.data[i++] = overlayColor.y();
+        this.data[i++] = overlayColor.z();
+        this.data[i++] = overlayColor.w();
         this.size = i;
         this.count++;
     }

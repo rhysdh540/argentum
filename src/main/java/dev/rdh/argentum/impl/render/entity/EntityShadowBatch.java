@@ -27,7 +27,7 @@ import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.render.entity.instancing.InstancedGeometryBuffer;
+import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
 import dev.rdh.argentum.impl.render.entity.instancing.InstancedVertexFormats;
 import dev.rdh.argentum.impl.render.terrain.fog.GLStateManagerFogService;
 

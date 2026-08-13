@@ -1,0 +1,370 @@
+package dev.rdh.argentum.impl.render.entity.instancing;
+
+import net.minecraft.client.render.entity.LivingEntityRenderer;
+import net.minecraft.client.render.entity.layer.AbstractArmorLayer;
+import net.minecraft.client.render.entity.layer.EntityRenderLayer;
+import net.minecraft.client.render.model.Model;
+import net.minecraft.client.render.model.ModelPart;
+import net.minecraft.client.render.texture.TextureAtlas;
+import net.minecraft.client.resource.model.BakedModel;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.living.LivingEntity;
+import net.minecraft.entity.projectile.ArrowEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.resource.Identifier;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
+import org.lwjgl.opengl.GL11;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+
+public final class EntityCapture implements AutoCloseable {
+    private static final Identifier ENCHANTMENT_GLINT_TEXTURE =
+            new Identifier("textures/misc/enchanted_item_glint.png");
+
+    private final EntityInstancing owner;
+    private final Matrix4f arrowMatrix = new Matrix4f();
+    private final Set<ModelPart> glintParts = Collections.newSetFromMap(new IdentityHashMap<>());
+
+    private Matrix4f[] matrices = createMatrices(64);
+    private EntityCapture previous;
+    private ModelGeometry model;
+    private Identifier entityTexture;
+    private Identifier boundTexture;
+    private InstanceRenderPass pass;
+    private boolean item;
+    private boolean modelActive;
+    private boolean recorded;
+    private boolean player;
+    private boolean suppressFixedFunction;
+    private boolean armorLayer;
+    private boolean finished;
+    private boolean released;
+    private int matrixDepth;
+    private int matrixMode;
+    private int packedLight;
+    private int itemGlintPass;
+    private final Vector4f color = new Vector4f();
+    private float effectTime;
+    private final Vector4f overlayColor = new Vector4f();
+    private final Vector4f currentOverlayColor = new Vector4f();
+
+    EntityCapture(EntityInstancing owner) {
+        this.owner = owner;
+    }
+
+    public static EntityCapture current() {
+        EntityInstancing instancing = EntityInstancing.current();
+        return instancing == null ? null : instancing.activeCapture();
+    }
+
+    void open(EntityCapture previous) {
+        this.previous = previous;
+        this.finished = false;
+        this.released = false;
+    }
+
+    void beginEntity(Model model, Identifier texture, boolean player, boolean preserveFixedFunction,
+            int packedLight, float effectTime, float overlayRed, float overlayGreen, float overlayBlue,
+            float overlayAlpha) {
+        this.item = false;
+        this.model = this.owner.backend().model(model);
+        this.entityTexture = texture;
+        this.boundTexture = texture;
+        this.pass = InstanceRenderPass.NORMAL;
+        this.player = player;
+        this.suppressFixedFunction = !preserveFixedFunction;
+        this.packedLight = packedLight;
+        this.effectTime = effectTime;
+        this.overlayColor.set(overlayRed, overlayGreen, overlayBlue, overlayAlpha);
+        this.resetState();
+    }
+
+    void beginItem(ItemEntity entity, int packedLight) {
+        this.item = true;
+        this.model = null;
+        this.entityTexture = null;
+        this.boundTexture = TextureAtlas.BLOCKS_LOCATION;
+        this.pass = InstanceRenderPass.ITEM;
+        this.player = false;
+        this.suppressFixedFunction = true;
+        this.packedLight = packedLight;
+        this.effectTime = entity.getAge();
+        this.overlayColor.set(0);
+        this.resetState();
+        this.modelActive = true;
+    }
+
+    private void resetState() {
+        this.matrices[0].identity();
+        this.matrixDepth = 0;
+        this.matrixMode = GL11.GL_MODELVIEW;
+        this.recorded = false;
+        this.modelActive = false;
+        this.armorLayer = false;
+        this.itemGlintPass = 0;
+        this.color.set(1);
+        this.currentOverlayColor.set(this.overlayColor);
+    }
+
+    public void beginModel() {
+        if (this.finished || this.model == null) {
+            return;
+        }
+        this.boundTexture = this.entityTexture;
+        this.model.begin();
+        this.modelActive = true;
+        this.currentOverlayColor.set(this.overlayColor);
+    }
+
+    public void endModel() {
+        this.modelActive = false;
+    }
+
+    public boolean beginLayer(Object layer, LivingEntity entity) {
+        InstanceRenderPass layerPass = EntityLayerSupport.pass(layer, entity);
+        if (this.finished || layerPass == null) {
+            return false;
+        }
+        this.pass = layerPass;
+        this.armorLayer = layer instanceof AbstractArmorLayer;
+        this.currentOverlayColor.set(this.overlayColor);
+        if (!(layer instanceof EntityRenderLayer<?> renderLayer) || !renderLayer.colorsWhenDamaged()) {
+            this.currentOverlayColor.w = 0.0F;
+        }
+        this.glintParts.clear();
+        this.itemGlintPass = 0;
+        this.model.begin();
+        this.modelActive = true;
+        this.color.set(1);
+        return true;
+    }
+
+    public void endLayer() {
+        this.modelActive = false;
+        this.pass = InstanceRenderPass.NORMAL;
+        this.armorLayer = false;
+        this.color.set(1);
+    }
+
+    public boolean deferNameTag(LivingEntityRenderer<?> renderer, LivingEntity entity,
+            double x, double y, double z) {
+        if (this.finished || !this.recorded) {
+            return false;
+        }
+        this.owner.nameTags().add(renderer, entity, x, y, z);
+        return true;
+    }
+
+    public boolean record(ModelPart part, float scale) {
+        if (!this.modelActive) {
+            return false;
+        }
+        this.recordPart(part, scale);
+        return true;
+    }
+
+    public boolean recordItem(BakedModel model, ItemStack item, int color) {
+        if (!this.modelActive) {
+            return false;
+        }
+        InstanceRenderPass previousPass = this.pass;
+        InstanceGeometry geometry;
+        if (item != null && color == -1) {
+            this.pass = InstanceRenderPass.ITEM;
+            geometry = this.owner.backend().item(model, item);
+        } else if (item == null && color == -8372020 && this.itemGlintPass < 2) {
+            this.pass = this.itemGlintPass++ == 0
+                    ? InstanceRenderPass.ITEM_GLINT_0 : InstanceRenderPass.ITEM_GLINT_1;
+            geometry = this.owner.backend().fixedItem(model, color);
+        } else {
+            return false;
+        }
+        if (geometry == null) {
+            this.pass = previousPass;
+            return false;
+        }
+        this.submit(geometry, this.matrices[this.matrixDepth]);
+        if (item != null) {
+            this.pass = previousPass;
+        }
+        return true;
+    }
+
+    public boolean recordBlock(BakedModel model, float brightness, float red, float green, float blue) {
+        if (!this.modelActive) {
+            return false;
+        }
+        InstanceGeometry geometry = this.owner.backend().block(model, brightness, red, green, blue);
+        return geometry != null && this.submit(geometry, this.matrices[this.matrixDepth]);
+    }
+
+    boolean recordArrow(ArrowEntity arrow, double x, double y, double z, float tickDelta, Identifier texture) {
+        this.boundTexture = texture;
+        this.arrowMatrix.set(this.matrices[this.matrixDepth]);
+        this.owner.transformArrow(this.arrowMatrix, arrow, x, y, z, tickDelta);
+        return this.submit(this.owner.backend().arrow(), this.arrowMatrix);
+    }
+
+    public boolean pushMatrix() {
+        if (!this.tracksModelView()) {
+            return false;
+        }
+        int next = this.matrixDepth + 1;
+        if (next == this.matrices.length) {
+            int previousLength = this.matrices.length;
+            this.matrices = Arrays.copyOf(this.matrices, previousLength * 2);
+            for (int i = previousLength; i < this.matrices.length; i++) {
+                this.matrices[i] = new Matrix4f();
+            }
+        }
+        this.matrices[next].set(this.matrices[this.matrixDepth]);
+        this.matrixDepth = next;
+        return this.suppressFixedFunction;
+    }
+
+    public boolean popMatrix() {
+        if (!this.tracksModelView()) {
+            return false;
+        }
+        if (this.matrixDepth > 0) {
+            this.matrixDepth--;
+        }
+        return this.suppressFixedFunction;
+    }
+
+    public boolean translate(float x, float y, float z) {
+        if (!this.tracksModelView()) {
+            return false;
+        }
+        this.matrices[this.matrixDepth].translate(x, y, z);
+        return this.suppressFixedFunction;
+    }
+
+    public boolean rotate(float angle, float x, float y, float z) {
+        if (!this.tracksModelView()) {
+            return false;
+        }
+        float length = (float)Math.sqrt(x * x + y * y + z * z);
+        if (length != 0.0F) {
+            this.matrices[this.matrixDepth].rotate((float)Math.toRadians(angle), x / length, y / length, z / length);
+        }
+        return this.suppressFixedFunction;
+    }
+
+    public boolean scale(float x, float y, float z) {
+        if (!this.tracksModelView()) {
+            return false;
+        }
+        this.matrices[this.matrixDepth].scale(x, y, z);
+        return this.suppressFixedFunction;
+    }
+
+    public void setMatrixMode(int mode) {
+        this.matrixMode = mode;
+    }
+
+    public void setColor(float red, float green, float blue, float alpha) {
+        this.color.set(red, green, blue, alpha);
+    }
+
+    public void setTexture(Identifier texture) {
+        this.boundTexture = texture;
+        if (this.modelActive && this.armorLayer) {
+            this.pass = ENCHANTMENT_GLINT_TEXTURE.equals(texture)
+                    ? InstanceRenderPass.GLINT : InstanceRenderPass.NORMAL;
+        }
+    }
+
+    public void finish() {
+        if (!this.finished) {
+            this.owner.finish(this);
+        }
+    }
+
+    @Override
+    public void close() {
+        if (!this.released) {
+            this.owner.release(this);
+        }
+    }
+
+    EntityCapture previous() {
+        return this.previous;
+    }
+
+    boolean recorded() {
+        return this.recorded;
+    }
+
+    boolean isPlayer() {
+        return !this.item && this.player;
+    }
+
+    boolean isModelActive() {
+        return this.modelActive;
+    }
+
+    void markFinished() {
+        this.finished = true;
+        this.modelActive = false;
+        this.suppressFixedFunction = false;
+    }
+
+    void markReleased() {
+        this.markFinished();
+        this.released = true;
+        this.previous = null;
+        this.model = null;
+        this.entityTexture = null;
+        this.boundTexture = null;
+    }
+
+    private boolean submit(InstanceGeometry geometry, Matrix4f matrix) {
+        boolean submitted = this.owner.backend().submit(geometry, this.boundTexture, this.pass, matrix,
+                this.packedLight, this.color, this.effectTime, this.currentOverlayColor
+        );
+        this.recorded |= submitted;
+        return submitted;
+    }
+
+    private void recordPart(ModelPart part, float scale) {
+        if (part.invisible || !part.visible) {
+            return;
+        }
+        if (this.pass == InstanceRenderPass.GLINT && !this.glintParts.add(part)) {
+            return;
+        }
+        InstanceGeometry geometry = this.model.getGeometry(part, scale);
+
+        this.pushMatrix();
+        this.translate(part.translateX, part.translateY, part.translateZ);
+        this.translate(part.x * scale, part.y * scale, part.z * scale);
+        this.matrices[this.matrixDepth].rotateZ(part.rotationZ).rotateY(part.rotationY).rotateX(part.rotationX);
+
+        if (!part.boxes.isEmpty()) {
+            this.submit(geometry, this.matrices[this.matrixDepth]);
+        }
+        if (part.children != null) {
+            for (int i = 0; i < part.children.size(); i++) {
+                this.recordPart(part.children.get(i), scale);
+            }
+        }
+        this.popMatrix();
+    }
+
+    private boolean tracksModelView() {
+        return !this.finished && this.matrixMode == GL11.GL_MODELVIEW;
+    }
+
+    private static Matrix4f[] createMatrices(int count) {
+        Matrix4f[] matrices = new Matrix4f[count];
+        for (int i = 0; i < count; i++) {
+            matrices[i] = new Matrix4f();
+        }
+        return matrices;
+    }
+}

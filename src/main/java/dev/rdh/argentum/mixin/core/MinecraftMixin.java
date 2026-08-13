@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.render.entity.EntityShadowBatch;
-import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
 
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
@@ -37,27 +36,13 @@ public abstract class MinecraftMixin {
         this.celeritas$renderAheadManager.endFrame();
     }
 
-    @Inject(method = "reloadResources", at = @At("HEAD"))
-    private void celeritas$deleteInstancedGeometry(CallbackInfo ci) {
-        if (!EntityInstancingRenderer.isInitialized()) {
-            return;
-        }
-        RenderDevice.enterManagedCode();
-        try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
-            EntityInstancingRenderer.deleteGeometry(commandList);
-        } finally {
-            RenderDevice.exitManagedCode();
-        }
-    }
-
     @Inject(method = "shutdown", at = @At("HEAD"))
     private void celeritas$deleteInstancedRenderResources(CallbackInfo ci) {
-        if (!EntityInstancingRenderer.isInitialized() && !EntityShadowBatch.isInitialized()) {
+        if (!EntityShadowBatch.isInitialized()) {
             return;
         }
         RenderDevice.enterManagedCode();
         try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
-            EntityInstancingRenderer.deleteGeometry(commandList);
             EntityShadowBatch.deleteGeometry(commandList);
         } finally {
             RenderDevice.exitManagedCode();

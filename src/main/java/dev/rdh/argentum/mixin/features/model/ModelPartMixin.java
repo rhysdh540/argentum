@@ -8,13 +8,14 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
+import dev.rdh.argentum.impl.render.entity.instancing.EntityCapture;
 
 @Mixin(ModelPart.class)
 public abstract class ModelPartMixin {
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void celeritas$recordModelPart(float scale, CallbackInfo ci) {
-        if (EntityInstancingRenderer.record((ModelPart)(Object)this, scale)) {
+        EntityCapture capture = EntityCapture.current();
+        if (capture != null && capture.record((ModelPart)(Object)this, scale)) {
             ci.cancel();
         }
     }

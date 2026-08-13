@@ -1,5 +1,6 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+
 import net.minecraft.client.render.entity.layer.AbstractArmorLayer;
 import net.minecraft.client.render.entity.layer.CapeLayer;
 import net.minecraft.client.render.entity.layer.CreeperChargeLayer;
@@ -27,29 +28,29 @@ final class EntityLayerSupport {
     private EntityLayerSupport() {
     }
 
-    static EntityRenderPass pass(Object layer, LivingEntity entity) {
+    static InstanceRenderPass pass(Object layer, LivingEntity entity) {
         if (layer instanceof EnderDragonEyesLayer
                 || layer instanceof EndermanEyesLayer
                 || layer instanceof SpiderEyesLayer) {
-            return EntityRenderPass.EMISSIVE;
+            return InstanceRenderPass.EMISSIVE;
         }
         if (layer instanceof CreeperChargeLayer) {
-            return EntityRenderPass.CREEPER_CHARGE;
+            return InstanceRenderPass.CREEPER_CHARGE;
         }
         if (layer instanceof WitherChargeLayer) {
-            return EntityRenderPass.WITHER_CHARGE;
+            return InstanceRenderPass.WITHER_CHARGE;
         }
         if (layer instanceof SlimeOuterLayer) {
-            return EntityRenderPass.TRANSLUCENT;
+            return InstanceRenderPass.TRANSLUCENT;
         }
         if (layer instanceof MushroomLayer) {
-            return EntityRenderPass.CULL_FRONT;
+            return InstanceRenderPass.CULL_FRONT;
         }
         if (layer instanceof StuckArrowLayer) {
-            return EntityRenderPass.CULL_BACK;
+            return InstanceRenderPass.CULL_BACK;
         }
         if (layer instanceof AbstractArmorLayer) {
-            return EntityRenderPass.NORMAL;
+            return InstanceRenderPass.NORMAL;
         }
         return layer instanceof CapeLayer
                 || layer instanceof Deadmou5Layer
@@ -62,7 +63,7 @@ final class EntityLayerSupport {
                 || layer instanceof WornSkullLayer
                 || layer instanceof ItemInHandLayer && supportsHeldItem(entity)
                 || layer instanceof WitchItemInHandLayer && supportsHeldItem(entity)
-                ? EntityRenderPass.NORMAL : null;
+                ? InstanceRenderPass.NORMAL : null;
     }
 
     private static boolean supportsHeldItem(LivingEntity entity) {

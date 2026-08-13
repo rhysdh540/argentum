@@ -4,7 +4,6 @@ import it.unimi.dsi.fastutil.Pair;
 import org.embeddedt.embeddium.impl.common.util.MathUtil;
 import org.embeddedt.embeddium.impl.common.util.NativeBuffer;
 import dev.rdh.argentum.impl.Argentum;
-import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 
 import net.minecraft.text.Formatting;
@@ -27,7 +26,7 @@ public class DebugStrings {
 
         if (renderer != null) {
             RenderMetrics.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, Formatting.RESET)));
-            stringsToRender.add(Pair.of(EntityInstancingRenderer.getDebugString(), Formatting.RESET));
+            stringsToRender.add(Pair.of(renderer.getEntityInstancing().getDebugString(), Formatting.RESET));
             stringsToRender.add(Pair.of("", Formatting.RESET));
             renderer.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, Formatting.RESET)));
         }

@@ -1,17 +1,19 @@
 package dev.rdh.argentum.mixin.features.model.instancing;
 
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.render.entity.ItemEntityRenderer;
 import net.minecraft.client.render.entity.ItemRenderer;
 import net.minecraft.client.resource.model.BakedModel;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.Entity;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
+import dev.rdh.argentum.impl.render.entity.instancing.EntityCapture;
+import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancing;
 
 @Mixin(ItemEntityRenderer.class)
 public abstract class ItemEntityRendererMixin {
@@ -19,31 +21,27 @@ public abstract class ItemEntityRendererMixin {
     @Final
     private ItemRenderer itemRenderer;
 
-    @Unique
-    private EntityInstancingRenderer.Capture celeritas$capture;
-
-    @Inject(method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V", at = @At("HEAD"))
-    private void celeritas$beginItemEntity(ItemEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
+    @WrapMethod(method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V")
+    private void celeritas$captureItemEntity(ItemEntity entity, double x, double y, double z, float yaw,
+            float tickDelta, Operation<Void> original) {
+        EntityInstancing instancing = EntityInstancing.current();
         BakedModel model = this.itemRenderer.getModelShaper().getModel(entity.getItem());
-        this.celeritas$capture = EntityInstancingRenderer.beginItemEntity(entity, model);
+        try (EntityCapture _ = instancing == null ? null
+                : instancing.beginItemEntity(entity, model, EntityInstancing.packedLight(entity, tickDelta))) {
+            original.call(entity, x, y, z, yaw, tickDelta);
+        }
     }
 
-    @Inject(
+    @WrapOperation(
             method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/EntityRenderer;render(Lnet/minecraft/entity/Entity;DDDFF)V")
     )
-    private void celeritas$endItemEntity(ItemEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
-        if (this.celeritas$capture != null) {
-            this.celeritas$capture.close();
-            this.celeritas$capture = null;
+    private void celeritas$finishItemCapture(ItemEntityRenderer renderer, Entity entity, double x, double y,
+            double z, float yaw, float tickDelta, Operation<Void> original) {
+        EntityCapture capture = EntityCapture.current();
+        if (capture != null) {
+            capture.finish();
         }
-    }
-
-    @Inject(method = "render(Lnet/minecraft/entity/ItemEntity;DDDFF)V", at = @At("RETURN"))
-    private void celeritas$finishItemEntity(ItemEntity entity, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
-        if (this.celeritas$capture != null) {
-            this.celeritas$capture.close();
-            this.celeritas$capture = null;
-        }
+        original.call(renderer, entity, x, y, z, yaw, tickDelta);
     }
 }

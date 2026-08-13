@@ -94,7 +94,7 @@ final class TextureArrayManager {
         );
         Pool pool = this.pools.get(key);
         if (pool == null) {
-            int capacity = (int)Math.min(this.maxLayers, Math.max(2L, MAX_POOL_BYTES / Math.max(1L, (long)width * height * 4)));
+            int capacity = (int)Math.clamp(MAX_POOL_BYTES / Math.max(1L, (long)width * height * 4), 2, this.maxLayers);
             pool = new Pool(key, capacity);
             this.pools.put(key, pool);
         }
@@ -103,11 +103,21 @@ final class TextureArrayManager {
         return layer != null ? layer.selection : null;
     }
 
-    void invalidate(Texture texture) {
-        this.textures.remove(texture);
+    void delete() {
         for (Pool pool : this.pools.values()) {
-            pool.invalidate(texture);
+            GL11.glDeleteTextures(pool.texture);
         }
+        this.pools.clear();
+        this.textures.clear();
+        if (this.fallbackTexture != 0) {
+            GL11.glDeleteTextures(this.fallbackTexture);
+            this.fallbackTexture = 0;
+        }
+        if (this.framebuffer != 0) {
+            EXTFramebufferObject.glDeleteFramebuffersEXT(this.framebuffer);
+            this.framebuffer = 0;
+        }
+        this.maxLayers = 0;
     }
 
     record Selection(Pool pool, int layer) {
@@ -214,11 +224,6 @@ final class TextureArrayManager {
             }
         }
 
-        private void invalidate(Texture texture) {
-            for (Layer layer : this.layers.values()) {
-                if (layer.source == texture) layer.sourceId = -1;
-            }
-        }
     }
 
     private record PoolKey(int width, int height, int minFilter, int magFilter, int wrapS, int wrapT) {

@@ -1,0 +1,295 @@
+package dev.rdh.argentum.impl.render.entity.instancing;
+
+import net.minecraft.client.render.model.Model;
+import net.minecraft.client.render.platform.GLX;
+import net.minecraft.client.render.platform.GlStateManager;
+import net.minecraft.client.resource.model.BakedModel;
+import net.minecraft.client.render.texture.TextureAtlas;
+import net.minecraft.item.ItemStack;
+import net.minecraft.resource.Identifier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.embeddedt.embeddium.impl.gl.device.CommandList;
+import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
+import org.embeddedt.embeddium.impl.gl.shader.GlShader;
+import org.embeddedt.embeddium.impl.gl.shader.ShaderConstants;
+import org.embeddedt.embeddium.impl.gl.shader.ShaderType;
+import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
+import org.joml.Matrix4f;
+import org.joml.Vector4fc;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
+
+import java.util.List;
+
+public final class ModelInstancer {
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    private final InstanceBatcher batcher = new InstanceBatcher();
+    private final BakedItemGeometryCache itemGeometry = new BakedItemGeometryCache();
+    private final TextureArrayManager textureArrays = new TextureArrayManager();
+
+    private boolean initialized;
+    private boolean supported;
+    private boolean textureArraysSupported;
+    private boolean batchActive;
+    private int frame;
+    private int selectedFrame = -1;
+    private int selectedTextureLayer;
+    private int instanceCount;
+    private Identifier selectedTexture;
+    private InstanceRenderPass selectedPass;
+    private InstanceBatcher.TextureBatch selectedTextureBatch;
+    private GlProgram<InstanceShader> program;
+    private ArrowGeometry arrowGeometry;
+
+    public boolean beginBatch() {
+        if (!this.initialize()) {
+            return false;
+        }
+
+        this.instanceCount = 0;
+        this.frame++;
+        this.batchActive = true;
+        return true;
+    }
+
+    public boolean isBatchActive() {
+        return this.batchActive;
+    }
+
+    public ModelGeometry model(Model model) {
+        return this.batcher.model(model);
+    }
+
+    public boolean supportsItem(BakedModel model, ItemStack item) {
+        return this.itemGeometry.supportsItem(model, item);
+    }
+
+    public InstanceGeometry item(BakedModel model, ItemStack item) {
+        return this.itemGeometry.getItem(model, item);
+    }
+
+    public InstanceGeometry fixedItem(BakedModel model, int color) {
+        return this.itemGeometry.getFixed(model, color);
+    }
+
+    public InstanceGeometry block(BakedModel model, float brightness, float red, float green, float blue) {
+        return this.itemGeometry.getBlock(model, brightness, red, green, blue);
+    }
+
+    public InstanceGeometry arrow() {
+        if (this.arrowGeometry == null) {
+            this.arrowGeometry = new ArrowGeometry();
+        }
+        return this.arrowGeometry;
+    }
+
+    public boolean submit(InstanceGeometry geometry, Identifier texture, InstanceRenderPass pass, Matrix4f matrix,
+                          int packedLight, Vector4fc color, float effectTime, Vector4fc overlayColor) {
+        if (!this.batchActive || geometry == null || texture == null) {
+            return false;
+        }
+
+        InstanceBatcher.TextureBatch textureBatch = this.selectTexture(texture, pass);
+        textureBatch.add(geometry, matrix, packedLight & 0xFFFF, packedLight >>> 16,
+                this.selectedTextureLayer, color, effectTime, overlayColor
+        );
+        this.instanceCount++;
+        return true;
+    }
+
+    public BatchStats flush(CommandList commandList) {
+        if (!this.batchActive) {
+            return BatchStats.EMPTY;
+        }
+
+        this.batchActive = false;
+        if (this.instanceCount == 0) {
+            this.batcher.clear();
+            return BatchStats.EMPTY;
+        }
+
+        GlStateManager.activeTexture(GLX.GL_TEXTURE0);
+        GlStateManager.disableCull();
+        this.program.bind();
+        this.program.getInterface().setUniforms();
+        int previousArray = this.textureArraysSupported ? this.textureArrays.bindFallback() : 0;
+        boolean failed = false;
+        InstanceBatcher.Stats stats;
+        try {
+            stats = this.batcher.render(commandList, this.program);
+        } catch (RuntimeException exception) {
+            failed = true;
+            this.supported = false;
+            LOGGER.error("Model instancing disabled after a geometry failure", exception);
+            stats = new InstanceBatcher.Stats(0, 0);
+        } finally {
+            if (this.textureArraysSupported) {
+                this.textureArrays.restore(previousArray);
+            }
+            if (failed) {
+                GlStateManager.depthMask(true);
+                GlStateManager.depthFunc(GL11.GL_LEQUAL);
+                GlStateManager.disableBlend();
+                GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            }
+            this.program.unbind();
+            GlStateManager.enableCull();
+            GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+            this.batcher.clear();
+        }
+        return new BatchStats(this.instanceCount, stats.draws(), stats.textures());
+    }
+
+    public void discardBatch() {
+        this.batchActive = false;
+        this.batcher.clear();
+    }
+
+    public void reload(CommandList commandList) {
+        this.close(commandList);
+    }
+
+    public void close(CommandList commandList) {
+        this.discardBatch();
+        this.batcher.delete(commandList);
+        this.itemGeometry.delete(commandList);
+        if (this.arrowGeometry != null) {
+            this.arrowGeometry.delete(commandList);
+            this.arrowGeometry = null;
+        }
+        if (this.program != null) {
+            this.program.delete();
+            this.program = null;
+        }
+        this.textureArrays.delete();
+        this.initialized = false;
+        this.supported = false;
+        this.textureArraysSupported = false;
+        this.selectedFrame = -1;
+        this.selectedTexture = null;
+        this.selectedPass = null;
+        this.selectedTextureBatch = null;
+    }
+
+    public boolean isInitialized() {
+        return this.initialized;
+    }
+
+    private InstanceBatcher.TextureBatch selectTexture(Identifier texture, InstanceRenderPass pass) {
+        if (this.selectedFrame == this.frame && this.selectedPass == pass && texture.equals(this.selectedTexture)) {
+            return this.selectedTextureBatch;
+        }
+
+        TextureArrayManager.Selection selection = null;
+        if (this.textureArraysSupported && !TextureAtlas.BLOCKS_LOCATION.equals(texture)) {
+            try {
+                selection = this.textureArrays.select(texture, this.frame);
+            } catch (RuntimeException exception) {
+                this.textureArraysSupported = false;
+                LOGGER.warn("Texture arrays disabled after a copy failure", exception);
+            }
+        }
+        if (selection != null) {
+            this.selectedTextureLayer = selection.layer();
+            this.selectedTextureBatch = this.batcher.texture(selection.pool(), pass);
+        } else {
+            this.selectedTextureLayer = 0;
+            this.selectedTextureBatch = this.batcher.texture(texture, pass);
+        }
+        this.selectedFrame = this.frame;
+        this.selectedTexture = texture;
+        this.selectedPass = pass;
+        return this.selectedTextureBatch;
+    }
+
+    private boolean initialize() {
+        if (this.initialized) {
+            return this.supported;
+        }
+
+        this.initialized = true;
+        var capabilities = GL.getCapabilities();
+        this.supported = capabilities.GL_ARB_draw_instanced
+                && capabilities.GL_ARB_instanced_arrays
+                && capabilities.OpenGL20;
+        if (!this.supported) {
+            LOGGER.warn("Model instancing disabled: required OpenGL extensions are missing");
+            return false;
+        }
+
+        try {
+            if (capabilities.GL_EXT_texture_array
+                    && capabilities.GL_EXT_framebuffer_object
+                    && capabilities.GL_EXT_gpu_shader4) {
+                try {
+                    this.textureArraysSupported = this.textureArrays.initialize();
+                } catch (RuntimeException exception) {
+                    LOGGER.warn("Texture arrays unavailable", exception);
+                }
+            }
+            try {
+                this.program = this.createProgram();
+            } catch (RuntimeException exception) {
+                if (!this.textureArraysSupported) {
+                    throw exception;
+                }
+                LOGGER.warn("Texture-array shader unavailable", exception);
+                this.textureArrays.delete();
+                this.textureArraysSupported = false;
+                this.program = this.createProgram();
+            }
+            this.program.bind();
+            try {
+                this.program.getInterface().initialize();
+            } finally {
+                this.program.unbind();
+            }
+            LOGGER.info("Model instancing enabled");
+        } catch (RuntimeException exception) {
+            this.supported = false;
+            if (this.program != null) {
+                this.program.delete();
+                this.program = null;
+            }
+            this.textureArrays.delete();
+            LOGGER.error("Model instancing failed to initialize", exception);
+        }
+        return this.supported;
+    }
+
+    private GlProgram<InstanceShader> createProgram() {
+        ShaderConstants constants = this.textureArraysSupported
+                ? ShaderConstants.builder().add("TEXTURE_ARRAY").build()
+                : ShaderConstants.EMPTY;
+        List<GlShader> shaders = List.of(
+                ShaderLoader.loadShader(ShaderType.VERTEX, "argentum:entity_instancing.vert", constants),
+                ShaderLoader.loadShader(ShaderType.FRAGMENT, "argentum:entity_instancing.frag", constants)
+        );
+        try {
+            GlProgram.Builder builder = GlProgram.builder("argentum:model_instancing");
+            shaders.forEach(builder::attachShader);
+            return builder
+                    .bindAttribute("aPosition", 0)
+                    .bindAttribute("aTexCoord", 1)
+                    .bindAttribute("aNormal", 2)
+                    .bindAttribute("aModel0", 3)
+                    .bindAttribute("aModel1", 4)
+                    .bindAttribute("aModel2", 5)
+                    .bindAttribute("aModel3", 6)
+                    .bindAttribute("aLightCoord", 7)
+                    .bindAttribute("aColor", 8)
+                    .bindAttribute("aVertexColor", 9)
+                    .bindAttribute("aEffectTime", 10)
+                    .bindAttribute("aOverlay", 11)
+                    .link(context -> new InstanceShader(context, this.textureArraysSupported));
+        } finally {
+            shaders.forEach(GlShader::delete);
+        }
+    }
+
+    public record BatchStats(int instances, int draws, int textures) {
+        private static final BatchStats EMPTY = new BatchStats(0, 0, 0);
+    }
+}

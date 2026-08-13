@@ -1,11 +1,13 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
+
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 
-final class ArrowGeometry extends EntityGeometry {
+final class ArrowGeometry extends InstanceGeometry {
     private final InstancedGeometryBuffer buffers;
 
     ArrowGeometry() {

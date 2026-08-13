@@ -7,7 +7,7 @@ import net.minecraft.client.render.block.BlockModelRenderer;
 import net.minecraft.client.resource.model.BakedModel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancingRenderer;
+import dev.rdh.argentum.impl.render.entity.instancing.EntityCapture;
 
 @Mixin(BlockModelRenderer.class)
 public abstract class BlockModelRendererMixin {
@@ -17,7 +17,8 @@ public abstract class BlockModelRendererMixin {
     )
     private void celeritas$instanceEntityBlock(BlockModelRenderer renderer, BakedModel model,
             float brightness, float red, float green, float blue, Operation<Void> original) {
-        if (!EntityInstancingRenderer.recordBlock(model, brightness, red, green, blue)) {
+        EntityCapture capture = EntityCapture.current();
+        if (capture == null || !capture.recordBlock(model, brightness, red, green, blue)) {
             original.call(renderer, model, brightness, red, green, blue);
         }
     }

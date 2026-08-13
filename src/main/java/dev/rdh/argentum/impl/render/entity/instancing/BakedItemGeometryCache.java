@@ -1,27 +1,31 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
+
 import net.minecraft.client.resource.model.BakedModel;
 import net.minecraft.client.resource.model.BakedQuad;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3i;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 final class BakedItemGeometryCache {
     private static final int MULTIPLE_TINTS = Integer.MIN_VALUE;
 
-    private final Map<BakedModel, Int2ObjectOpenHashMap<EntityGeometry>> itemGeometries = new IdentityHashMap<>();
-    private final Map<BakedModel, Int2ObjectOpenHashMap<EntityGeometry>> fixedGeometries = new IdentityHashMap<>();
-    private final Map<BakedModel, Int2ObjectOpenHashMap<EntityGeometry>> blockGeometries = new IdentityHashMap<>();
+    private final Map<BakedModel, Int2ObjectMap<InstanceGeometry>> itemGeometries = new Reference2ReferenceOpenHashMap<>();
+    private final Map<BakedModel, Int2ObjectMap<InstanceGeometry>> fixedGeometries = new Reference2ReferenceOpenHashMap<>();
+    private final Map<BakedModel, Int2ObjectMap<InstanceGeometry>> blockGeometries = new Reference2ReferenceOpenHashMap<>();
 
-    EntityGeometry getItem(BakedModel model, ItemStack item) {
+    InstanceGeometry getItem(BakedModel model, ItemStack item) {
         if (model.isCustomRenderer()) {
             return null;
         }
@@ -37,7 +41,7 @@ final class BakedItemGeometryCache {
         return this.getItem(model, item) != null;
     }
 
-    EntityGeometry getFixed(BakedModel model, int color) {
+    InstanceGeometry getFixed(BakedModel model, int color) {
         if (model.isCustomRenderer()) {
             return null;
         }
@@ -45,7 +49,7 @@ final class BakedItemGeometryCache {
                 .computeIfAbsent(color, ignored -> new BakedItemGeometry(model, color, true));
     }
 
-    EntityGeometry getBlock(BakedModel model, float brightness, float red, float green, float blue) {
+    InstanceGeometry getBlock(BakedModel model, float brightness, float red, float green, float blue) {
         if (model.isCustomRenderer()) {
             return null;
         }
@@ -62,13 +66,13 @@ final class BakedItemGeometryCache {
         delete(this.blockGeometries, commandList);
     }
 
-    private static void delete(Map<BakedModel, Int2ObjectOpenHashMap<EntityGeometry>> geometries, CommandList commandList) {
+    private static void delete(Map<BakedModel, Int2ObjectMap<InstanceGeometry>> geometries, CommandList commandList) {
         geometries.values().forEach(map -> map.values().forEach(geometry -> geometry.delete(commandList)));
         geometries.clear();
     }
 
     private static int toByte(float value) {
-        return Math.min(255, Math.max(0, (int)(value * 255.0F + 0.5F)));
+        return Math.clamp((int) (value * 255.0F + 0.5F), 0, 255);
     }
 
     private static int getTint(BakedModel model, ItemStack item) {
@@ -94,7 +98,7 @@ final class BakedItemGeometryCache {
         return tint == -1 || tint == color ? color : MULTIPLE_TINTS;
     }
 
-    private static final class BakedItemGeometry extends EntityGeometry {
+    private static final class BakedItemGeometry extends InstanceGeometry {
         private final InstancedGeometryBuffer buffers;
         private final int vertexCount;
 

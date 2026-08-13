@@ -8,8 +8,8 @@ import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformInt;
 import dev.rdh.argentum.impl.render.terrain.fog.GLStateManagerFogService;
 
-final class EntityShader {
-    private static final float[] FOG_COLOR = new float[4];
+final class InstanceShader {
+    private final float[] fogColorArray = new float[4];
 
     private final GlUniformInt texture;
     private final GlUniformInt lightmap;
@@ -24,7 +24,7 @@ final class EntityShader {
     private final GlUniformFloat4v fogColor;
     private final GlUniformFloat3v fogParameters;
 
-    EntityShader(ShaderBindingContext context, boolean textureArraysSupported) {
+    InstanceShader(ShaderBindingContext context, boolean textureArraysSupported) {
         this.texture = context.bindUniform("uTexture", GlUniformInt::new);
         this.lightmap = context.bindUniform("uLightmap", GlUniformInt::new);
         this.textureArray = textureArraysSupported
@@ -56,11 +56,11 @@ final class EntityShader {
 
     void setUniforms() {
         this.fogMode.setInt(GLStateManagerFogService.fogEnabled ? GLStateManagerFogService.fogMode : 0);
-        FOG_COLOR[0] = GLStateManagerFogService.fogColorRed;
-        FOG_COLOR[1] = GLStateManagerFogService.fogColorGreen;
-        FOG_COLOR[2] = GLStateManagerFogService.fogColorBlue;
-        FOG_COLOR[3] = 1.0F;
-        this.fogColor.set(FOG_COLOR);
+        this.fogColorArray[0] = GLStateManagerFogService.fogColorRed;
+        this.fogColorArray[1] = GLStateManagerFogService.fogColorGreen;
+        this.fogColorArray[2] = GLStateManagerFogService.fogColorBlue;
+        this.fogColorArray[3] = 1.0F;
+        this.fogColor.set(this.fogColorArray);
         this.fogParameters.set(GLStateManagerFogService.fogStart, GLStateManagerFogService.fogEnd, GLStateManagerFogService.fogDensity);
     }
 

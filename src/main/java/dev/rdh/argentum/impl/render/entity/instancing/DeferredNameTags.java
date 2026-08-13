@@ -5,8 +5,9 @@ import net.minecraft.entity.living.LivingEntity;
 
 import java.util.Arrays;
 
+@SuppressWarnings("unchecked")
 final class DeferredNameTags {
-    private Object[] renderers = new Object[64];
+    private LivingEntityRenderer<LivingEntity>[] renderers = new LivingEntityRenderer[64];
     private LivingEntity[] entities = new LivingEntity[64];
     private double[] positions = new double[64 * 3];
     private int count;
@@ -21,7 +22,7 @@ final class DeferredNameTags {
             this.entities = Arrays.copyOf(this.entities, this.count * 2);
             this.positions = Arrays.copyOf(this.positions, this.count * 6);
         }
-        this.renderers[this.count] = renderer;
+        this.renderers[this.count] = (LivingEntityRenderer<LivingEntity>) renderer;
         this.entities[this.count] = entity;
         int offset = this.count * 3;
         this.positions[offset] = x;
@@ -30,11 +31,10 @@ final class DeferredNameTags {
         this.count++;
     }
 
-    @SuppressWarnings("unchecked")
     void render() {
         for (int i = 0; i < this.count; i++) {
             int offset = i * 3;
-            ((LivingEntityRenderer<LivingEntity>)this.renderers[i]).renderNameTag(this.entities[i],
+            this.renderers[i].renderNameTag(this.entities[i],
                     this.positions[offset], this.positions[offset + 1], this.positions[offset + 2]
             );
             this.renderers[i] = null;
