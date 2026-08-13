@@ -1,5 +1,6 @@
 package dev.rdh.argentum.impl.render.instancing;
 
+import dev.rdh.argentum.impl.extensions.TextureGenerationExtension;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -15,12 +16,14 @@ import org.lwjgl.opengl.GL13C;
 import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL;
 
+import java.util.Map;
+
 public final class TextureArrayManager {
     private static final int MAX_LAYERS = 256;
     private static final int MAX_POOL_BYTES = 8 * 1024 * 1024;
 
-    private final Object2ObjectLinkedOpenHashMap<PoolKey, Pool> pools = new Object2ObjectLinkedOpenHashMap<>();
-    private final Reference2ObjectOpenHashMap<Texture, CachedTexture> textures = new Reference2ObjectOpenHashMap<>();
+    private final Map<PoolKey, Pool> pools = new Object2ObjectLinkedOpenHashMap<>();
+    private final Map<Texture, CachedTexture> textures = new Reference2ObjectOpenHashMap<>();
     private boolean core;
     private int framebuffer;
     private int fallbackTexture;
@@ -75,17 +78,19 @@ public final class TextureArrayManager {
     }
 
     public Selection select(Identifier location, int frame) {
-        Minecraft minecraft = Minecraft.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         GlStateManager.activeTexture(GLX.GL_TEXTURE0);
-        Texture source = minecraft.getTextureManager().get(location);
+        Texture source = mc.getTextureManager().get(location);
         if (source == null) {
-            minecraft.getTextureManager().bind(location);
-            source = minecraft.getTextureManager().get(location);
+            mc.getTextureManager().bind(location);
+            source = mc.getTextureManager().get(location);
         }
 
         int sourceId = source.getGlId();
+        int generation = source instanceof TextureGenerationExtension extension
+                ? extension.argentum$getGeneration() : 0;
         CachedTexture cached = this.textures.get(source);
-        if (cached != null && cached.sourceId == sourceId) {
+        if (cached != null && cached.sourceId == sourceId && cached.generation == generation) {
             Layer layer = cached.pool.getLayer(location, source, sourceId, frame);
             return layer != null ? layer.selection : null;
         }
@@ -105,11 +110,11 @@ public final class TextureArrayManager {
         );
         Pool pool = this.pools.get(key);
         if (pool == null) {
-            int capacity = (int)Math.clamp(MAX_POOL_BYTES / Math.max(1L, (long)width * height * 4), 2, this.maxLayers);
+            int capacity = Math.clamp(MAX_POOL_BYTES / Math.max(1L, (long)width * height * 4), 2, this.maxLayers);
             pool = new Pool(key, capacity);
             this.pools.put(key, pool);
         }
-        this.textures.put(source, new CachedTexture(sourceId, pool));
+        this.textures.put(source, new CachedTexture(sourceId, generation, pool));
         Layer layer = pool.getLayer(location, source, sourceId, frame);
         return layer != null ? layer.selection : null;
     }
@@ -182,6 +187,7 @@ public final class TextureArrayManager {
         }
 
         private Layer getLayer(Identifier location, Texture source, int sourceId, int frame) {
+            Minecraft mc = Minecraft.getInstance();
             Layer layer = this.layers.getAndMoveToLast(location);
             if (layer != null && layer.source == source && layer.sourceId == sourceId) {
                 layer.frame = frame;
@@ -265,7 +271,7 @@ public final class TextureArrayManager {
     private record PoolKey(int width, int height, int minFilter, int magFilter, int wrapS, int wrapT) {
     }
 
-    private record CachedTexture(int sourceId, Pool pool) {
+    private record CachedTexture(int sourceId, int generation, Pool pool) {
     }
 
     private static final class Layer {
