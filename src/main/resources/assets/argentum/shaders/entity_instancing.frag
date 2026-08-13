@@ -1,7 +1,4 @@
-#version 120
-#ifdef TEXTURE_ARRAY
-#extension GL_EXT_texture_array : require
-#endif
+#version 130
 
 uniform sampler2D uTexture;
 uniform sampler2D uLightmap;
@@ -14,24 +11,32 @@ uniform vec4 uFogColor;
 uniform vec3 uFogParameters;
 uniform bool uEmissive;
 
-varying vec2 vTexCoord;
-varying vec2 vLightCoord;
-varying float vTextureLayer;
-varying float vLighting;
-varying float vFogDistance;
-varying vec4 vColor;
-varying vec4 vOverlay;
+in vec2 vTexCoord;
+in vec2 vLightCoord;
+in float vTextureLayer;
+in float vLighting;
+in float vFogDistance;
+in vec4 vColor;
+in vec4 vOverlay;
+
+#ifndef LEGACY
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+#endif
+
+#ifdef LEGACY
+#define textureArray texture2DArray
+#else
+#define textureArray texture
+#endif
 
 void main() {
-    vec4 color;
+    vec4 color = texture(uTexture, vTexCoord);
 #ifdef TEXTURE_ARRAY
     if (uTextureArrayEnabled) {
-        color = texture2DArray(uTextureArray, vec3(vTexCoord, vTextureLayer));
-    } else {
-        color = texture2D(uTexture, vTexCoord);
+        color = textureArray(uTextureArray, vec3(vTexCoord, vTextureLayer));
     }
-#else
-    color = texture2D(uTexture, vTexCoord);
 #endif
     color *= vColor;
     if (color.a <= 0.1) {
@@ -39,7 +44,7 @@ void main() {
     }
 
     if (!uEmissive) {
-        color.rgb *= texture2D(uLightmap, vLightCoord).rgb * vLighting;
+        color.rgb *= texture(uLightmap, vLightCoord).rgb * vLighting;
     }
     color.rgb = mix(color.rgb, vOverlay.rgb, vOverlay.a);
     float fog = 1.0;
@@ -51,5 +56,5 @@ void main() {
         float density = uFogParameters.z * vFogDistance;
         fog = clamp(exp(-density * density), 0.0, 1.0);
     }
-    gl_FragColor = mix(uFogColor, color, fog);
+    fragColor = mix(uFogColor, color, fog);
 }

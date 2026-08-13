@@ -1,17 +1,17 @@
-#version 120
+#version 130
 
-attribute vec3 aPosition;
-attribute vec2 aTexCoord;
-attribute vec3 aNormal;
-attribute vec4 aModel0;
-attribute vec4 aModel1;
-attribute vec4 aModel2;
-attribute vec4 aModel3;
-attribute vec3 aLightCoord;
-attribute vec4 aColor;
-attribute vec4 aVertexColor;
-attribute float aEffectTime;
-attribute vec4 aOverlay;
+in vec3 aPosition;
+in vec2 aTexCoord;
+in vec3 aNormal;
+in vec4 aModel0;
+in vec4 aModel1;
+in vec4 aModel2;
+in vec4 aModel3;
+in vec3 aLightCoord;
+in vec4 aColor;
+in vec4 aVertexColor;
+in float aEffectTime;
+in vec4 aOverlay;
 uniform int uGlintPass;
 uniform int uChargePass;
 uniform int uItemGlintPass;
@@ -19,13 +19,13 @@ uniform float uItemGlintOffset;
 uniform vec3 uLightDirection0;
 uniform vec3 uLightDirection1;
 
-varying vec2 vTexCoord;
-varying vec2 vLightCoord;
-varying float vTextureLayer;
-varying float vLighting;
-varying float vFogDistance;
-varying vec4 vColor;
-varying vec4 vOverlay;
+out vec2 vTexCoord;
+out vec2 vLightCoord;
+out float vTextureLayer;
+out float vLighting;
+out float vFogDistance;
+out vec4 vColor;
+out vec4 vOverlay;
 
 void main() {
     mat4 model = mat4(aModel0, aModel1, aModel2, aModel3);

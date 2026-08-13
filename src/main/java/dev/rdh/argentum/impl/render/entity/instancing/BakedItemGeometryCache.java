@@ -15,15 +15,14 @@ import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
-import java.util.Map;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 final class BakedItemGeometryCache {
     private static final int MULTIPLE_TINTS = Integer.MIN_VALUE;
 
-    private final Map<BakedModel, Int2ObjectMap<InstanceGeometry>> itemGeometries = new Reference2ReferenceOpenHashMap<>();
-    private final Map<BakedModel, Int2ObjectMap<InstanceGeometry>> fixedGeometries = new Reference2ReferenceOpenHashMap<>();
-    private final Map<BakedModel, Int2ObjectMap<InstanceGeometry>> blockGeometries = new Reference2ReferenceOpenHashMap<>();
+    private final Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> itemGeometries = new Reference2ReferenceOpenHashMap<>();
+    private final Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> fixedGeometries = new Reference2ReferenceOpenHashMap<>();
+    private final Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> blockGeometries = new Reference2ReferenceOpenHashMap<>();
 
     InstanceGeometry getItem(BakedModel model, ItemStack item) {
         if (model.isCustomRenderer()) {
@@ -66,7 +65,8 @@ final class BakedItemGeometryCache {
         delete(this.blockGeometries, commandList);
     }
 
-    private static void delete(Map<BakedModel, Int2ObjectMap<InstanceGeometry>> geometries, CommandList commandList) {
+    private static void delete(Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> geometries,
+            CommandList commandList) {
         geometries.values().forEach(map -> map.values().forEach(geometry -> geometry.delete(commandList)));
         geometries.clear();
     }

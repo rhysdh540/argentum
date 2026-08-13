@@ -1,69 +1,80 @@
-package dev.rdh.argentum.impl.render.entity.instancing;
+package dev.rdh.argentum.impl.render.instancing;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.platform.GLX;
 import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.client.render.texture.Texture;
 import net.minecraft.resource.Identifier;
 import org.lwjgl.opengl.EXTFramebufferObject;
-import org.lwjgl.opengl.EXTTextureArray;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12C;
 import org.lwjgl.opengl.GL13C;
+import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL;
 
-import java.util.Iterator;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-final class TextureArrayManager {
+public final class TextureArrayManager {
     private static final int MAX_LAYERS = 256;
     private static final int MAX_POOL_BYTES = 8 * 1024 * 1024;
 
-    private final Map<PoolKey, Pool> pools = new LinkedHashMap<>();
-    private final Map<Texture, CachedTexture> textures = new IdentityHashMap<>();
+    private final Object2ObjectLinkedOpenHashMap<PoolKey, Pool> pools = new Object2ObjectLinkedOpenHashMap<>();
+    private final Reference2ObjectOpenHashMap<Texture, CachedTexture> textures = new Reference2ObjectOpenHashMap<>();
+    private boolean core;
     private int framebuffer;
     private int fallbackTexture;
     private int maxLayers;
 
-    boolean initialize() {
-        this.maxLayers = Math.min(GL11.glGetInteger(EXTTextureArray.GL_MAX_ARRAY_TEXTURE_LAYERS_EXT), MAX_LAYERS);
+    public boolean initialize() {
+        var capabilities = GL.getCapabilities();
+        this.core = capabilities.OpenGL30;
+        if (!this.core && !(capabilities.GL_EXT_texture_array
+                && capabilities.GL_EXT_framebuffer_object
+                && capabilities.GL_EXT_gpu_shader4)) {
+            return false;
+        }
+        this.maxLayers = Math.min(GL11.glGetInteger(GL30C.GL_MAX_ARRAY_TEXTURE_LAYERS), MAX_LAYERS);
         if (this.maxLayers < 2) {
             return false;
         }
         int activeTexture = GL11.glGetInteger(GL13C.GL_ACTIVE_TEXTURE);
         GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-        int previous = GL11.glGetInteger(EXTTextureArray.GL_TEXTURE_BINDING_2D_ARRAY_EXT);
+        int previous = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
         try {
             this.fallbackTexture = GL11.glGenTextures();
-            GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, this.fallbackTexture);
-            GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-            GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-            GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL12C.GL_TEXTURE_MAX_LEVEL, 0);
-            GL12C.glTexImage3D(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, 0, GL11.GL_RGBA8, 1, 1, 1, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L);
+            GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.fallbackTexture);
+            GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL12C.GL_TEXTURE_MAX_LEVEL, 0);
+            GL12C.glTexImage3D(GL30C.GL_TEXTURE_2D_ARRAY, 0, GL11.GL_RGBA8, 1, 1, 1, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L);
         } finally {
-            GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, previous);
+            GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, previous);
             GlStateManager.activeTexture(activeTexture);
         }
-        this.framebuffer = EXTFramebufferObject.glGenFramebuffersEXT();
+        this.framebuffer = this.core ? GL30C.glGenFramebuffers() : EXTFramebufferObject.glGenFramebuffersEXT();
         return true;
     }
 
-    int bindFallback() {
+    public boolean usesCoreApi() {
+        return this.core;
+    }
+
+    public int bindFallback() {
         GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-        int previous = GL11.glGetInteger(EXTTextureArray.GL_TEXTURE_BINDING_2D_ARRAY_EXT);
-        GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, this.fallbackTexture);
+        int previous = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
+        GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.fallbackTexture);
         GlStateManager.activeTexture(GLX.GL_TEXTURE0);
         return previous;
     }
 
-    void restore(int texture) {
+    public void restore(int texture) {
         GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-        GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, texture);
+        GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, texture);
         GlStateManager.activeTexture(GLX.GL_TEXTURE0);
     }
 
-    Selection select(Identifier location, int frame) {
+    public Selection select(Identifier location, int frame) {
         Minecraft minecraft = Minecraft.getInstance();
         GlStateManager.activeTexture(GLX.GL_TEXTURE0);
         Texture source = minecraft.getTextureManager().get(location);
@@ -103,7 +114,7 @@ final class TextureArrayManager {
         return layer != null ? layer.selection : null;
     }
 
-    void delete() {
+    public void delete() {
         for (Pool pool : this.pools.values()) {
             GL11.glDeleteTextures(pool.texture);
         }
@@ -114,17 +125,21 @@ final class TextureArrayManager {
             this.fallbackTexture = 0;
         }
         if (this.framebuffer != 0) {
-            EXTFramebufferObject.glDeleteFramebuffersEXT(this.framebuffer);
+            if (this.core) {
+                GL30C.glDeleteFramebuffers(this.framebuffer);
+            } else {
+                EXTFramebufferObject.glDeleteFramebuffersEXT(this.framebuffer);
+            }
             this.framebuffer = 0;
         }
         this.maxLayers = 0;
     }
 
-    record Selection(Pool pool, int layer) {
+    public record Selection(Pool pool, int layer) {
     }
 
-    final class Pool {
-        private final Map<Identifier, Layer> layers = new LinkedHashMap<>(16, 0.75F, true);
+    public final class Pool {
+        private final Object2ObjectLinkedOpenHashMap<Identifier, Layer> layers = new Object2ObjectLinkedOpenHashMap<>();
         private final PoolKey key;
         private final int texture;
         private final int capacity;
@@ -134,40 +149,40 @@ final class TextureArrayManager {
             this.capacity = capacity;
             int activeTexture = GL11.glGetInteger(GL13C.GL_ACTIVE_TEXTURE);
             GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-            int previous = GL11.glGetInteger(EXTTextureArray.GL_TEXTURE_BINDING_2D_ARRAY_EXT);
+            int previous = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
             try {
                 this.texture = GL11.glGenTextures();
-                GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, this.texture);
-                GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_MIN_FILTER, key.minFilter);
-                GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_MAG_FILTER, key.magFilter);
-                GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_WRAP_S, key.wrapS);
-                GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL11.GL_TEXTURE_WRAP_T, key.wrapT);
-                GL11.glTexParameteri(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, GL12C.GL_TEXTURE_MAX_LEVEL, 0);
-                GL12C.glTexImage3D(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, 0, GL11.GL_RGBA8,
+                GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.texture);
+                GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, key.minFilter);
+                GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, key.magFilter);
+                GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, key.wrapS);
+                GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, key.wrapT);
+                GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL12C.GL_TEXTURE_MAX_LEVEL, 0);
+                GL12C.glTexImage3D(GL30C.GL_TEXTURE_2D_ARRAY, 0, GL11.GL_RGBA8,
                         key.width, key.height, capacity, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L
                 );
             } finally {
-                GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, previous);
+                GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, previous);
                 GlStateManager.activeTexture(activeTexture);
             }
         }
 
-        int bind() {
+        public int bind() {
             GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-            int previous = GL11.glGetInteger(EXTTextureArray.GL_TEXTURE_BINDING_2D_ARRAY_EXT);
-            GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, this.texture);
+            int previous = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
+            GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.texture);
             GlStateManager.activeTexture(GLX.GL_TEXTURE0);
             return previous;
         }
 
-        void restore(int texture) {
+        public void restore(int texture) {
             GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-            GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, texture);
+            GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, texture);
             GlStateManager.activeTexture(GLX.GL_TEXTURE0);
         }
 
         private Layer getLayer(Identifier location, Texture source, int sourceId, int frame) {
-            Layer layer = this.layers.get(location);
+            Layer layer = this.layers.getAndMoveToLast(location);
             if (layer != null && layer.source == source && layer.sourceId == sourceId) {
                 layer.frame = frame;
                 return layer;
@@ -175,7 +190,7 @@ final class TextureArrayManager {
             if (layer == null) {
                 int index = this.layers.size();
                 if (index == this.capacity) {
-                    Iterator<Layer> iterator = this.layers.values().iterator();
+                    ObjectIterator<Layer> iterator = this.layers.values().iterator();
                     while (iterator.hasNext()) {
                         Layer candidate = iterator.next();
                         if (candidate.frame != frame) {
@@ -201,29 +216,50 @@ final class TextureArrayManager {
         }
 
         private boolean copy(int sourceTexture, int layer) {
-            int previousFramebuffer = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_BINDING_EXT);
+            int previousFramebuffer = GL11.glGetInteger(GL30C.GL_FRAMEBUFFER_BINDING);
             int activeTexture = GL11.glGetInteger(GL13C.GL_ACTIVE_TEXTURE);
             GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-            int previousArray = GL11.glGetInteger(EXTTextureArray.GL_TEXTURE_BINDING_2D_ARRAY_EXT);
+            int previousArray = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
             try {
-                EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, framebuffer);
-                EXTFramebufferObject.glFramebufferTexture2DEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT,
-                        EXTFramebufferObject.GL_COLOR_ATTACHMENT0_EXT, GL11.GL_TEXTURE_2D, sourceTexture, 0
-                );
-                if (EXTFramebufferObject.glCheckFramebufferStatusEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT)
-                        != EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT) {
+                bindFramebuffer(framebuffer);
+                attachTexture(sourceTexture);
+                if (!isFramebufferComplete()) {
                     return false;
                 }
-                GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, this.texture);
-                GL12C.glCopyTexSubImage3D(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, 0, 0, 0, layer, 0, 0, this.key.width, this.key.height);
+                GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.texture);
+                GL12C.glCopyTexSubImage3D(GL30C.GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, 0, 0, this.key.width, this.key.height);
                 return true;
             } finally {
-                GL11.glBindTexture(EXTTextureArray.GL_TEXTURE_2D_ARRAY_EXT, previousArray);
+                GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, previousArray);
                 GlStateManager.activeTexture(activeTexture);
-                EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, previousFramebuffer);
+                bindFramebuffer(previousFramebuffer);
             }
         }
 
+    }
+
+    private void bindFramebuffer(int framebuffer) {
+        if (this.core) {
+            GL30C.glBindFramebuffer(GL30C.GL_FRAMEBUFFER, framebuffer);
+        } else {
+            EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, framebuffer);
+        }
+    }
+
+    private void attachTexture(int texture) {
+        if (this.core) {
+            GL30C.glFramebufferTexture2D(GL30C.GL_FRAMEBUFFER, GL30C.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, texture, 0);
+        } else {
+            EXTFramebufferObject.glFramebufferTexture2DEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT,
+                    EXTFramebufferObject.GL_COLOR_ATTACHMENT0_EXT, GL11.GL_TEXTURE_2D, texture, 0);
+        }
+    }
+
+    private boolean isFramebufferComplete() {
+        return this.core
+                ? GL30C.glCheckFramebufferStatus(GL30C.GL_FRAMEBUFFER) == GL30C.GL_FRAMEBUFFER_COMPLETE
+                : EXTFramebufferObject.glCheckFramebufferStatusEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT)
+                == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
     }
 
     private record PoolKey(int width, int height, int minFilter, int magFilter, int wrapS, int wrapT) {

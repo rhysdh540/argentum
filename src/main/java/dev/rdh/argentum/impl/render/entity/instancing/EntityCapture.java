@@ -1,5 +1,6 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.render.entity.layer.AbstractArmorLayer;
 import net.minecraft.client.render.entity.layer.EntityRenderLayer;
@@ -17,9 +18,6 @@ import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Set;
 
 public final class EntityCapture implements AutoCloseable {
     private static final Identifier ENCHANTMENT_GLINT_TEXTURE =
@@ -27,7 +25,7 @@ public final class EntityCapture implements AutoCloseable {
 
     private final EntityInstancing owner;
     private final Matrix4f arrowMatrix = new Matrix4f();
-    private final Set<ModelPart> glintParts = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final ReferenceOpenHashSet<ModelPart> glintParts = new ReferenceOpenHashSet<>();
 
     private Matrix4f[] matrices = createMatrices(64);
     private EntityCapture previous;

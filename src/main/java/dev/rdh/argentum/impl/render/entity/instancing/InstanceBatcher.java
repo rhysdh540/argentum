@@ -1,5 +1,6 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+import dev.rdh.argentum.impl.render.instancing.TextureArrayManager;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import net.minecraft.client.Minecraft;
@@ -17,13 +18,12 @@ import org.lwjgl.opengl.GL11;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 
 import java.util.EnumMap;
-import java.util.Map;
 
 final class InstanceBatcher {
-    private final Map<Model, ModelGeometry> models = new Reference2ReferenceOpenHashMap<>();
-    private final EnumMap<InstanceRenderPass, Map<Identifier, TextureBatch>> textures =
+    private final Reference2ReferenceOpenHashMap<Model, ModelGeometry> models = new Reference2ReferenceOpenHashMap<>();
+    private final EnumMap<InstanceRenderPass, Object2ObjectLinkedOpenHashMap<Identifier, TextureBatch>> textures =
             new EnumMap<>(InstanceRenderPass.class);
-    private final EnumMap<InstanceRenderPass, Map<TextureArrayManager.Pool, TextureBatch>> arrayTextures =
+    private final EnumMap<InstanceRenderPass, Reference2ReferenceOpenHashMap<TextureArrayManager.Pool, TextureBatch>> arrayTextures =
             new EnumMap<>(InstanceRenderPass.class);
 
     InstanceBatcher() {
@@ -45,8 +45,8 @@ final class InstanceBatcher {
     void delete(CommandList commandList) {
         this.models.values().forEach(model -> model.delete(commandList));
         this.models.clear();
-        this.textures.values().forEach(Map::clear);
-        this.arrayTextures.values().forEach(Map::clear);
+        this.textures.values().forEach(Object2ObjectLinkedOpenHashMap::clear);
+        this.arrayTextures.values().forEach(Reference2ReferenceOpenHashMap::clear);
     }
 
     TextureBatch texture(Identifier texture, InstanceRenderPass pass) {
@@ -166,7 +166,7 @@ final class InstanceBatcher {
             draws += texture.render(commandList, pass == InstanceRenderPass.TRANSLUCENT);
             textureCount++;
         }
-        for (Map.Entry<TextureArrayManager.Pool, TextureBatch> entry : this.arrayTextures.get(pass).entrySet()) {
+        for (var entry : this.arrayTextures.get(pass).reference2ReferenceEntrySet()) {
             if (entry.getValue().count == 0) continue;
             int previous = entry.getKey().bind();
             program.getInterface().setTextureArray(true);

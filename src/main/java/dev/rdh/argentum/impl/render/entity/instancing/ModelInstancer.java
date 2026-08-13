@@ -1,5 +1,6 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+import dev.rdh.argentum.impl.render.instancing.TextureArrayManager;
 import net.minecraft.client.render.model.Model;
 import net.minecraft.client.render.platform.GLX;
 import net.minecraft.client.render.platform.GlStateManager;
@@ -13,6 +14,7 @@ import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
 import org.embeddedt.embeddium.impl.gl.shader.GlShader;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderConstants;
+import org.embeddedt.embeddium.impl.gl.shader.ShaderParser;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderType;
 import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
 import org.joml.Matrix4f;
@@ -20,10 +22,13 @@ import org.joml.Vector4fc;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 
-import java.util.List;
+import java.util.regex.Pattern;
 
 public final class ModelInstancer {
     private static final Logger LOGGER = LogManager.getLogger();
+    private static final Pattern VERSION_DIRECTIVE = Pattern.compile("^#version.*$", Pattern.MULTILINE);
+    private static final Pattern IN_PARAM = Pattern.compile("^in ", Pattern.MULTILINE);
+    private static final Pattern OUT_PARAM = Pattern.compile("^out ", Pattern.MULTILINE);
 
     private final InstanceBatcher batcher = new InstanceBatcher();
     private final BakedItemGeometryCache itemGeometry = new BakedItemGeometryCache();
@@ -220,14 +225,10 @@ public final class ModelInstancer {
         }
 
         try {
-            if (capabilities.GL_EXT_texture_array
-                    && capabilities.GL_EXT_framebuffer_object
-                    && capabilities.GL_EXT_gpu_shader4) {
-                try {
-                    this.textureArraysSupported = this.textureArrays.initialize();
-                } catch (RuntimeException exception) {
-                    LOGGER.warn("Texture arrays unavailable", exception);
-                }
+            try {
+                this.textureArraysSupported = this.textureArrays.initialize();
+            } catch (RuntimeException exception) {
+                LOGGER.warn("Texture arrays unavailable", exception);
             }
             try {
                 this.program = this.createProgram();
@@ -263,13 +264,15 @@ public final class ModelInstancer {
         ShaderConstants constants = this.textureArraysSupported
                 ? ShaderConstants.builder().add("TEXTURE_ARRAY").build()
                 : ShaderConstants.EMPTY;
-        List<GlShader> shaders = List.of(
-                ShaderLoader.loadShader(ShaderType.VERTEX, "argentum:entity_instancing.vert", constants),
-                ShaderLoader.loadShader(ShaderType.FRAGMENT, "argentum:entity_instancing.frag", constants)
-        );
+        GlShader[] shaders = {
+                this.loadShader(ShaderType.VERTEX, "argentum:entity_instancing.vert", constants),
+                this.loadShader(ShaderType.FRAGMENT, "argentum:entity_instancing.frag", constants)
+        };
         try {
             GlProgram.Builder builder = GlProgram.builder("argentum:model_instancing");
-            shaders.forEach(builder::attachShader);
+            for (GlShader shader : shaders) {
+                builder.attachShader(shader);
+            }
             return builder
                     .bindAttribute("aPosition", 0)
                     .bindAttribute("aTexCoord", 1)
@@ -285,8 +288,25 @@ public final class ModelInstancer {
                     .bindAttribute("aOverlay", 11)
                     .link(context -> new InstanceShader(context, this.textureArraysSupported));
         } finally {
-            shaders.forEach(GlShader::delete);
+            for (GlShader shader : shaders) {
+                shader.delete();
+            }
         }
+    }
+
+    private GlShader loadShader(ShaderType type, String path, ShaderConstants constants) {
+        String source = ShaderParser.parseShader(ShaderLoader.getShaderSource(path), ShaderLoader::getShaderSource, constants);
+        if (!this.textureArrays.usesCoreApi()) {
+            String preamble = "#version 120";
+            if (this.textureArraysSupported) {
+                preamble += "\n#extension GL_EXT_texture_array : require";
+            }
+            preamble += "\n#define LEGACY\n#define texture texture2D";
+            source = VERSION_DIRECTIVE.matcher(source).replaceFirst(preamble);
+            source = IN_PARAM.matcher(source).replaceAll(type == ShaderType.VERTEX ? "attribute " : "varying ");
+            source = OUT_PARAM.matcher(source).replaceAll("varying ");
+        }
+        return new GlShader(type, path, source);
     }
 
     public record BatchStats(int instances, int draws, int textures) {

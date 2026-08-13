@@ -23,12 +23,14 @@ import org.embeddedt.embeddium.impl.gl.shader.ShaderType;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat3v;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat4v;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformInt;
+import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttribute;
+import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttributeBinding;
+import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttributeFormat;
 import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
-import dev.rdh.argentum.impl.render.entity.instancing.InstancedVertexFormats;
 import dev.rdh.argentum.impl.render.terrain.fog.GLStateManagerFogService;
 
 import java.nio.FloatBuffer;
@@ -39,6 +41,14 @@ public final class EntityShadowBatch {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Identifier SHADOW_TEXTURE = new Identifier("textures/misc/shadow.png");
     private static final int INSTANCE_FLOATS = 10;
+    private static final GlVertexAttributeBinding[] VERTEX_FORMAT = {
+            binding(0, 2, 2 * Float.BYTES, 0, 0)
+    };
+    private static final GlVertexAttributeBinding[] INSTANCE_FORMAT = {
+            binding(1, 4, INSTANCE_FLOATS * Float.BYTES, 0, 1),
+            binding(2, 4, INSTANCE_FLOATS * Float.BYTES, 4 * Float.BYTES, 1),
+            binding(3, 2, INSTANCE_FLOATS * Float.BYTES, 8 * Float.BYTES, 1)
+    };
     private static final Long2ReferenceOpenHashMap<Block> BLOCKS = new Long2ReferenceOpenHashMap<>();
     private static final Long2LongOpenHashMap LIGHT = new Long2LongOpenHashMap();
     private static final BlockPos.Mutable POS = new BlockPos.Mutable();
@@ -224,7 +234,7 @@ public final class EntityShadowBatch {
             program.unbind();
             FloatBuffer corners = BufferUtils.createFloatBuffer(8);
             corners.put(new float[]{0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F}).flip();
-            geometry = new InstancedGeometryBuffer(corners, InstancedVertexFormats.SHADOW_VERTEX, InstancedVertexFormats.SHADOW_INSTANCE);
+            geometry = new InstancedGeometryBuffer(corners, VERTEX_FORMAT, INSTANCE_FORMAT);
 
             LOGGER.info("Instanced entity shadows enabled");
         } catch (RuntimeException exception) {
@@ -244,6 +254,11 @@ public final class EntityShadowBatch {
             LOGGER.error("Instanced entity shadow geometry failed to initialize", exception);
             return false;
         }
+    }
+
+    private static GlVertexAttributeBinding binding(int index, int count, int stride, int pointer, int divisor) {
+        return new GlVertexAttributeBinding(index,
+                new GlVertexAttribute(GlVertexAttributeFormat.FLOAT, "", count, false, pointer, stride, false), divisor);
     }
 
     public static void deleteGeometry(CommandList commandList) {
