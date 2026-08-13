@@ -16,6 +16,8 @@ uniform int uGlintPass;
 uniform int uChargePass;
 uniform int uItemGlintPass;
 uniform float uItemGlintOffset;
+uniform vec3 uLightDirection0;
+uniform vec3 uLightDirection1;
 
 varying vec2 vTexCoord;
 varying vec2 vLightCoord;
@@ -29,10 +31,8 @@ void main() {
     mat4 model = mat4(aModel0, aModel1, aModel2, aModel3);
     vec4 eyePosition = gl_ModelViewMatrix * model * vec4(aPosition, 1.0);
     vec3 normal = normalize(gl_NormalMatrix * mat3(model) * aNormal);
-    vec3 lightDir0 = normalize(mat3(gl_ModelViewMatrix) * vec3(0.2, 1.0, -0.7));
-    vec3 lightDir1 = normalize(mat3(gl_ModelViewMatrix) * vec3(-0.2, 1.0, 0.7));
-    float light0 = max(dot(normal, lightDir0), 0.0);
-    float light1 = max(dot(normal, lightDir1), 0.0);
+    float light0 = max(dot(normal, uLightDirection0), 0.0);
+    float light1 = max(dot(normal, uLightDirection1), 0.0);
 
     gl_Position = gl_ProjectionMatrix * eyePosition;
     if (uGlintPass >= 0) {

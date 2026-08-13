@@ -7,9 +7,16 @@ import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat4v;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformInt;
 import dev.rdh.argentum.impl.render.terrain.fog.GLStateManagerFogService;
+import dev.rdh.argentum.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 final class InstanceShader {
+    private static final Vector3fc LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
+    private static final Vector3fc LIGHT_1 = new Vector3f(-0.2F, 1.0F, 0.7F).normalize();
+
     private final float[] fogColorArray = new float[4];
+    private final Vector3f lightDirection = new Vector3f();
 
     private final GlUniformInt texture;
     private final GlUniformInt lightmap;
@@ -23,6 +30,8 @@ final class InstanceShader {
     private final GlUniformFloat itemGlintOffset;
     private final GlUniformFloat4v fogColor;
     private final GlUniformFloat3v fogParameters;
+    private final GlUniformFloat3v lightDirection0;
+    private final GlUniformFloat3v lightDirection1;
 
     InstanceShader(ShaderBindingContext context, boolean textureArraysSupported) {
         this.texture = context.bindUniform("uTexture", GlUniformInt::new);
@@ -41,6 +50,8 @@ final class InstanceShader {
         this.itemGlintOffset = context.bindUniform("uItemGlintOffset", GlUniformFloat::new);
         this.fogColor = context.bindUniform("uFogColor", GlUniformFloat4v::new);
         this.fogParameters = context.bindUniform("uFogParameters", GlUniformFloat3v::new);
+        this.lightDirection0 = context.bindUniform("uLightDirection0", GlUniformFloat3v::new);
+        this.lightDirection1 = context.bindUniform("uLightDirection1", GlUniformFloat3v::new);
     }
 
     void initialize() {
@@ -62,6 +73,13 @@ final class InstanceShader {
         this.fogColorArray[3] = 1.0F;
         this.fogColor.set(this.fogColorArray);
         this.fogParameters.set(GLStateManagerFogService.fogStart, GLStateManagerFogService.fogEnd, GLStateManagerFogService.fogDensity);
+        this.setLightDirection(this.lightDirection0, LIGHT_0);
+        this.setLightDirection(this.lightDirection1, LIGHT_1);
+    }
+
+    private void setLightDirection(GlUniformFloat3v uniform, Vector3fc direction) {
+        PrimitiveChunkMatrixGetter.getMatrices().modelView().transformDirection(direction, this.lightDirection).normalize();
+        uniform.set(this.lightDirection.x, this.lightDirection.y, this.lightDirection.z);
     }
 
     void setTextureArray(boolean enabled) {
