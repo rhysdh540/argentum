@@ -21,7 +21,7 @@ public final class EntityInstancing {
     private final DeferredNameTags nameTags = new DeferredNameTags();
     private final Matrix4f arrowMatrix = new Matrix4f();
     private final Vector4f arrowColor = new Vector4f(1.0F);
-    private final Vector4f arrowOverlayColor = new Vector4f();
+    private final Vector4f arrowOverlayColor = new Vector4f(0.0F);
 
     private EntityCapture activeCapture;
     private int entityCount;
