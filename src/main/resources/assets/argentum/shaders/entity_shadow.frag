@@ -1,13 +1,22 @@
 #version 120
 
+#import <sodium:include/fog.glsl>
+
 uniform sampler2D uTexture;
-uniform int uFogMode;
-uniform vec4 uFogColor;
-uniform vec3 uFogParameters;
 
 varying vec2 vTexCoord;
 varying float vAlpha;
+#ifdef USE_FOG
 varying float vFogDistance;
+uniform vec4 u_FogColor;
+#ifdef USE_FOG_SMOOTH
+uniform float u_FogStart;
+uniform float u_FogEnd;
+#endif
+#ifdef USE_FOG_EXP2
+uniform float u_FogDensity;
+#endif
+#endif
 
 void main() {
     vec4 color = texture2D(uTexture, vTexCoord);
@@ -16,15 +25,10 @@ void main() {
         discard;
     }
 
-    float fog = 1.0;
-    if (uFogMode == 9729) {
-        fog = clamp((uFogParameters.y - vFogDistance) / (uFogParameters.y - uFogParameters.x), 0.0, 1.0);
-    } else if (uFogMode == 2048) {
-        fog = clamp(exp(-uFogParameters.z * vFogDistance), 0.0, 1.0);
-    } else if (uFogMode == 2049) {
-        float density = uFogParameters.z * vFogDistance;
-        fog = clamp(exp(-density * density), 0.0, 1.0);
-    }
-    color.rgb = mix(uFogColor.rgb, color.rgb, fog);
+#ifdef USE_FOG_EXP2
+    color = _exp2Fog(color, vFogDistance, u_FogColor, u_FogDensity);
+#elif defined(USE_FOG_SMOOTH)
+    color = _linearFog(color, vFogDistance, u_FogColor, u_FogStart, u_FogEnd);
+#endif
     gl_FragColor = color;
 }

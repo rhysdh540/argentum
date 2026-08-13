@@ -1,5 +1,7 @@
 #version 120
 
+#import <sodium:include/fog.glsl>
+
 attribute vec2 aCorner;
 attribute vec4 aBounds0;
 attribute vec4 aBounds1;
@@ -7,7 +9,10 @@ attribute vec2 aShadow;
 
 varying vec2 vTexCoord;
 varying float vAlpha;
+#ifdef USE_FOG
 varying float vFogDistance;
+uniform int u_FogShape;
+#endif
 
 void main() {
     vec3 position = vec3(
@@ -24,5 +29,7 @@ void main() {
         1.0
     )).xy;
     vAlpha = aShadow.y;
-    vFogDistance = abs(eyePosition.z);
+#ifdef USE_FOG
+    vFogDistance = getFragDistance(u_FogShape, eyePosition.xyz);
+#endif
 }

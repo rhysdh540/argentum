@@ -40,6 +40,7 @@ import java.util.Objects;
 public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveRenderSectionManager, BlockLayer, BlockEntity, Float> {
     private final EntityGatherer entityGatherer = new EntityGatherer();
     private final EntityOcclusionCuller entityOcclusionCuller = new EntityOcclusionCuller(this);
+    private final EntityShadowBatch entityShadowBatch = new EntityShadowBatch();
     private final ModelInstancer modelInstancer = new ModelInstancer();
     private final EntityInstancing entityInstancing = new EntityInstancing(this.modelInstancer);
 
@@ -70,6 +71,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
         this.entityOcclusionCuller.clear();
         this.entityInstancing.discardBatch();
         try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
+            this.entityShadowBatch.close(commandList);
             this.modelInstancer.close(commandList);
         }
         super.unloadWorld();
@@ -77,10 +79,14 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
 
     @Override
     public void reload() {
-        if (this.modelInstancer.isInitialized()) {
-            this.entityInstancing.discardBatch();
+        boolean reloadModels = this.modelInstancer.isInitialized();
+        if (reloadModels || this.entityShadowBatch.isInitialized()) {
             try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
-                this.modelInstancer.reload(commandList);
+                if (reloadModels) {
+                    this.entityInstancing.discardBatch();
+                    this.modelInstancer.reload(commandList);
+                }
+                this.entityShadowBatch.close(commandList);
             }
         }
         super.reload();
@@ -90,12 +96,16 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
         return this.entityInstancing;
     }
 
+    public EntityShadowBatch getEntityShadowBatch() {
+        return this.entityShadowBatch;
+    }
+
     public ModelInstancer getModelInstancer() {
         return this.modelInstancer;
     }
 
     public void beginEntityRendering() {
-        EntityShadowBatch.beginFrame();
+        this.entityShadowBatch.beginFrame();
         this.entityInstancing.beginBatch();
     }
 
@@ -216,7 +226,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
         }
         RenderDevice.enterManagedCode();
         try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
-            EntityShadowBatch.flush(commandList);
+            this.entityShadowBatch.flush(commandList);
             if (batching) {
                 this.entityInstancing.flush(commandList);
             }
