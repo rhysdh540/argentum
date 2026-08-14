@@ -12,6 +12,8 @@ import net.minecraft.resource.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
@@ -33,7 +35,6 @@ import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
 
 import java.nio.FloatBuffer;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +54,7 @@ public final class EntityShadowBatch {
     private final Long2LongOpenHashMap light = new Long2LongOpenHashMap();
     private final BlockPos.Mutable pos = new BlockPos.Mutable();
     private final BlockPos.Mutable below = new BlockPos.Mutable();
-    private final Map<ChunkShaderComponent.Factory<?>, GlProgram<ShadowShader>> programs = new HashMap<>();
+    private final Map<ChunkShaderComponent.Factory<?>, GlProgram<ShadowShader>> programs = new Object2ObjectOpenHashMap<>();
 
     private float[] instances = new float[4096 * INSTANCE_FLOATS];
     private FloatBuffer upload = BufferUtils.createFloatBuffer(instances.length);

@@ -6,6 +6,8 @@ import net.minecraft.client.render.vertex.DefaultVertexFormat;
 import net.minecraft.client.render.vertex.Tesselator;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Box;
+
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15C;
@@ -13,7 +15,6 @@ import org.lwjgl.opengl.GL33C;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ public class EntityOcclusionCuller {
     private static final double MAX_BOX_VOLUME = 64.0D * 64.0D * 64.0D;
 
     private final ArgentumWorldRenderer renderer;
-    private final Map<Entity, Query> queries = new IdentityHashMap<>();
+    private final Map<Entity, Query> queries = new Reference2ReferenceOpenHashMap<>();
     private long frame;
 
     public EntityOcclusionCuller(ArgentumWorldRenderer renderer) {

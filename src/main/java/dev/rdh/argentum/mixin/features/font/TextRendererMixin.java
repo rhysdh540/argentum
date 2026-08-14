@@ -14,6 +14,9 @@ import net.minecraft.client.render.vertex.Tesselator;
 import net.minecraft.client.render.vertex.VertexBuffer;
 import net.minecraft.client.render.vertex.VertexFormat;
 import net.minecraft.resource.Identifier;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,12 +28,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.extensions.BufferBuilderExtension;
 import dev.rdh.argentum.impl.extensions.TextRendererExtension;
 
 import java.nio.IntBuffer;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Mixin(TextRenderer.class)
@@ -109,7 +109,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
     private Map<String, Integer> celeritas$widthCache;
 
     @Unique
-    private Map<GeometryKey, Geometry> celeritas$geometryCache;
+    private Object2ObjectLinkedOpenHashMap<GeometryKey, Geometry> celeritas$geometryCache;
 
     @Unique
     private final GeometryKey celeritas$lookupKey = new GeometryKey();
@@ -144,8 +144,8 @@ public abstract class TextRendererMixin implements TextRendererExtension {
         this.celeritas$decorationBuffer = new BufferBuilder(4 * 1024 / Integer.BYTES);
         this.celeritas$elementBuffer = new BufferBuilder(128 * 1024 / Integer.BYTES);
         this.celeritas$uploader = new BufferUploader();
-        this.celeritas$widthCache = new HashMap<>(256);
-        this.celeritas$geometryCache = new LinkedHashMap<>(256, 0.75F, true);
+        this.celeritas$widthCache = new Object2ObjectOpenHashMap<>(256);
+        this.celeritas$geometryCache = new Object2ObjectLinkedOpenHashMap<>(256);
     }
 
     @Inject(method = "getWidth(Ljava/lang/String;)I", at = @At("HEAD"), cancellable = true)
@@ -202,7 +202,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
                 Float.floatToIntBits(this.celeritas$red), Float.floatToIntBits(this.celeritas$green),
                 Float.floatToIntBits(this.celeritas$blue), Float.floatToIntBits(this.celeritas$alpha)
         );
-        Geometry geometry = this.celeritas$geometryCache.get(key);
+        Geometry geometry = this.celeritas$geometryCache.getAndMoveToLast(key);
         if (geometry != null) {
             if (this.celeritas$elementBatchDepth > 0) {
                 this.celeritas$append(geometry.vertices(), this.x, this.y);
@@ -231,9 +231,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
                     new Geometry(this.celeritas$pendingBuffer, this.celeritas$pendingVertices, this.x - this.celeritas$originX)
             );
             if (this.celeritas$geometryCache.size() > GEOMETRY_CACHE_SIZE) {
-                var iterator = this.celeritas$geometryCache.entrySet().iterator();
-                iterator.next().getValue().buffer().delete();
-                iterator.remove();
+                this.celeritas$geometryCache.removeFirst().buffer().delete();
             }
         }
         this.celeritas$pendingKey = null;

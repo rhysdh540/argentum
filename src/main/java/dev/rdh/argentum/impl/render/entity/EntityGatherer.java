@@ -1,6 +1,8 @@
 package dev.rdh.argentum.impl.render.entity;
 
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
 import dev.rdh.argentum.mixin.core.world.ClientChunkCacheAccessor;
 import dev.rdh.argentum.mixin.core.world.WorldChunkAccessor;
 
@@ -9,17 +11,14 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.TypeInstanceMultiMap;
 import net.minecraft.world.chunk.WorldChunk;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 public class EntityGatherer {
     private final List<Entity> entityList;
-    private final Consumer<Entity> addEntity;
 
     public EntityGatherer() {
-        this.entityList = new ArrayList<>();
-        this.addEntity = this.entityList::add;
+        this.entityList = new ObjectArrayList<>();
     }
 
     public void clear() {
@@ -27,7 +26,7 @@ public class EntityGatherer {
     }
 
     public List<Entity> getLoadedEntityList(ClientWorld world) {
-        Consumer<Entity> addEntity = this.addEntity;
+        Consumer<Entity> addEntity = this.entityList::add;
         // Iterate directly over chunk entity lists where possible - mods may create multipart entities that are not
         // added to the main loadedEntityList.
         if (world.getChunkSource() instanceof ClientChunkCacheAccessor provider) {
