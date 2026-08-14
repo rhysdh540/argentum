@@ -1,6 +1,7 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
 import dev.rdh.argentum.impl.render.instancing.TextureArrayManager;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.minecraft.client.render.model.Model;
 import net.minecraft.client.render.platform.GLX;
 import net.minecraft.client.render.platform.GlStateManager;
@@ -16,6 +17,8 @@ import org.embeddedt.embeddium.impl.gl.shader.GlShader;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderConstants;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderParser;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderType;
+import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderComponent;
+import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderFogComponent;
 import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
 import org.joml.Matrix4f;
 import org.joml.Vector4fc;
@@ -33,6 +36,8 @@ public final class ModelInstancer {
     private final InstanceBatcher batcher = new InstanceBatcher();
     private final BakedItemGeometryCache itemGeometry = new BakedItemGeometryCache();
     private final TextureArrayManager textureArrays = new TextureArrayManager();
+    private final Reference2ReferenceOpenHashMap<ChunkShaderComponent.Factory<?>, GlProgram<InstanceShader>> programs =
+            new Reference2ReferenceOpenHashMap<>();
 
     private boolean initialized;
     private boolean supported;
@@ -45,7 +50,6 @@ public final class ModelInstancer {
     private Identifier selectedTexture;
     private InstanceRenderPass selectedPass;
     private InstanceBatcher.TextureBatch selectedTextureBatch;
-    private GlProgram<InstanceShader> program;
     private ArrowGeometry arrowGeometry;
 
     public boolean beginBatch() {
@@ -115,15 +119,24 @@ public final class ModelInstancer {
             return BatchStats.EMPTY;
         }
 
+        GlProgram<InstanceShader> program;
+        try {
+            program = this.getProgram();
+        } catch (RuntimeException exception) {
+            this.supported = false;
+            LOGGER.error("Model instancing disabled after a shader failure", exception);
+            this.batcher.clear();
+            return BatchStats.EMPTY;
+        }
         GlStateManager.activeTexture(GLX.GL_TEXTURE0);
         GlStateManager.disableCull();
-        this.program.bind();
-        this.program.getInterface().setUniforms();
+        program.bind();
+        program.getInterface().setUniforms();
         int previousArray = this.textureArraysSupported ? this.textureArrays.bindFallback() : 0;
         boolean failed = false;
         InstanceBatcher.Stats stats;
         try {
-            stats = this.batcher.render(commandList, this.program);
+            stats = this.batcher.render(commandList, program);
         } catch (RuntimeException exception) {
             failed = true;
             this.supported = false;
@@ -139,7 +152,7 @@ public final class ModelInstancer {
                 GlStateManager.disableBlend();
                 GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             }
-            this.program.unbind();
+            program.unbind();
             GlStateManager.enableCull();
             GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
             this.batcher.clear();
@@ -164,10 +177,8 @@ public final class ModelInstancer {
             this.arrowGeometry.delete(commandList);
             this.arrowGeometry = null;
         }
-        if (this.program != null) {
-            this.program.delete();
-            this.program = null;
-        }
+        this.programs.values().forEach(GlProgram::delete);
+        this.programs.clear();
         this.textureArrays.delete();
         this.initialized = false;
         this.supported = false;
@@ -231,7 +242,7 @@ public final class ModelInstancer {
                 LOGGER.warn("Texture arrays unavailable", exception);
             }
             try {
-                this.program = this.createProgram();
+                this.getProgram();
             } catch (RuntimeException exception) {
                 if (!this.textureArraysSupported) {
                     throw exception;
@@ -239,34 +250,49 @@ public final class ModelInstancer {
                 LOGGER.warn("Texture-array shader unavailable", exception);
                 this.textureArrays.delete();
                 this.textureArraysSupported = false;
-                this.program = this.createProgram();
-            }
-            this.program.bind();
-            try {
-                this.program.getInterface().initialize();
-            } finally {
-                this.program.unbind();
+                this.getProgram();
             }
             LOGGER.info("Model instancing enabled");
         } catch (RuntimeException exception) {
             this.supported = false;
-            if (this.program != null) {
-                this.program.delete();
-                this.program = null;
-            }
+            this.programs.values().forEach(GlProgram::delete);
+            this.programs.clear();
             this.textureArrays.delete();
             LOGGER.error("Model instancing failed to initialize", exception);
         }
         return this.supported;
     }
 
-    private GlProgram<InstanceShader> createProgram() {
-        ShaderConstants constants = this.textureArraysSupported
-                ? ShaderConstants.builder().add("TEXTURE_ARRAY").build()
-                : ShaderConstants.EMPTY;
+    private GlProgram<InstanceShader> getProgram() {
+        ChunkShaderComponent.Factory<?> fogFactory = ChunkShaderFogComponent.FOG_SERVICE.getFogMode();
+        GlProgram<InstanceShader> program = this.programs.get(fogFactory);
+        if (program != null) {
+            return program;
+        }
+
+        program = this.createProgram(fogFactory);
+        program.bind();
+        try {
+            program.getInterface().initialize();
+        } catch (RuntimeException exception) {
+            program.delete();
+            throw exception;
+        } finally {
+            program.unbind();
+        }
+        this.programs.put(fogFactory, program);
+        return program;
+    }
+
+    private GlProgram<InstanceShader> createProgram(ChunkShaderComponent.Factory<?> fogFactory) {
+        ShaderConstants.Builder constants = ShaderConstants.builder().addAll(fogFactory.getDefines());
+        if (this.textureArraysSupported) {
+            constants.add("TEXTURE_ARRAY");
+        }
+        ShaderConstants shaderConstants = constants.build();
         GlShader[] shaders = {
-                this.loadShader(ShaderType.VERTEX, "argentum:entity_instancing.vert", constants),
-                this.loadShader(ShaderType.FRAGMENT, "argentum:entity_instancing.frag", constants)
+                this.loadShader(ShaderType.VERTEX, "argentum:entity_instancing.vert", shaderConstants),
+                this.loadShader(ShaderType.FRAGMENT, "argentum:entity_instancing.frag", shaderConstants)
         };
         try {
             GlProgram.Builder builder = GlProgram.builder("argentum:model_instancing");
@@ -276,7 +302,7 @@ public final class ModelInstancer {
             return builder
                     .bindAttributes(InstancedVertexFormats.ENTITY_VERTEX, 0)
                     .bindAttributes(InstancedVertexFormats.ENTITY_INSTANCE, InstancedVertexFormats.ENTITY_VERTEX.getAttributes().size())
-                    .link(context -> new InstanceShader(context, this.textureArraysSupported));
+                    .link(context -> new InstanceShader(context, this.textureArraysSupported, fogFactory));
         } finally {
             for (GlShader shader : shaders) {
                 shader.delete();

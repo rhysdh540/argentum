@@ -1,5 +1,7 @@
 #version 130
 
+#import <sodium:include/fog.glsl>
+
 in vec3 aPosition;
 in vec2 aTexCoord;
 in vec3 aNormal;
@@ -23,7 +25,10 @@ out vec2 vTexCoord;
 out vec2 vLightCoord;
 out float vTextureLayer;
 out float vLighting;
+#ifdef USE_FOG
 out float vFogDistance;
+uniform int u_FogShape;
+#endif
 out vec4 vColor;
 out vec4 vOverlay;
 
@@ -55,7 +60,9 @@ void main() {
     vLightCoord = (gl_TextureMatrix[1] * vec4(aLightCoord.xy, 0.0, 1.0)).xy;
     vTextureLayer = aLightCoord.z;
     vLighting = min(1.0, (light0 + light1) * 0.6 + 0.4);
-    vFogDistance = abs(eyePosition.z);
+#ifdef USE_FOG
+    vFogDistance = getFragDistance(u_FogShape, eyePosition.xyz);
+#endif
     vColor = aColor * aVertexColor;
     vOverlay = aOverlay;
 }

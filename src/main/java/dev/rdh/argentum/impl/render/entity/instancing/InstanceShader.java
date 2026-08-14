@@ -3,10 +3,9 @@ package dev.rdh.argentum.impl.render.entity.instancing;
 import net.minecraft.client.Minecraft;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderBindingContext;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat3v;
-import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat4v;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformInt;
-import dev.rdh.argentum.impl.render.terrain.fog.GLStateManagerFogService;
+import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderComponent;
 import dev.rdh.argentum.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -15,25 +14,23 @@ final class InstanceShader {
     private static final Vector3fc LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
     private static final Vector3fc LIGHT_1 = new Vector3f(-0.2F, 1.0F, 0.7F).normalize();
 
-    private final float[] fogColorArray = new float[4];
     private final Vector3f lightDirection = new Vector3f();
 
     private final GlUniformInt texture;
     private final GlUniformInt lightmap;
     private final GlUniformInt textureArray;
     private final GlUniformInt textureArrayEnabled;
-    private final GlUniformInt fogMode;
     private final GlUniformInt emissive;
     private final GlUniformInt glintPass;
     private final GlUniformInt chargePass;
     private final GlUniformInt itemGlintPass;
     private final GlUniformFloat itemGlintOffset;
-    private final GlUniformFloat4v fogColor;
-    private final GlUniformFloat3v fogParameters;
     private final GlUniformFloat3v lightDirection0;
     private final GlUniformFloat3v lightDirection1;
+    private final ChunkShaderComponent fog;
 
-    InstanceShader(ShaderBindingContext context, boolean textureArraysSupported) {
+    InstanceShader(ShaderBindingContext context, boolean textureArraysSupported,
+            ChunkShaderComponent.Factory<?> fogFactory) {
         this.texture = context.bindUniform("uTexture", GlUniformInt::new);
         this.lightmap = context.bindUniform("uLightmap", GlUniformInt::new);
         this.textureArray = textureArraysSupported
@@ -42,16 +39,14 @@ final class InstanceShader {
         this.textureArrayEnabled = textureArraysSupported
                 ? context.bindUniform("uTextureArrayEnabled", GlUniformInt::new)
                 : null;
-        this.fogMode = context.bindUniform("uFogMode", GlUniformInt::new);
         this.emissive = context.bindUniform("uEmissive", GlUniformInt::new);
         this.glintPass = context.bindUniform("uGlintPass", GlUniformInt::new);
         this.chargePass = context.bindUniform("uChargePass", GlUniformInt::new);
         this.itemGlintPass = context.bindUniform("uItemGlintPass", GlUniformInt::new);
         this.itemGlintOffset = context.bindUniform("uItemGlintOffset", GlUniformFloat::new);
-        this.fogColor = context.bindUniform("uFogColor", GlUniformFloat4v::new);
-        this.fogParameters = context.bindUniform("uFogParameters", GlUniformFloat3v::new);
         this.lightDirection0 = context.bindUniform("uLightDirection0", GlUniformFloat3v::new);
         this.lightDirection1 = context.bindUniform("uLightDirection1", GlUniformFloat3v::new);
+        this.fog = fogFactory.create(context);
     }
 
     void initialize() {
@@ -66,13 +61,7 @@ final class InstanceShader {
     }
 
     void setUniforms() {
-        this.fogMode.setInt(GLStateManagerFogService.fogEnabled ? GLStateManagerFogService.fogMode : 0);
-        this.fogColorArray[0] = GLStateManagerFogService.fogColorRed;
-        this.fogColorArray[1] = GLStateManagerFogService.fogColorGreen;
-        this.fogColorArray[2] = GLStateManagerFogService.fogColorBlue;
-        this.fogColorArray[3] = 1.0F;
-        this.fogColor.set(this.fogColorArray);
-        this.fogParameters.set(GLStateManagerFogService.fogStart, GLStateManagerFogService.fogEnd, GLStateManagerFogService.fogDensity);
+        this.fog.setup();
         this.setLightDirection(this.lightDirection0, LIGHT_0);
         this.setLightDirection(this.lightDirection1, LIGHT_1);
     }
