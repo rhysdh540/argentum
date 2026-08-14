@@ -32,9 +32,9 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
+import dev.rdh.argentum.impl.render.instancing.InstanceDataBuffer;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -55,15 +55,12 @@ public final class EntityShadowBatch {
     private final BlockPos.Mutable pos = new BlockPos.Mutable();
     private final BlockPos.Mutable below = new BlockPos.Mutable();
     private final Map<ChunkShaderComponent.Factory<?>, GlProgram<ShadowShader>> programs = new Object2ObjectOpenHashMap<>();
+    private final ShadowInstances instances = new ShadowInstances();
 
-    private float[] instances = new float[4096 * INSTANCE_FLOATS];
-    private FloatBuffer upload = BufferUtils.createFloatBuffer(instances.length);
     private boolean initialized;
     private boolean supported;
     private boolean active;
     private InstancedGeometryBuffer geometry;
-    private int size;
-    private int quads;
     private GlProgram<ShadowShader> program;
 
     public EntityShadowBatch() {
@@ -73,8 +70,7 @@ public final class EntityShadowBatch {
     public void beginFrame() {
         blocks.clear();
         light.clear();
-        size = 0;
-        quads = 0;
+        instances.clear();
         active = initialize();
     }
 
@@ -119,7 +115,7 @@ public final class EntityShadowBatch {
             return;
         }
         active = false;
-        if (quads == 0) {
+        if (instances.count() == 0) {
             return;
         }
         if (!initializeGeometry(commandList)) {
@@ -134,13 +130,9 @@ public final class EntityShadowBatch {
         program.bind();
         program.getInterface().fog().setup();
 
-        if (upload.capacity() < size) {
-            upload = BufferUtils.createFloatBuffer(instances.length);
-        }
-        upload.clear().put(instances, 0, size).flip();
         RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
         try {
-            geometry.draw(commandList, upload, 4, quads);
+            geometry.draw(commandList, instances.upload(), 4, instances.count());
             RenderMetrics.recordDraw();
         } catch (RuntimeException exception) {
             supported = false;
@@ -193,20 +185,7 @@ public final class EntityShadowBatch {
         float minV = (float)((dz - minZ) / 2.0 / shadowSize + 0.5);
         float maxV = (float)((dz - maxZ) / 2.0 / shadowSize + 0.5);
 
-        if (size + INSTANCE_FLOATS > instances.length) {
-            instances = Arrays.copyOf(instances, instances.length * 2);
-        }
-        instances[size++] = (float)minX;
-        instances[size++] = (float)surfaceY;
-        instances[size++] = (float)minZ;
-        instances[size++] = (float)maxX;
-        instances[size++] = (float)maxZ;
-        instances[size++] = minU;
-        instances[size++] = minV;
-        instances[size++] = maxU;
-        instances[size++] = maxV;
-        instances[size++] = (float)alpha;
-        quads++;
+        instances.add(minX, surfaceY, minZ, maxX, maxZ, minU, minV, maxU, maxV, alpha);
     }
 
     private boolean initialize() {
@@ -304,6 +283,29 @@ public final class EntityShadowBatch {
     private record ShadowShader(GlUniformInt texture, ChunkShaderComponent fog) {
         ShadowShader(ShaderBindingContext ctx, ChunkShaderComponent.Factory<?> fogFactory) {
             this(ctx.bindUniform("uTexture", GlUniformInt::new), fogFactory.create(ctx));
+        }
+    }
+
+    private static final class ShadowInstances extends InstanceDataBuffer {
+        private ShadowInstances() {
+            super(INSTANCE_FLOATS, 0, 4096);
+        }
+
+        private void add(double minX, double y, double minZ, double maxX, double maxZ,
+                float minU, float minV, float maxU, float maxV, double alpha) {
+            int i = appendOffset();
+            float[] data = data();
+            data[i++] = (float)minX;
+            data[i++] = (float)y;
+            data[i++] = (float)minZ;
+            data[i++] = (float)maxX;
+            data[i++] = (float)maxZ;
+            data[i++] = minU;
+            data[i++] = minV;
+            data[i++] = maxU;
+            data[i++] = maxV;
+            data[i] = (float)alpha;
+            finishInstance();
         }
     }
 }
