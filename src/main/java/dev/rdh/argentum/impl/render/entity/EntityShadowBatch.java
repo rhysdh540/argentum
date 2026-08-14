@@ -21,9 +21,8 @@ import org.embeddedt.embeddium.impl.gl.shader.ShaderBindingContext;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderConstants;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderType;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformInt;
-import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttribute;
-import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttributeBinding;
 import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttributeFormat;
+import org.embeddedt.embeddium.impl.gl.attribute.GlVertexFormat;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderComponent;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderFogComponent;
 import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
@@ -42,14 +41,14 @@ public final class EntityShadowBatch {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Identifier SHADOW_TEXTURE = new Identifier("textures/misc/shadow.png");
     private static final int INSTANCE_FLOATS = 10;
-    private static final GlVertexAttributeBinding[] VERTEX_FORMAT = {
-            binding(0, 2, 2 * Float.BYTES, 0, 0)
-    };
-    private static final GlVertexAttributeBinding[] INSTANCE_FORMAT = {
-            binding(1, 4, INSTANCE_FLOATS * Float.BYTES, 0, 1),
-            binding(2, 4, INSTANCE_FLOATS * Float.BYTES, 4 * Float.BYTES, 1),
-            binding(3, 2, INSTANCE_FLOATS * Float.BYTES, 8 * Float.BYTES, 1)
-    };
+    private static final GlVertexFormat VERTEX_FORMAT = GlVertexFormat.builder(2 * Float.BYTES)
+            .addElement("aCorner", 0, GlVertexAttributeFormat.FLOAT, 2, false, false)
+            .build();
+    private static final GlVertexFormat INSTANCE_FORMAT = GlVertexFormat.builder(INSTANCE_FLOATS * Float.BYTES)
+            .addElement("aBounds0", 0, GlVertexAttributeFormat.FLOAT, 4, false, false)
+            .addElement("aBounds1", 4 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 4, false, false)
+            .addElement("aShadow", 8 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 2, false, false)
+            .build();
     private final Long2ReferenceOpenHashMap<Block> blocks = new Long2ReferenceOpenHashMap<>();
     private final Long2LongOpenHashMap light = new Long2LongOpenHashMap();
     private final BlockPos.Mutable pos = new BlockPos.Mutable();
@@ -266,11 +265,6 @@ public final class EntityShadowBatch {
         }
     }
 
-    private static GlVertexAttributeBinding binding(int index, int count, int stride, int pointer, int divisor) {
-        return new GlVertexAttributeBinding(index,
-                new GlVertexAttribute(GlVertexAttributeFormat.FLOAT, "", count, false, pointer, stride, false), divisor);
-    }
-
     public void close(CommandList commandList) {
         active = false;
         if (geometry != null) {
@@ -298,10 +292,8 @@ public final class EntityShadowBatch {
             GlProgram.Builder builder = GlProgram.builder("argentum:entity_shadow");
             shaders.forEach(builder::attachShader);
             return builder
-                    .bindAttribute("aCorner", 0)
-                    .bindAttribute("aBounds0", 1)
-                    .bindAttribute("aBounds1", 2)
-                    .bindAttribute("aShadow", 3)
+                    .bindAttributes(VERTEX_FORMAT, 0)
+                    .bindAttributes(INSTANCE_FORMAT, VERTEX_FORMAT.getAttributes().size())
                     .link(ctx -> new ShadowShader(ctx, fogFactory));
         } finally {
             shaders.forEach(GlShader::delete);

@@ -1,7 +1,7 @@
 package dev.rdh.argentum.impl.render.instancing;
 
 import org.embeddedt.embeddium.impl.gl.array.GlVertexArray;
-import org.embeddedt.embeddium.impl.gl.attribute.GlVertexAttributeBinding;
+import org.embeddedt.embeddium.impl.gl.attribute.GlVertexFormat;
 import org.embeddedt.embeddium.impl.gl.buffer.GlBufferUsage;
 import org.embeddedt.embeddium.impl.gl.buffer.GlMutableBuffer;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
@@ -15,13 +15,13 @@ import java.nio.FloatBuffer;
 
 public final class InstancedGeometryBuffer {
     private FloatBuffer vertices;
-    private final GlVertexAttributeBinding[] vertexFormat;
-    private final GlVertexAttributeBinding[] instanceFormat;
+    private final GlVertexFormat vertexFormat;
+    private final GlVertexFormat instanceFormat;
     private GlMutableBuffer vertexBuffer;
     private GlMutableBuffer instanceBuffer;
     private GlVertexArrayTessellation tessellation;
 
-    public InstancedGeometryBuffer(FloatBuffer vertices, GlVertexAttributeBinding[] vertexFormat, GlVertexAttributeBinding[] instanceFormat) {
+    public InstancedGeometryBuffer(FloatBuffer vertices, GlVertexFormat vertexFormat, GlVertexFormat instanceFormat) {
         this.vertices = vertices;
         this.vertexFormat = vertexFormat;
         this.instanceFormat = instanceFormat;
@@ -38,7 +38,8 @@ public final class InstancedGeometryBuffer {
             commandList.uploadData(this.vertexBuffer, MemoryUtil.memAddress(this.vertices), (long)this.vertices.remaining() * Float.BYTES, GlBufferUsage.STATIC_DRAW);
             this.tessellation = new GlVertexArrayTessellation(new GlVertexArray(), new TessellationBinding[]{
                     TessellationBinding.forVertexBuffer(this.vertexBuffer, this.vertexFormat),
-                    TessellationBinding.forVertexBuffer(this.instanceBuffer, this.instanceFormat)
+                    TessellationBinding.forVertexBuffer(this.instanceBuffer, this.instanceFormat,
+                            this.vertexFormat.getAttributes().size(), 1)
             }
             );
             this.tessellation.init(commandList);

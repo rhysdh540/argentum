@@ -274,18 +274,8 @@ public final class ModelInstancer {
                 builder.attachShader(shader);
             }
             return builder
-                    .bindAttribute("aPosition", 0)
-                    .bindAttribute("aTexCoord", 1)
-                    .bindAttribute("aNormal", 2)
-                    .bindAttribute("aModel0", 3)
-                    .bindAttribute("aModel1", 4)
-                    .bindAttribute("aModel2", 5)
-                    .bindAttribute("aModel3", 6)
-                    .bindAttribute("aLightCoord", 7)
-                    .bindAttribute("aColor", 8)
-                    .bindAttribute("aVertexColor", 9)
-                    .bindAttribute("aEffectTime", 10)
-                    .bindAttribute("aOverlay", 11)
+                    .bindAttributes(InstancedVertexFormats.ENTITY_VERTEX, 0)
+                    .bindAttributes(InstancedVertexFormats.ENTITY_INSTANCE, InstancedVertexFormats.ENTITY_VERTEX.getAttributes().size())
                     .link(context -> new InstanceShader(context, this.textureArraysSupported));
         } finally {
             for (GlShader shader : shaders) {
