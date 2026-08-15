@@ -1,7 +1,7 @@
 package dev.rdh.cera.mixin;
 
-import dev.rdh.argentum.impl.extensions.WorldRendererExtension;
-import dev.rdh.cera.CeraClientWorldExtension;
+import dev.rdh.argentum.impl.ext.WorldRendererExtension;
+import dev.rdh.cera.ext.CeraClientWorldExtension;
 import net.minecraft.client.render.world.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import org.spongepowered.asm.mixin.Mixin;

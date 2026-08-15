@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import dev.rdh.argentum.impl.Argentum;
-import dev.rdh.argentum.impl.extensions.TextureAtlasExtension;
+import dev.rdh.argentum.impl.ext.TextureAtlasExtension;
 
 import java.util.Iterator;
 import java.util.List;

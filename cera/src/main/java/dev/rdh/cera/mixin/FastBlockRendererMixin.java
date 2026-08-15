@@ -8,7 +8,7 @@ import dev.rdh.cera.modules.BetterGrass;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import dev.rdh.cera.modules.ctm.CtmRenderContext;
 import dev.rdh.cera.modules.NaturalTextures;
-import dev.rdh.cera.CeraTextureAtlasExtension;
+import dev.rdh.cera.ext.CeraTextureAtlasExtension;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import dev.rdh.argentum.impl.render.terrain.compile.pipeline.FastBlockRenderer;

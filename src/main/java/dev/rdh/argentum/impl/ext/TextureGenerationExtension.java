@@ -1,4 +1,4 @@
-package dev.rdh.argentum.impl.extensions;
+package dev.rdh.argentum.impl.ext;
 
 public interface TextureGenerationExtension {
     int argentum$getGeneration();

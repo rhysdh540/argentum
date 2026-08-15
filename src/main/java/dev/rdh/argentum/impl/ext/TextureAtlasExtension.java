@@ -1,4 +1,4 @@
-package dev.rdh.argentum.impl.extensions;
+package dev.rdh.argentum.impl.ext;
 
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 

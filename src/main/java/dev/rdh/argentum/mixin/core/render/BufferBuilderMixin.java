@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import dev.rdh.argentum.impl.extensions.BufferBuilderExtension;
+import dev.rdh.argentum.impl.ext.BufferBuilderExtension;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements BufferBuilderExtension {

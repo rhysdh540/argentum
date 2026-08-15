@@ -2,7 +2,7 @@ package dev.rdh.cera.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import dev.rdh.cera.CeraClientWorldExtension;
+import dev.rdh.cera.ext.CeraClientWorldExtension;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 import dev.rdh.cera.modules.DynamicLights;
 import net.minecraft.block.state.BlockState;

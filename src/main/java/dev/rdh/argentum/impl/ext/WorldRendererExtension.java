@@ -1,4 +1,4 @@
-package dev.rdh.argentum.impl.extensions;
+package dev.rdh.argentum.impl.ext;
 
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 

@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.extensions.WorldRendererExtension;
+import dev.rdh.argentum.impl.ext.WorldRendererExtension;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 import dev.rdh.argentum.impl.render.terrain.NoopRenderChunkStorage;
 

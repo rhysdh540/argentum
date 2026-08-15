@@ -5,6 +5,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.ornithemc.osl.resource.loader.api.client.ClientResourceLoaderEvents;
 import net.ornithemc.osl.resource.loader.api.resource.repository.ResourcePackRepository;
 import dev.rdh.argentum.impl.config.JsonOptionStorage;
+import dev.rdh.cera.ext.CeraClientWorldExtension;
+import dev.rdh.cera.ext.CeraTextureAtlasExtension;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

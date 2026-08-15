@@ -1,6 +1,6 @@
 package dev.rdh.cera.mixin;
 
-import dev.rdh.cera.CeraClientWorldExtension;
+import dev.rdh.cera.ext.CeraClientWorldExtension;
 import dev.rdh.cera.modules.DynamicLights;
 import net.minecraft.client.world.ClientWorld;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;

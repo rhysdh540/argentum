@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.extensions.TextRendererExtension;
+import dev.rdh.argentum.impl.ext.TextRendererExtension;
 
 import java.nio.IntBuffer;
 import java.util.Map;

@@ -1,7 +1,7 @@
 package dev.rdh.cera.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import dev.rdh.cera.CeraClientWorldExtension;
+import dev.rdh.cera.ext.CeraClientWorldExtension;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;

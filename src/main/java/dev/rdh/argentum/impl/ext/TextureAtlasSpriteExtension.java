@@ -1,4 +1,4 @@
-package dev.rdh.argentum.impl.extensions;
+package dev.rdh.argentum.impl.ext;
 
 import org.embeddedt.embeddium.impl.render.chunk.sprite.SpriteTransparencyLevel;
 

@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import dev.rdh.argentum.impl.extensions.ParticleExtension;
+import dev.rdh.argentum.impl.ext.ParticleExtension;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 
 @Mixin(Particle.class)

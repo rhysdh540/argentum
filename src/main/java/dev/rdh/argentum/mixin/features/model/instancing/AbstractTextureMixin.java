@@ -1,6 +1,6 @@
 package dev.rdh.argentum.mixin.features.model.instancing;
 
-import dev.rdh.argentum.impl.extensions.TextureGenerationExtension;
+import dev.rdh.argentum.impl.ext.TextureGenerationExtension;
 import net.minecraft.client.render.texture.AbstractTexture;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

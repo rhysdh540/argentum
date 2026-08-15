@@ -1,6 +1,6 @@
 package dev.rdh.argentum.impl.render.instancing;
 
-import dev.rdh.argentum.impl.extensions.TextureGenerationExtension;
+import dev.rdh.argentum.impl.ext.TextureGenerationExtension;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;

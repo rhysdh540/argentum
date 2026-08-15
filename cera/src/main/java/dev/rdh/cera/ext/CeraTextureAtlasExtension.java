@@ -1,4 +1,4 @@
-package dev.rdh.cera;
+package dev.rdh.cera.ext;
 
 import dev.rdh.cera.modules.BetterGrass;
 import dev.rdh.cera.modules.NaturalTextures;
