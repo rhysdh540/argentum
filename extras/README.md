@@ -1,5 +1,5 @@
 # Argentum Extras
-Argentum Extras is a companion mod for Argentum, providing eye-candy and options that sacrifice visual fidelity for performance.
+Argentum Extras is a companion mod for Argentum, providing eye-candy and options that provide more fine-grained tradeoffs between visual fidelity and performance.
 
 ## Features
 A non-exhaustive list of features that currently exist:
