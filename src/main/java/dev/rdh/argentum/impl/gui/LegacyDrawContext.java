@@ -9,6 +9,7 @@ import net.minecraft.client.render.texture.DynamicTexture;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.resource.Identifier;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.loader.api.FabricLoader;
 import org.embeddedt.embeddium.impl.gui.framework.DrawContext;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 final class LegacyDrawContext implements DrawContext {
@@ -145,10 +147,13 @@ final class LegacyDrawContext implements DrawContext {
                 .orElse(null);
     }
 
+    private final Map<Path, Identifier> loadedLogos = new Object2ObjectOpenHashMap<>();
     private final Set<Path> erroredModLogos = new ObjectOpenHashSet<>();
 
     private String rememberPath(Path path) {
         if (erroredModLogos.contains(path)) return null;
+        Identifier tex = loadedLogos.get(path);
+        if (tex != null) return tex.toString();
         try {
             BufferedImage img = ImageIO.read(Files.newInputStream(path));
             if (img.getWidth() != img.getHeight()) {
@@ -157,7 +162,9 @@ final class LegacyDrawContext implements DrawContext {
                 return null;
             }
 
-            return this.minecraft.getTextureManager().register("logo", new DynamicTexture(img)).toString();
+            tex = this.minecraft.getTextureManager().register("mod_logo", new DynamicTexture(img));
+            loadedLogos.put(path, tex);
+            return tex.toString();
         } catch (IOException e) {
 			Argentum.LOGGER.warn("Failed to read mod icon {}", path, e);
             erroredModLogos.add(path);
