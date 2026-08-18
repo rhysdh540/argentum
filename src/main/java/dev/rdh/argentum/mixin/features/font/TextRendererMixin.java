@@ -1,5 +1,6 @@
 package dev.rdh.argentum.mixin.features.font;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
@@ -184,6 +185,11 @@ public abstract class TextRendererMixin implements TextRendererExtension {
                 && (!Argentum.CONFIG.fontBatching || !this.celeritas$canCache(text))) {
             this.celeritas$beforeImmediateText.run();
         }
+    }
+
+    @ModifyExpressionValue(method = "drawLayer(Ljava/lang/String;Z)V", at = @At(value = "INVOKE", target = "Ljava/lang/String;charAt(I)C", ordinal = 0))
+    private char fixZeroWidthChars(char c) {
+        return c == '\u202f' || c == '\u00a0' || c == '\u2007' ? ' ' : c;
     }
 
     @Inject(method = "drawLayer(Ljava/lang/String;Z)V", at = @At("HEAD"), cancellable = true)
