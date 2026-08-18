@@ -12,6 +12,7 @@ import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.resource.model.BakedQuad;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldView;
+import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 
 import java.util.List;
 import java.util.Locale;
@@ -21,12 +22,12 @@ public final class ConnectedTextures {
     private List<CtmRule> pending = List.of();
     private volatile FaceTransformation transformation = FaceTransformation.EMPTY;
 
-    public void reload(TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
+    public void reload(ResourceManager resources, TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
         CtmLookup.validate();
         CompactCtm.validate();
         PaneCulling.validate();
         CtmRule.validate();
-        pending = CtmRuleLoader.load(atlas, sourcedSprites);
+        pending = CtmRuleLoader.load(resources, atlas, sourcedSprites);
     }
 
     public void bake() {
@@ -45,7 +46,7 @@ public final class ConnectedTextures {
         transformation = pending.isEmpty() ? FaceTransformation.EMPTY
                 : new FaceTransformation(Map.copyOf(blocks), Map.copyOf(tiles), new PaneCulling(),
                         new QuadGeometry.Registry());
-        Cera.LOGGER.info("Loaded {} connected texture rules", pending.size());
+        Cera.LOGGER.info("[CTM] Loaded {} rules", pending.size());
         pending = List.of();
     }
 

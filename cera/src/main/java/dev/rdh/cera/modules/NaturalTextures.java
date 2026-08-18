@@ -1,11 +1,12 @@
 package dev.rdh.cera.modules;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.resource.Identifier;
 import net.minecraft.util.math.BlockPos;
+import dev.rdh.cera.props.Props;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
+import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFacing;
 
@@ -14,14 +15,14 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Properties;
 
-public final class NaturalTextures {
+public final class NaturalTextures implements ResourceReloadListener {
     private static final Identifier CONFIG = new Identifier("optifine/natural.properties");
     private static final Identifier LEGACY_CONFIG = new Identifier("mcpatcher/natural.properties");
     private volatile Map<String, Rule> rules = Map.of();
 
-    public void reload(ResourceManager resources) {
+    @Override
+    public void resourcesReloaded(ResourceManager resources) {
         try {
             Resource config = get(resources, CONFIG);
             boolean defaults = resources.getResourceStack(CONFIG).size() == 1;
@@ -32,30 +33,27 @@ public final class NaturalTextures {
                     defaults = false;
                 }
             }
-
-            Properties properties = new Properties();
-            try (var stream = config.open()) {
-                properties.load(stream);
+            if (config == null) {
+                rules = Map.of();
+                return;
             }
 
+            Props properties = new Props(config);
+
             Map<String, Rule> loaded = new Object2ObjectOpenHashMap<>();
-            for (String texture : properties.stringPropertyNames()) {
-                Rule rule = Rule.parse(properties.getProperty(texture));
+            for (String texture : properties.properties().stringPropertyNames()) {
+                Rule rule = Rule.parse(properties.get(texture));
                 if (rule == null) {
-                    Cera.LOGGER.warn("Invalid natural texture rule: {}={}", texture, properties.getProperty(texture));
+                    Cera.LOGGER.warn("[NaturalTextures] Invalid rule: {}={}", texture, properties.get(texture));
                 } else if (!defaults || isVanillaTexture(resources, texture)) {
-                    TextureAtlasSprite sprite = Minecraft.getInstance().getBlocksAtlas()
-                            .getSprite("minecraft:blocks/" + texture);
-                    if (sprite != Minecraft.getInstance().getBlocksAtlas().getMissingSprite()) {
-                        loaded.put(sprite.getName(), rule);
-                    }
+                    loaded.put("minecraft:blocks/" + texture, rule);
                 }
             }
             rules = Map.copyOf(loaded);
-            Cera.LOGGER.info("Loaded {} natural texture rules", rules.size());
+            Cera.LOGGER.info("[NaturalTextures] Loaded {} rules", rules.size());
         } catch (IOException e) {
             rules = Map.of();
-            Cera.LOGGER.warn("Failed to load natural textures", e);
+            Cera.LOGGER.warn("[NaturalTextures] Failed to load properties", e);
         }
     }
 

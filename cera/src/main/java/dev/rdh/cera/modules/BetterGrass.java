@@ -9,8 +9,6 @@ import net.minecraft.client.render.model.block.BlockElementTexture;
 import net.minecraft.client.render.model.block.FaceBakery;
 import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
-import net.minecraft.client.resource.Resource;
-import net.minecraft.client.resource.manager.ResourceManager;
 import net.minecraft.client.resource.model.BakedQuad;
 import net.minecraft.client.resource.model.ModelRotation;
 import net.minecraft.resource.Identifier;
@@ -20,6 +18,9 @@ import net.minecraft.world.WorldView;
 import org.lwjgl.util.vector.Vector3f;
 
 import dev.rdh.cera.Cera;
+import dev.rdh.cera.props.Props;
+import net.ornithemc.osl.resource.loader.api.resource.Resource;
+import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 
 import java.io.IOException;
 import java.util.EnumMap;
@@ -33,14 +34,7 @@ public final class BetterGrass {
     private volatile State state = State.EMPTY;
 
     public void reload(ResourceManager resources, TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
-        Properties properties = new Properties();
-        try {
-            Resource resource = resources.getResource(CONFIG);
-            try (var stream = resource.asStream()) {
-                properties.load(stream);
-            }
-        } catch (IOException _) {
-        }
+        Props properties = load(resources);
 
         pending = new Pending(
                 enabled(properties, "grass"),
@@ -132,24 +126,32 @@ public final class BetterGrass {
         return mode == Mode.FAST || world.getBlockState(pos.offset(face)).getBlock() == block;
     }
 
-    private static boolean enabled(Properties properties, String key) {
+    private static Props load(ResourceManager resources) {
+        try {
+            Resource resource = resources.getResource(CONFIG).orElse(null);
+            return resource == null ? new Props(CONFIG, new Properties()) : new Props(resource);
+        } catch (IOException e) {
+            Cera.LOGGER.warn("[BetterGrass] Failed to load properties", e);
+            return new Props(CONFIG, new Properties());
+        }
+    }
+
+    private static boolean enabled(Props properties, String key) {
         return enabled(properties, key, true);
     }
 
-    private static boolean enabled(Properties properties, String key, boolean fallback) {
-        String value = properties.getProperty(key);
-        return value == null ? fallback : Boolean.parseBoolean(value);
+    private static boolean enabled(Props properties, String key, boolean fallback) {
+        var result = properties.getBoolean(key, fallback);
+        if (!result.isSuccess()) Cera.LOGGER.warn("[BetterGrass] {}", result.error());
+        return result.orElse(false);
     }
 
-    private static TextureAtlasSprite register(Properties properties, String key, String fallback,
+    private static TextureAtlasSprite register(Props properties, String key, String fallback,
             ResourceManager resources, TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
-        String texture = properties.getProperty(key, fallback);
-        Identifier id = new Identifier(texture);
+        Identifier id = Props.parseId(properties.get(key, fallback), properties.id());
         Identifier resource = new Identifier(id.getNamespace(), "textures/" + id.getPath() + ".png");
-        try {
-            resources.getResource(resource);
-        } catch (IOException e) {
-            Cera.LOGGER.warn("Better Grass texture not found: {}", resource);
+        if (!resources.hasResource(resource)) {
+            Cera.LOGGER.warn("[BetterGrass] texture not found: {}", resource);
             id = new Identifier(fallback);
         }
         TextureAtlasSprite sprite = sourcedSprites.get(id.toString());

@@ -2,16 +2,16 @@ package dev.rdh.cera;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 import net.ornithemc.osl.resource.loader.api.client.ClientResourceLoaderEvents;
 import net.ornithemc.osl.resource.loader.api.resource.repository.ResourcePackRepository;
 import dev.rdh.argentum.impl.config.JsonOptionStorage;
-import dev.rdh.cera.ext.CeraClientWorldExtension;
+import dev.rdh.cera.ext.CeraMinecraftExtension;
 import dev.rdh.cera.ext.CeraTextureAtlasExtension;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.taumc.celeritas.api.OptionGUIConstructionEvent;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
 
 public class Cera implements ClientModInitializer {
@@ -28,12 +28,10 @@ public class Cera implements ClientModInitializer {
         CONFIG_STORAGE = JsonOptionStorage.load(FabricLoader.getInstance().getConfigDir().resolve("cera.json"), CeraConfig.class, CeraConfig::new, CeraConfig::validate);
         CONFIG = CONFIG_STORAGE.getData();
         OptionGUIConstructionEvent.BUS.addListener(event -> event.addPage(CeraOptionPage.create()));
-        ClientResourceLoaderEvents.END_RESOURCE_RELOAD.register((resources, context) -> {
+        ClientResourceLoaderEvents.INIT_RESOURCE_MANAGER.register(resources -> {
             Minecraft minecraft = Minecraft.getInstance();
-            ((CeraTextureAtlasExtension)minecraft.getBlocksAtlas()).cera$getNaturalTextures().reload(resources);
-            if (minecraft.world instanceof CeraClientWorldExtension world) {
-                world.cera$getDynamicLights().reload(resources);
-            }
+            resources.addReloader(((CeraTextureAtlasExtension)minecraft.getBlocksAtlas()).cera$getNaturalTextures());
+            resources.addReloader(((CeraMinecraftExtension)minecraft).cera$getDynamicLightRules());
         });
     }
 

@@ -50,8 +50,10 @@ public class TextureAtlasMixin implements CeraTextureAtlasExtension {
     @Inject(method = "loadAndStitch", at = @At("HEAD"))
     private void cera$loadTextureModules(ResourceManager resources, CallbackInfo ci) {
         if ("textures".equals(this.path)) {
-            this.cera$betterGrass.reload(resources, (TextureAtlas)(Object)this, this.sourcedSprites);
-            this.cera$connectedTextures.reload((TextureAtlas)(Object)this, this.sourcedSprites);
+            var oslResources = net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager.client();
+            TextureAtlas thiz = (TextureAtlas) (Object) this;
+            this.cera$betterGrass.reload(oslResources, thiz, this.sourcedSprites);
+            this.cera$connectedTextures.reload(oslResources, thiz, this.sourcedSprites);
         }
     }
 

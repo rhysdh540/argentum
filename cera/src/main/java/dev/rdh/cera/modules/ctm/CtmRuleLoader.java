@@ -1,6 +1,8 @@
 package dev.rdh.cera.modules.ctm;
 
 import dev.rdh.cera.Cera;
+import dev.rdh.cera.props.Props;
+import dev.rdh.cera.props.Result;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.state.BlockState;
@@ -13,22 +15,17 @@ import net.minecraft.util.math.Direction;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.ornithemc.osl.core.api.util.function.IOSupplier;
-import net.ornithemc.osl.resource.loader.api.resource.ResourceType;
+import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
-import net.ornithemc.osl.resource.loader.api.resource.pack.ResourcePack;
 
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
@@ -49,58 +46,45 @@ final class CtmRuleLoader {
     private CtmRuleLoader() {
     }
 
-    static List<CtmRule> load(TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
+    static List<CtmRule> load(ResourceManager resources, TextureAtlas atlas,
+            Map<String, TextureAtlasSprite> sourcedSprites) {
         List<CtmRule> rules = new ObjectArrayList<>();
-        Set<String> loadedPaths = new ObjectOpenHashSet<>();
-        List<ResourcePack> packs = ResourceManager.client().getResourcePacks();
-        for (int i = packs.size() - 1; i >= 0; i--) {
-            loadPack(packs.get(i), atlas, sourcedSprites, rules, loadedPaths);
-        }
+        load(resources, OPTIFINE_PREFIX, atlas, sourcedSprites, rules);
+        load(resources, MCPATCHER_PREFIX, atlas, sourcedSprites, rules);
+        rules.sort(Comparator.comparingInt(CtmRule::weight).reversed().thenComparing(CtmRule::path));
         return List.copyOf(rules);
     }
 
-    private static void loadPack(ResourcePack pack, TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites, List<CtmRule> rules, Set<String> loadedPaths) {
-        Map<String, IOSupplier<InputStream>> files = new Object2ObjectAVLTreeMap<>();
-        List<CtmRule> packRules = new ObjectArrayList<>();
-        collectProperties(pack, OPTIFINE_PREFIX, files);
-        collectProperties(pack, MCPATCHER_PREFIX, files);
-        for (var entry : files.entrySet()) {
-            String path = entry.getKey();
-            if (!loadedPaths.add(path)) continue;
-            try (InputStream stream = entry.getValue().get()) {
-                Properties properties = new Properties();
-                properties.load(stream);
-                CtmRule rule = parse(properties, path, atlas, sourcedSprites);
-                if (rule != null) packRules.add(rule);
+    private static void load(ResourceManager resources, String directory, TextureAtlas atlas,
+            Map<String, TextureAtlasSprite> sourcedSprites, List<CtmRule> rules) {
+        for (var location : resources.findResources("minecraft", directory,
+                id -> id.identifier().endsWith(".properties")).keySet()) {
+            List<Resource> stack = resources.getResourceStack(location);
+            if (stack.isEmpty()) continue;
+            Resource resource = stack.getLast();
+            try {
+                CtmRule rule = parse(new Props(resource), atlas, sourcedSprites);
+                if (rule != null) rules.add(rule);
             } catch (Exception e) {
-                Cera.LOGGER.warn("Failed to load connected textures rule {} from {}", path, pack.getName(), e);
+                Cera.LOGGER.warn("[CTM] Failed to load rule {} from {}", location, resource.sourceName(), e);
             }
         }
-        packRules.sort(Comparator.comparingInt(CtmRule::weight).reversed().thenComparing(CtmRule::path));
-        rules.addAll(packRules);
     }
 
-    private static void collectProperties(ResourcePack pack, String directory, Map<String, IOSupplier<InputStream>> files) {
-        pack.findResources(ResourceType.CLIENT_ASSETS, "minecraft", directory,
-                (location, resource) -> {
-                    String path = location.identifier();
-                    if (path.endsWith(".properties")) files.put(path, resource);
-                });
-    }
-
-    private static CtmRule parse(Properties properties, String path, TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
-        String base = path.substring(0, path.lastIndexOf('/'));
+    private static CtmRule parse(Props properties, TextureAtlas atlas,
+            Map<String, TextureAtlasSprite> sourcedSprites) {
+        String path = properties.id().identifier();
         String name = path.substring(path.lastIndexOf('/') + 1, path.length() - ".properties".length());
-        Method method = Method.parse(properties.getProperty("method", "ctm"));
+        Method method = Method.parse(properties.get("method", "ctm"));
         if (method == null) return null;
 
-        int metadata = parseIntMask(properties.getProperty("metadata"));
-        Map<Block, Integer> matchBlocks = parseBlocks(properties.getProperty("matchBlocks"));
+        int metadata = parseIntMask(properties.get("metadata"));
+        Map<Block, Integer> matchBlocks = parseBlocks(properties.get("matchBlocks"));
         Set<String> matchTiles = parseMatchTiles(
-                properties.getProperty("matchTiles"), base, atlas, sourcedSprites);
+                properties.get("matchTiles"), properties, atlas, sourcedSprites);
 
         boolean inferredBlock = false;
-        if (!properties.containsKey("matchBlocks")) {
+        if (!properties.contains("matchBlocks")) {
             Matcher matcher = BLOCK_FILE.matcher(name);
             if (matcher.matches()) {
                 inferredBlock = true;
@@ -108,16 +92,16 @@ final class CtmRuleLoader {
                 if (block != null) matchBlocks.put(block, -1);
             }
         }
-        if (!properties.containsKey("matchBlocks") && !inferredBlock && !properties.containsKey("matchTiles")) {
+        if (!properties.contains("matchBlocks") && !inferredBlock && !properties.contains("matchTiles")) {
             TextureAtlasSprite sprite = register(atlas, sourcedSprites, new Identifier("blocks/" + name));
             matchTiles.add(sprite.getName());
         }
         if (matchBlocks.isEmpty() && matchTiles.isEmpty()) {
-            Cera.LOGGER.warn("No matchBlocks or matchTiles in {}", path);
+            Cera.LOGGER.warn("[CTM] No matchBlocks or matchTiles in {}", path);
             return null;
         }
 
-        String tileValue = properties.getProperty("tiles",
+        String tileValue = properties.get("tiles",
                 method == Method.CTM ? "0-11 16-27 32-43 48-58"
                         : method == Method.CTM_COMPACT ? "0-4"
                         : method == Method.OVERLAY ? "0-16"
@@ -128,8 +112,7 @@ final class CtmRuleLoader {
         if (requiredTiles < 1 || (method == Method.CTM || method == Method.CTM_COMPACT
                 || method == Method.OVERLAY || method == Method.OVERLAY_CTM
                 ? tileNames.size() < requiredTiles : tileNames.size() != requiredTiles)) {
-            Cera.LOGGER.warn("Invalid tile count for connected texture rule {}: expected {}, found {}",
-                    path, requiredTiles, tileNames.size());
+            Cera.LOGGER.warn("[CTM] Invalid tile count for rule {}: expected {}, found {}", path, requiredTiles, tileNames.size());
             return null;
         }
         Tile[] tiles = new Tile[tileNames.size()];
@@ -139,19 +122,19 @@ final class CtmRuleLoader {
                 tiles[i] = new Tile(null, TileAction.SKIP);
             } else if (tile.equals("<default>") || tile.equals("<default>.png")) {
                 if (method.overlay()) {
-                    Cera.LOGGER.warn("<default> is not valid for overlay rule {}", path);
+                    Cera.LOGGER.warn("[CTM] <default> is not valid for overlay rule {}", path);
                     return null;
                 }
                 tiles[i] = new Tile(null, TileAction.DEFAULT);
             } else {
                 tiles[i] = new Tile(
-                        register(atlas, sourcedSprites, resolveSprite(tile, base, true)),
+                        register(atlas, sourcedSprites, resolveSprite(tile, properties, true)),
                         TileAction.REPLACE
                 );
             }
         }
 
-        Connect connect = switch (properties.getProperty("connect", matchBlocks.isEmpty() ? "tile" : "block").trim()) {
+        Connect connect = switch (properties.get("connect", matchBlocks.isEmpty() ? "tile" : "block").trim()) {
             case "block" -> Connect.BLOCK;
             case "tile" -> Connect.TILE;
             case "material" -> Connect.MATERIAL;
@@ -159,30 +142,30 @@ final class CtmRuleLoader {
             default -> null;
         };
         if (connect == null) {
-            Cera.LOGGER.warn("Invalid connect in {}", path);
+            Cera.LOGGER.warn("[CTM] Invalid connect in {}", path);
             return null;
         }
 
         int[] weights = method == Method.RANDOM || method == Method.OVERLAY_RANDOM
-                ? parseWeights(properties.getProperty("weights"), tiles.length) : null;
-        int randomLoops = parseInt(properties.getProperty("randomLoops"), 0);
+                ? parseWeights(properties.get("weights"), tiles.length) : null;
+        int randomLoops = value(properties.getInt("randomLoops", 0), 0);
         if ((method == Method.RANDOM || method == Method.OVERLAY_RANDOM)
                 && (randomLoops < 0 || randomLoops > 9)) {
-            Cera.LOGGER.warn("Invalid randomLoops in {}", path);
+            Cera.LOGGER.warn("[CTM] Invalid randomLoops in {}", path);
             return null;
         }
-        int symmetry = parseSymmetry(properties.getProperty("symmetry"));
-        boolean linked = Boolean.parseBoolean(properties.getProperty("linked", "false"));
-        int width = parseInt(properties.getProperty("width"), -1);
-        int height = parseInt(properties.getProperty("height"), -1);
+        int symmetry = parseSymmetry(properties.get("symmetry"));
+        boolean linked = value(properties.getBoolean("linked", false), false);
+        int width = value(properties.getInt("width", -1), -1);
+        int height = value(properties.getInt("height", -1), -1);
 
-        BlockLayer layer = parseLayer(properties.getProperty("layer", "cutout_mipped"));
+        BlockLayer layer = parseLayer(properties.get("layer", "cutout_mipped"));
         if (method.overlay() && layer == null) {
-            Cera.LOGGER.warn("Invalid overlay layer in {}", path);
+            Cera.LOGGER.warn("[CTM] Invalid overlay layer in {}", path);
             return null;
         }
-        int tintIndex = parseInt(properties.getProperty("tintIndex"), -1);
-        BlockState tintState = parseTintState(properties.getProperty("tintBlock"));
+        int tintIndex = value(properties.getInt("tintIndex", -1), -1);
+        BlockState tintState = parseTintState(properties.get("tintBlock"));
         CtmRule.Action action = switch (method) {
             case CTM -> CtmRule.ctm();
             case CTM_COMPACT -> CtmRule.compact(parseCtmOverrides(properties, tiles.length));
@@ -206,25 +189,25 @@ final class CtmRuleLoader {
 
         return new CtmRule(
                 path,
-                parseInt(properties.getProperty("weight"), 0),
+                value(properties.getInt("weight", 0), 0),
                 Map.copyOf(matchBlocks),
                 Set.copyOf(matchTiles),
                 metadata,
-                parseFaces(properties.getProperty("faces")),
+                parseFaces(properties.get("faces")),
                 parseHeights(properties),
-                parseBiomes(properties.getProperty("biomes")),
-                parseName(properties.getProperty("name")),
-                Boolean.parseBoolean(properties.getProperty("innerSeams", "false")),
+                parseBiomes(properties.get("biomes")),
+                parseName(properties.get("name")),
+                value(properties.getBoolean("innerSeams", false), false),
                 connect,
                 tiles,
                 action,
                 maxMetadata(metadata, matchBlocks),
-                Map.copyOf(parseBlocks(properties.getProperty("connectBlocks"))),
-                Set.copyOf(parseMatchTiles(properties.getProperty("connectTiles"), base, atlas, sourcedSprites))
+                Map.copyOf(parseBlocks(properties.get("connectBlocks"))),
+                Set.copyOf(parseMatchTiles(properties.get("connectTiles"), properties, atlas, sourcedSprites))
         );
     }
 
-    private static int requiredTiles(Method method, Properties properties) {
+    private static int requiredTiles(Method method, Props properties) {
         return switch (method) {
             case CTM, OVERLAY_CTM -> 47;
             case CTM_COMPACT -> 5;
@@ -232,22 +215,22 @@ final class CtmRuleLoader {
 			case HORIZONTAL, VERTICAL -> 4;
             case TOP, FIXED, OVERLAY_FIXED -> 1;
             case HORIZONTAL_VERTICAL, VERTICAL_HORIZONTAL -> 7;
-            case RANDOM, OVERLAY_RANDOM -> expand(properties.getProperty("tiles", "")).size();
+            case RANDOM, OVERLAY_RANDOM -> expand(properties.get("tiles", "")).size();
             case REPEAT, OVERLAY_REPEAT -> {
-                int width = parseInt(properties.getProperty("width"), -1);
-                int height = parseInt(properties.getProperty("height"), -1);
+                int width = value(properties.getInt("width", -1), -1);
+                int height = value(properties.getInt("height", -1), -1);
                 yield width > 0 && height > 0 ? width * height : -1;
             }
         };
     }
 
-    private static int[] parseCtmOverrides(Properties properties, int tileCount) {
+    private static int[] parseCtmOverrides(Props properties, int tileCount) {
         int[] overrides = new int[47];
         Arrays.fill(overrides, -1);
-        for (String key : properties.stringPropertyNames()) {
+        for (String key : properties.properties().stringPropertyNames()) {
             if (!key.startsWith("ctm.")) continue;
             int index = parseInt(key.substring("ctm.".length()), -1);
-            int tile = parseInt(properties.getProperty(key), -1);
+            int tile = value(properties.getInt(key, -1), -1);
             if (index >= 0 && index < overrides.length && tile >= 0 && tile < tileCount) {
                 overrides[index] = tile;
             }
@@ -268,7 +251,7 @@ final class CtmRuleLoader {
             for (String blockName : blockNames) {
                 Block block = parseBlock(blockName);
                 if (block == null) {
-                    Cera.LOGGER.warn("Unknown block in connected texture rule: {}", blockName);
+                    Cera.LOGGER.warn("[CTM] Unknown block in rule: {}", blockName);
                 } else {
                     int mask = parseBlockStates(block, parameters);
                     blocks.mergeInt(block, mask, (first, second) -> first | second);
@@ -349,12 +332,13 @@ final class CtmRuleLoader {
         };
     }
 
-    private static Set<String> parseMatchTiles(String value, String base, TextureAtlas atlas, Map<String, TextureAtlasSprite> sourcedSprites) {
+    private static Set<String> parseMatchTiles(String value, Props properties, TextureAtlas atlas,
+            Map<String, TextureAtlasSprite> sourcedSprites) {
         if (value == null) return new ObjectOpenHashSet<>();
         Set<String> tiles = new ObjectOpenHashSet<>();
         for (String token : value.trim().split("[ ,]+")) {
             if (!token.isEmpty()) {
-                tiles.add(register(atlas, sourcedSprites, resolveSprite(token, base, false)).getName());
+                tiles.add(register(atlas, sourcedSprites, resolveSprite(token, properties, false)).getName());
             }
         }
         return tiles;
@@ -385,34 +369,18 @@ final class CtmRuleLoader {
         return result;
     }
 
-    private static Identifier resolveSprite(String value, String base, boolean relative) {
-        String namespace = "minecraft";
+    private static Identifier resolveSprite(String value, Props properties, boolean relative) {
         String path = value;
         int separator = value.indexOf(':');
-        if (separator >= 0) {
-            namespace = value.substring(0, separator);
-            path = value.substring(separator + 1);
-        }
         if (path.endsWith(".png")) path = path.substring(0, path.length() - 4);
+        if (path.startsWith("/")) path = "~/" + path.substring(1);
+        if (!relative && separator < 0 && !path.contains("/")) path = "blocks/" + path;
 
-        String root = base.startsWith(OPTIFINE_PREFIX) ? "optifine/" : "mcpatcher/";
-        if (path.startsWith("./")) {
-            path = base + "/" + path.substring(2);
-        } else if (path.startsWith("~/")) {
-            path = root + path.substring(2);
-        } else if (path.startsWith("/")) {
-            path = root + path.substring(1);
-        } else if (path.startsWith("textures/")) {
-            path = path.substring("textures/".length());
-        } else if (relative && separator < 0 && !path.startsWith(OPTIFINE_PREFIX)
-                && !path.startsWith(MCPATCHER_PREFIX) && !path.startsWith(base + "/")) {
-            path = base + "/" + path;
-        } else if (!relative && !path.contains("/")) {
-            path = "blocks/" + path;
-        } else if (separator >= 0 && !path.contains("/")) {
-            path = "blocks/" + path;
-        }
-        return new Identifier(namespace, path);
+        Identifier id = Props.parseId(path, properties.id());
+        path = id.getPath();
+        if (path.startsWith("textures/")) path = path.substring("textures/".length());
+        if (separator >= 0 && !path.contains("/")) path = "blocks/" + path;
+        return new Identifier(id.getNamespace(), path);
     }
 
     private static int parseIntMask(String value) {
@@ -512,8 +480,8 @@ final class CtmRuleLoader {
         return faces;
     }
 
-    private static IntPredicate parseHeights(Properties properties) {
-        String heights = properties.getProperty("heights");
+    private static IntPredicate parseHeights(Props properties) {
+        String heights = properties.get("heights");
         if (heights != null) {
             List<int[]> parsed = new ObjectArrayList<>();
             for (String token : heights.trim().split("[ ,]+")) {
@@ -532,9 +500,14 @@ final class CtmRuleLoader {
                 return false;
             };
         }
-        int min = parseInt(properties.getProperty("minHeight"), Integer.MIN_VALUE);
-        int max = parseInt(properties.getProperty("maxHeight"), Integer.MAX_VALUE);
+        int min = value(properties.getInt("minHeight", Integer.MIN_VALUE), Integer.MIN_VALUE);
+        int max = value(properties.getInt("maxHeight", Integer.MAX_VALUE), Integer.MAX_VALUE);
         return y -> y >= min && y <= max;
+    }
+
+    private static <T> T value(Result<T> result, T fallback) {
+        if (!result.isSuccess()) Cera.LOGGER.warn("[CTM] {}", result.error());
+        return result.orElse(fallback);
     }
 
     private static Set<String> parseBiomes(String value) {

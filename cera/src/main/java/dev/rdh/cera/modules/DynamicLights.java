@@ -2,6 +2,7 @@ package dev.rdh.cera.modules;
 
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 import dev.rdh.cera.Cera;
+import dev.rdh.cera.props.Props;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.client.world.ClientWorld;
@@ -24,30 +25,24 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import net.ornithemc.osl.core.api.util.NamespacedIdentifier;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
+import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Properties;
 
 public final class DynamicLights {
     private static final String CONFIG = "optifine/dynamic_lights.properties";
     private static final double MAX_DISTANCE = 7.5;
     private static final Light[] NO_LIGHTS = new Light[0];
     private final Int2ObjectMap<Light> tracked = new Int2ObjectOpenHashMap<>();
-    private volatile Rules rules = Rules.EMPTY;
+    private final Rules rules;
     private volatile Light[] lights = NO_LIGHTS;
     private int ticks;
 
-    public void reload(ResourceManager resources) {
-        Object2IntMap<String> entities = new Object2IntOpenHashMap<>();
-        Object2IntMap<Item> items = new Object2IntOpenHashMap<>();
-
-        resources.findResources("optifine", id -> CONFIG.equals(id.identifier())).forEach((id, resource) -> load(resource, id.namespace(), entities, items));
-
-        rules = new Rules(Map.copyOf(entities), Map.copyOf(items));
-        Cera.LOGGER.info("Loaded {} dynamic light entity rules and {} item rules", entities.size(), items.size());
+    public DynamicLights(Rules rules) {
+        this.rules = rules;
     }
 
     public void update(ClientWorld world, ArgentumWorldRenderer renderer) {
@@ -135,47 +130,7 @@ public final class DynamicLights {
     private int getLightLevel(ItemStack stack) {
         if (stack == null || stack.getItem() == null) return 0;
         if (stack.getItem() instanceof BlockItem blockItem) return blockItem.getBlock().getLight();
-        return rules.items.getOrDefault(stack.getItem(), 0);
-    }
-
-    private static void load(Resource resource, String namespace, Object2IntMap<String> entities, Object2IntMap<Item> items) {
-        try (resource) {
-            Properties properties = new Properties();
-            try (var stream = resource.open()) {
-                properties.load(stream);
-            }
-            parse(properties.getProperty("entities"), namespace, (name, level) -> entities.put("minecraft".equals(namespace) ? name : namespace + ":" + name, level));
-            parse(properties.getProperty("items"), namespace, (name, level) -> {
-                Item item = Item.REGISTRY.get(new Identifier(namespace, name));
-                if (item == null) {
-                    Cera.LOGGER.warn("Unknown dynamic light item: {}:{}", namespace, name);
-                } else {
-                    items.put(item, level);
-                }
-            });
-        } catch (IOException e) {
-            Cera.LOGGER.warn("Failed to load {} dynamic lights", namespace, e);
-        }
-    }
-
-    private static void parse(String value, String namespace, RuleConsumer consumer) {
-        if (value == null) return;
-        String trimmed = value.trim();
-        if (trimmed.isEmpty()) return;
-        for (String entry : trimmed.split("\\s+")) {
-            int separator = entry.lastIndexOf(':');
-            if (separator <= 0) {
-                Cera.LOGGER.warn("Invalid dynamic light rule in {}: {}", namespace, entry);
-                continue;
-            }
-            try {
-                int level = Integer.parseInt(entry.substring(separator + 1));
-                if (level < 0 || level > 15) throw new NumberFormatException();
-                consumer.accept(entry.substring(0, separator), level);
-            } catch (NumberFormatException e) {
-                Cera.LOGGER.warn("Invalid dynamic light level in {}: {}", namespace, entry);
-            }
-        }
+        return rules.item(stack.getItem());
     }
 
     private static void dirty(ArgentumWorldRenderer renderer, double x, double y, double z) {
@@ -192,12 +147,70 @@ public final class DynamicLights {
         ticks = 0;
     }
 
-    private record Rules(Map<String, Integer> entities, Map<Item, Integer> items) {
-        private static final Rules EMPTY = new Rules(Map.of(), Map.of());
+    public static final class Rules implements ResourceReloadListener {
+        private final Object2IntMap<String> entities = new Object2IntOpenHashMap<>();
+        private final Object2IntMap<Item> items = new Object2IntOpenHashMap<>();
+
+        @Override
+        public void resourcesReloaded(ResourceManager resources) {
+            entities.clear();
+            items.clear();
+            resources.findResources("optifine", id -> CONFIG.equals(id.identifier()))
+                    .forEach((_, resource) -> load(resource));
+            Cera.LOGGER.info("[DynamicLights] Loaded {} entity rules and {} item rules", entities.size(), items.size());
+        }
 
         private int entity(Entity entity) {
             String key = Entities.getKey(entity);
             return key == null ? 0 : entities.getOrDefault(key, 0);
+        }
+
+        private int item(Item item) {
+            return items.getOrDefault(item, 0);
+        }
+
+        private void load(Resource resource) {
+            String namespace = resource.location().namespace();
+            try {
+                Props properties = new Props(resource);
+                parse(properties.get("entities"), resource.location(), (name, level) ->
+                        entities.put("minecraft".equals(namespace) ? name : namespace + ":" + name, level));
+                parse(properties.get("items"), resource.location(), (name, level) -> {
+                    Item item = Item.REGISTRY.get(new Identifier(namespace, name));
+                    if (item == null) {
+                        Cera.LOGGER.warn("[DynamicLights] Unknown item: {}:{}", namespace, name);
+                    } else {
+                        items.put(item, level);
+                    }
+                });
+            } catch (IOException e) {
+                Cera.LOGGER.warn("[DynamicLights] Failed to load from {}", resource.location(), e);
+            }
+        }
+
+        private void parse(String value, NamespacedIdentifier id, RuleConsumer consumer) {
+            if (value == null) return;
+            String trimmed = value.trim();
+            if (trimmed.isEmpty()) return;
+            for (String entry : trimmed.split("\\s+")) {
+                int separator = entry.lastIndexOf(':');
+                if (separator <= 0) {
+                    Cera.LOGGER.warn("[DynamicLights] Invalid rule in {}: {}", id, entry);
+                    continue;
+                }
+                try {
+                    int level = Integer.parseInt(entry.substring(separator + 1));
+                    if (level < 0 || level > 15) throw new NumberFormatException();
+                    consumer.accept(entry.substring(0, separator), level);
+                } catch (NumberFormatException e) {
+                    Cera.LOGGER.warn("[DynamicLights] Invalid light level in {}: {}", id, entry);
+                }
+            }
+        }
+
+        @FunctionalInterface
+        private interface RuleConsumer {
+            void accept(String name, int level);
         }
     }
 
@@ -206,11 +219,6 @@ public final class DynamicLights {
             return Math.abs(this.x - x) > 0.1 || Math.abs(this.y - y) > 0.1 || Math.abs(this.z - z) > 0.1
                     || this.level != level || this.underwater != underwater;
         }
-    }
-
-    @FunctionalInterface
-    private interface RuleConsumer {
-        void accept(String name, int level);
     }
 
     public enum Mode {
