@@ -14,10 +14,9 @@ import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.resource.Identifier;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
-
-import java.util.Arrays;
 
 public final class EntityCapture implements AutoCloseable {
     private static final Identifier ENCHANTMENT_GLINT_TEXTURE =
@@ -27,7 +26,7 @@ public final class EntityCapture implements AutoCloseable {
     private final Matrix4f arrowMatrix = new Matrix4f();
     private final ReferenceOpenHashSet<ModelPart> glintParts = new ReferenceOpenHashSet<>();
 
-    private Matrix4f[] matrices = createMatrices(64);
+    private Matrix4fStack matrices = new Matrix4fStack(64);
     private EntityCapture previous;
     private ModelGeometry model;
     private Identifier entityTexture;
@@ -41,7 +40,6 @@ public final class EntityCapture implements AutoCloseable {
     private boolean armorLayer;
     private boolean finished;
     private boolean released;
-    private int matrixDepth;
     private int matrixMode;
     private int packedLight;
     private int itemGlintPass;
@@ -97,8 +95,8 @@ public final class EntityCapture implements AutoCloseable {
     }
 
     private void resetState() {
-        this.matrices[0].identity();
-        this.matrixDepth = 0;
+        this.matrices.clear();
+        this.matrices.pushMatrix();
         this.matrixMode = GL11.GL_MODELVIEW;
         this.recorded = false;
         this.modelActive = false;
@@ -185,7 +183,7 @@ public final class EntityCapture implements AutoCloseable {
             this.pass = previousPass;
             return false;
         }
-        this.submit(geometry, this.matrices[this.matrixDepth]);
+        this.submit(geometry, this.matrices);
         if (item != null) {
             this.pass = previousPass;
         }
@@ -197,12 +195,12 @@ public final class EntityCapture implements AutoCloseable {
             return false;
         }
         InstanceGeometry geometry = this.owner.backend().block(model, brightness, red, green, blue);
-        return geometry != null && this.submit(geometry, this.matrices[this.matrixDepth]);
+        return geometry != null && this.submit(geometry, this.matrices);
     }
 
     boolean recordArrow(ArrowEntity arrow, double x, double y, double z, float tickDelta, Identifier texture) {
         this.boundTexture = texture;
-        this.arrowMatrix.set(this.matrices[this.matrixDepth]);
+        this.arrowMatrix.set(this.matrices);
         this.owner.transformArrow(this.arrowMatrix, arrow, x, y, z, tickDelta);
         return this.submit(this.owner.backend().arrow(), this.arrowMatrix);
     }
@@ -211,16 +209,7 @@ public final class EntityCapture implements AutoCloseable {
         if (!this.tracksModelView()) {
             return false;
         }
-        int next = this.matrixDepth + 1;
-        if (next == this.matrices.length) {
-            int previousLength = this.matrices.length;
-            this.matrices = Arrays.copyOf(this.matrices, previousLength * 2);
-            for (int i = previousLength; i < this.matrices.length; i++) {
-                this.matrices[i] = new Matrix4f();
-            }
-        }
-        this.matrices[next].set(this.matrices[this.matrixDepth]);
-        this.matrixDepth = next;
+        this.matrices.pushMatrix();
         return this.suppressFixedFunction;
     }
 
@@ -228,9 +217,7 @@ public final class EntityCapture implements AutoCloseable {
         if (!this.tracksModelView()) {
             return false;
         }
-        if (this.matrixDepth > 0) {
-            this.matrixDepth--;
-        }
+        this.matrices.popMatrix();
         return this.suppressFixedFunction;
     }
 
@@ -238,7 +225,7 @@ public final class EntityCapture implements AutoCloseable {
         if (!this.tracksModelView()) {
             return false;
         }
-        this.matrices[this.matrixDepth].translate(x, y, z);
+        this.matrices.translate(x, y, z);
         return this.suppressFixedFunction;
     }
 
@@ -248,7 +235,7 @@ public final class EntityCapture implements AutoCloseable {
         }
         float length = (float)Math.sqrt(x * x + y * y + z * z);
         if (length != 0.0F) {
-            this.matrices[this.matrixDepth].rotate((float)Math.toRadians(angle), x / length, y / length, z / length);
+            this.matrices.rotate((float)Math.toRadians(angle), x / length, y / length, z / length);
         }
         return this.suppressFixedFunction;
     }
@@ -257,7 +244,7 @@ public final class EntityCapture implements AutoCloseable {
         if (!this.tracksModelView()) {
             return false;
         }
-        this.matrices[this.matrixDepth].scale(x, y, z);
+        this.matrices.scale(x, y, z);
         return this.suppressFixedFunction;
     }
 
@@ -341,10 +328,10 @@ public final class EntityCapture implements AutoCloseable {
         this.pushMatrix();
         this.translate(part.translateX, part.translateY, part.translateZ);
         this.translate(part.x * scale, part.y * scale, part.z * scale);
-        this.matrices[this.matrixDepth].rotateZ(part.rotationZ).rotateY(part.rotationY).rotateX(part.rotationX);
+        this.matrices.rotateZ(part.rotationZ).rotateY(part.rotationY).rotateX(part.rotationX);
 
         if (!part.boxes.isEmpty()) {
-            this.submit(geometry, this.matrices[this.matrixDepth]);
+            this.submit(geometry, this.matrices);
         }
         if (part.children != null) {
             for (int i = 0; i < part.children.size(); i++) {
@@ -356,13 +343,5 @@ public final class EntityCapture implements AutoCloseable {
 
     private boolean tracksModelView() {
         return !this.finished && this.matrixMode == GL11.GL_MODELVIEW;
-    }
-
-    private static Matrix4f[] createMatrices(int count) {
-        Matrix4f[] matrices = new Matrix4f[count];
-        for (int i = 0; i < count; i++) {
-            matrices[i] = new Matrix4f();
-        }
-        return matrices;
     }
 }
