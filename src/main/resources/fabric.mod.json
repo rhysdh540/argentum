@@ -6,11 +6,15 @@
   "environment": "client",
   "description": "An open-source client performance mod for Minecraft",
   "icon": "assets/argentum/textures/gui/icon.png",
-  "authors": ["embeddedt", "rdh"],
+  "authors": ["rdh"],
   "license": "LGPL-3.0-only",
-  "contributors": ["JellySquid", "IMS212"],
+  "contributors": ["embeddedt", "JellySquid", "IMS212"],
   "entrypoints": {
     "client": ["dev.rdh.argentum.impl.Argentum"]
+  },
+  "dependencies": {
+    "minecraft": "1.8.9",
+    "legacy-lwjgl3": ">=1.4.0"
   },
   "accessWidener": "argentum.classtweaker",
   "mixins": ["mixins.argentum.json"]

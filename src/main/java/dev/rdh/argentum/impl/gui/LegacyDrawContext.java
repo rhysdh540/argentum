@@ -5,16 +5,28 @@ import net.minecraft.client.gui.GuiElement;
 import net.minecraft.client.render.TextRenderer;
 import net.minecraft.client.render.Window;
 import net.minecraft.client.render.platform.GlStateManager;
+import net.minecraft.client.render.texture.DynamicTexture;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.resource.Identifier;
+
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.loader.api.FabricLoader;
 import org.embeddedt.embeddium.impl.gui.framework.DrawContext;
 import org.embeddedt.embeddium.impl.gui.framework.TextComponent;
 import org.embeddedt.embeddium.impl.gui.framework.TextFormattingStyle;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.opengl.GL11;
 import org.jetbrains.annotations.Nullable;
 
+import dev.rdh.argentum.impl.Argentum;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 final class LegacyDrawContext implements DrawContext {
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -35,7 +47,7 @@ final class LegacyDrawContext implements DrawContext {
     }
 
     @Override
-    public void blitWholeImage(String texture, int x, int y, int width, int height) {
+    public void blitWholeImage(@NotNull String texture, int x, int y, int width, int height) {
         this.minecraft.getTextureManager().bind(new Identifier(texture));
         GuiElement.drawTexture(x, y, 0.0F, 0.0F, width, height, width, height);
     }
@@ -127,7 +139,29 @@ final class LegacyDrawContext implements DrawContext {
 
     @Override
     public @Nullable String getModLogoPath(String modId) {
-        // TODO
-        return "argentum".equals(modId) ? "argentum:textures/gui/icon.png" : null;
+        return FabricLoader.getInstance().getModContainer(modId)
+                .flatMap(container -> container.getMetadata().getIconPath(32).flatMap(container::findPath))
+                .map(this::rememberPath)
+                .orElse(null);
+    }
+
+    private final Set<Path> erroredModLogos = new ObjectOpenHashSet<>();
+
+    private String rememberPath(Path path) {
+        if (erroredModLogos.contains(path)) return null;
+        try {
+            BufferedImage img = ImageIO.read(Files.newInputStream(path));
+            if (img.getWidth() != img.getHeight()) {
+                Argentum.LOGGER.warn("Mod icon {} is not square, ignoring", path);
+                erroredModLogos.add(path);
+                return null;
+            }
+
+            return this.minecraft.getTextureManager().register("logo", new DynamicTexture(img)).toString();
+        } catch (IOException e) {
+			Argentum.LOGGER.warn("Failed to read mod icon {}", path, e);
+            erroredModLogos.add(path);
+            return null;
+		}
     }
 }
