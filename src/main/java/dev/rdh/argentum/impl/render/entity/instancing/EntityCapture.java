@@ -26,7 +26,7 @@ public final class EntityCapture implements AutoCloseable {
     private final Matrix4f arrowMatrix = new Matrix4f();
     private final ReferenceOpenHashSet<ModelPart> glintParts = new ReferenceOpenHashSet<>();
 
-    private Matrix4fStack matrices = new Matrix4fStack(64);
+    private final Matrix4fStack matrices = new Matrix4fStack(64);
     private EntityCapture previous;
     private ModelGeometry model;
     private Identifier entityTexture;
@@ -70,7 +70,7 @@ public final class EntityCapture implements AutoCloseable {
         this.model = this.owner.backend().model(model);
         this.entityTexture = texture;
         this.boundTexture = texture;
-        this.pass = InstanceRenderPass.NORMAL;
+        this.pass = player ? InstanceRenderPass.TRANSLUCENT : InstanceRenderPass.NORMAL;
         this.player = player;
         this.suppressFixedFunction = !preserveFixedFunction;
         this.packedLight = packedLight;

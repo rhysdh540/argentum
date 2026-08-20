@@ -60,6 +60,8 @@ final class InstanceBatcher {
     Stats render(CommandList commandList, GlProgram<InstanceShader> program) {
         int draws = 0;
         int textureCount = 0;
+        GlStateManager.disableBlend();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         Stats normal = this.renderPass(commandList, program, InstanceRenderPass.NORMAL);
         draws += normal.draws;
         textureCount += normal.textures;
