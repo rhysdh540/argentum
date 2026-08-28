@@ -4,7 +4,7 @@
   "package": "dev.rdh.argentum.extras.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "AbstractArmorLayerMixin", "AbstractLeavesBlockMixin", "CloudRendererMixin", "DebugOverlayMixin",
+    "AbstractArmorLayerMixin", "AbstractLeavesBlockMixin", "ArgentumWorldRendererMixin", "CloudRendererMixin", "DebugOverlayMixin",
     "EntityRendererMixin", "GameGuiMixin", "TextRendererMixin",
     "FastBlockRendererMixin", "GameRendererMixin", "LivingEntityRendererMixin", "MobRendererMixin",
     "ParticleManagerMixin", "TitleScreenMixin", "WorldRendererMixin"

@@ -1,8 +1,11 @@
 package dev.rdh.argentum.mixin.core.render;
 
 import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.client.render.platform.GlStateManager;
+import net.minecraft.client.render.vertex.VertexBuffer;
 import org.embeddedt.embeddium.impl.gl.device.RenderDevice;
 import org.embeddedt.embeddium.impl.render.viewport.ViewportProvider;
+import org.lwjgl.opengl.GL11;
 import org.objectweb.asm.*;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -54,6 +57,10 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
     @Shadow
     private boolean viewChanged;
 
+    @Shadow
+    private boolean useVbo;
+    @Shadow
+    private VertexBuffer darkSkyBuffer;
     @Unique
     private ArgentumWorldRenderer renderer;
 
@@ -209,6 +216,20 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
     @Overwrite
     public String getChunkDebugInfo() {
         return this.renderer.getChunksDebugString();
+    }
+
+    @Redirect(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V", ordinal = 3))
+    private void argentum$fixSkyVboPath(int list) {
+        if (this.useVbo) {
+            this.darkSkyBuffer.bind();
+            GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+            GL11.glVertexPointer(3, GL11.GL_FLOAT, 12, 0L);
+            this.darkSkyBuffer.draw(GL11.GL_QUADS);
+            this.darkSkyBuffer.unbind();
+            GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+        } else {
+            GlStateManager.callList(list);
+        }
     }
 
 }

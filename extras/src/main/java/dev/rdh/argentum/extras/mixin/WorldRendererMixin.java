@@ -49,14 +49,7 @@ public class WorldRendererMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/VertexBuffer;draw(I)V",
                     ordinal = 2))
     private boolean argentumExtras$drawDarkSky(VertexBuffer buffer, int mode) {
-        return ArgentumExtras.CONFIG.sky;
-    }
-
-    @WrapWithCondition(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V",
-                    ordinal = 2))
-    private boolean argentumExtras$drawDarkSky(int list) {
-        return ArgentumExtras.CONFIG.sky;
+        return ArgentumExtras.CONFIG.lowerSky;
     }
 
     @ModifyArg(method = "renderSky",

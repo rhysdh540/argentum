@@ -87,6 +87,7 @@ final class ArgentumExtrasOptionPage {
         OptionGroup sky = OptionGroup.createBuilder()
                 .setId(id("sky"))
                 .add(toggle("sky", (c, v) -> c.sky = v, c -> c.sky))
+                .add(toggle("lowerSky", (c, v) -> c.lowerSky = v, c -> c.lowerSky))
                 .add(toggle("sun_and_moon", (c, v) -> c.sunAndMoon = v, c -> c.sunAndMoon))
                 .add(toggle("stars", (c, v) -> c.stars = v, c -> c.stars))
                 .build();

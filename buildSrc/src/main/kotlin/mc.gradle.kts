@@ -19,6 +19,7 @@ repositories {
     }
     maven("https://maven.taumc.org/releases")
     maven("https://maven.cloverclient.com/releases")
+    maven("https://maven.bawnorton.com/releases")
     exclusiveContent {
         forRepository { maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1") }
         filter {
@@ -95,6 +96,8 @@ dependencies {
 
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:${v("devauth")}")
     modImplementation("com.terraformersmc:modmenu:${v("modmenu")}+mc${v("minecraft")}")
+
+    include(implementation(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-fabric:${property("mixinsquared_version")}")!!)!!)
 
     if (project != rootProject) {
         implementation(project(path = ":", configuration = "namedElements"))
