@@ -1,6 +1,7 @@
 package dev.rdh.argentum.mixin.core.render;
 
 import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import org.embeddedt.embeddium.impl.gl.device.RenderDevice;
 import org.embeddedt.embeddium.impl.render.viewport.ViewportProvider;
 import org.objectweb.asm.*;
@@ -22,12 +23,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.Culler;
 import net.minecraft.client.render.block.BlockLayer;
 import net.minecraft.client.render.platform.Lighting;
+import net.minecraft.client.render.vertex.VertexBuffer;
 import net.minecraft.client.render.world.RenderChunkFactory;
 import net.minecraft.client.render.world.RenderChunkStorage;
 import net.minecraft.client.render.world.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
+import org.lwjgl.opengl.GL11;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -53,6 +56,9 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
 
     @Shadow
     private boolean viewChanged;
+
+    @Shadow
+    private VertexBuffer darkSkyBuffer;
 
     @Unique
     private ArgentumWorldRenderer renderer;
@@ -176,6 +182,17 @@ public abstract class WorldRendererMixin implements WorldRendererExtension {
     )
     private RenderChunkStorage celeritas$skipVanillaChunkStorage(World world, int viewDistance, WorldRenderer renderer, RenderChunkFactory factory) {
         return new NoopRenderChunkStorage(world, viewDistance, renderer, factory);
+    }
+
+    // vanilla forgot to not use display lists for this one call, which breaks it with vbos on
+    @Redirect(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V", ordinal = 3))
+    private void celeritas$renderLowerSky(int list) {
+        this.darkSkyBuffer.bind();
+        GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+        GL11.glVertexPointer(3, GL11.GL_FLOAT, 12, 0L);
+        this.darkSkyBuffer.draw(GL11.GL_QUADS);
+        this.darkSkyBuffer.unbind();
+        GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
     /**
