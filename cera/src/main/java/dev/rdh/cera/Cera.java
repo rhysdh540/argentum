@@ -29,6 +29,7 @@ public class Cera implements ClientModInitializer {
         ClientResourceLoaderEvents.INIT_RESOURCE_MANAGER.register(resources -> {
             Minecraft minecraft = Minecraft.getInstance();
             resources.addReloader(minecraft.getTextureManager().cera$getAnimatedTextures());
+            resources.addReloader(minecraft.getTextureManager().cera$getRandomEntities());
             resources.addReloader(minecraft.getBlocksAtlas().cera$getNaturalTextures());
             resources.addReloader(minecraft.cera$getDynamicLightRules());
             resources.addReloader(minecraft.getTextureManager().cera$getCustomGuis());

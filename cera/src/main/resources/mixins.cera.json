@@ -8,6 +8,8 @@
     "ChunkRenderContextMixin",
     "ClientPlayerInteractionManagerMixin",
     "EntityRenderDispatcherMixin",
+    "BlockEntityRenderDispatcherMixin",
+    "EntityRendererMixin",
     "AbstractArmorLayerMixin",
     "EntityMixin",
     "FastBlockRendererMixin",
@@ -26,5 +28,8 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "mixins": ["NamespacedIdentifiersMixin"]
+  "mixins": [
+    "NamespacedIdentifiersMixin",
+    "VillagerEntityAccessor"
+  ]
 }

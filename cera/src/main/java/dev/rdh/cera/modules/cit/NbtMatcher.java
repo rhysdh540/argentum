@@ -12,12 +12,12 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /** Matches an OptiFine-style {@code nbt.<path>=<matcher>} entry against an item's NBT tree. */
-record NbtMatcher(String[] path, ValueMatcher matcher) {
-    static NbtMatcher parse(String path, String value) {
+public record NbtMatcher(String[] path, ValueMatcher matcher) {
+    public static NbtMatcher parse(String path, String value) {
         return new NbtMatcher(path.split("\\."), ValueMatcher.parse(value));
     }
 
-    boolean matches(NbtCompound nbt) {
+    public boolean matches(NbtCompound nbt) {
         return matches(nbt, 0);
     }
 
