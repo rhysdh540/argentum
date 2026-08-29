@@ -12,6 +12,7 @@ import org.taumc.celeritas.api.options.structure.OptionPage;
 import dev.rdh.cera.modules.BetterGrass;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import dev.rdh.cera.modules.DynamicLights;
+import net.minecraft.client.Minecraft;
 
 import java.util.List;
 
@@ -39,8 +40,12 @@ final class CeraOptionPage {
                 .add(OptionImpl.createBuilder(boolean.class, Cera.CONFIG_STORAGE)
                         .setId(id("animated_textures"))
                         .setControl(TickBoxControl::new)
-                        .setBinding((config, value) -> config.animatedTextures = value, config -> config.animatedTextures)
-                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .setBinding((config, value) -> {
+                            if (config.animatedTextures != value) {
+                                config.animatedTextures = value;
+                                Minecraft.getInstance().getTextureManager().cera$getAnimatedTextures().setEnabled(value);
+                            }
+                        }, config -> config.animatedTextures)
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, Cera.CONFIG_STORAGE)
                         .setId(id("random_entities"))

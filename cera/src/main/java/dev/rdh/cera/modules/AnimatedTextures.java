@@ -4,12 +4,8 @@ import dev.rdh.cera.Cera;
 import dev.rdh.cera.props.Props;
 import dev.rdh.cera.props.Result;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.render.texture.AbstractTexture;
 import net.minecraft.client.render.texture.DynamicTexture;
-import net.minecraft.client.render.texture.SimpleTexture;
 import net.minecraft.client.render.texture.Texture;
-import net.minecraft.client.render.texture.TextureManager;
 import net.minecraft.client.render.texture.TickableTexture;
 import net.minecraft.resource.Identifier;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
@@ -28,54 +24,72 @@ import java.util.List;
 import java.util.Map;
 
 public final class AnimatedTextures implements ResourceReloadListener {
-    private volatile Map<Identifier, Target> targets = Map.of();
+    private volatile Map<Identifier, AnimatedTexture> textures = Map.of();
+    private volatile ResourceManager resources;
 
     @Override
     public void resourcesReloaded(ResourceManager resources) {
-        Map<Identifier, List<Animation>> grouped = new Object2ObjectOpenHashMap<>();
-        if (Cera.CONFIG.animatedTextures) {
-            collect(resources, "optifine/anim/", grouped);
-            collect(resources, "mcpatcher/anim/", grouped);
+        this.resources = resources;
+        this.textures = Cera.CONFIG.animatedTextures ? build(resources) : freeAll();
+
+        int count = this.textures.values().stream().mapToInt(tex -> tex.animations.length).sum();
+        Cera.LOGGER.info("[AnimatedTextures] Loaded {} animations across {} textures", count, this.textures.size());
+    }
+
+    public Texture overrideFor(Identifier id) {
+        return this.textures.get(id);
+    }
+
+    public void tick() {
+        if (!Cera.CONFIG.animatedTextures) return;
+        for (AnimatedTexture tex : this.textures.values()) tex.tick();
+    }
+
+    public void setEnabled(boolean enabled) {
+        if (enabled) {
+            if (this.resources != null) this.textures = build(this.resources);
+        } else {
+            this.textures = freeAll();
         }
+    }
+
+    private Map<Identifier, AnimatedTexture> build(ResourceManager resources) {
+        Map<Identifier, AnimatedTexture> old = this.textures;
+        Map<Identifier, Target> loaded = parse(resources);
+        Map<Identifier, AnimatedTexture> next = new Object2ObjectOpenHashMap<>();
+
+        loaded.forEach((id, target) -> {
+            AnimatedTexture reuse = old.get(id);
+            if (reuse != null && reuse.matches(target.width(), target.height())) {
+                reuse.reset(target.pixels(), target.animations());
+                next.put(id, reuse);
+            } else {
+                next.put(id, new AnimatedTexture(target.pixels(), target.width(), target.height(), target.animations()));
+            }
+        });
+
+        old.forEach((id, tex) -> {
+            if (next.get(id) != tex) tex.clearGlId();
+        });
+        return Map.copyOf(next);
+    }
+
+    private Map<Identifier, AnimatedTexture> freeAll() {
+        this.textures.values().forEach(AnimatedTexture::clearGlId);
+        return Map.of();
+    }
+
+    private static Map<Identifier, Target> parse(ResourceManager resources) {
+        Map<Identifier, List<Animation>> grouped = new Object2ObjectOpenHashMap<>();
+        collect(resources, "optifine/anim/", grouped);
+        collect(resources, "mcpatcher/anim/", grouped);
 
         Map<Identifier, Target> loaded = new Object2ObjectOpenHashMap<>();
         grouped.forEach((id, animations) -> {
             Target target = target(resources, id, animations);
             if (target != null) loaded.put(id, target);
         });
-        this.targets = Map.copyOf(loaded);
-
-        int count = loaded.values().stream().mapToInt(target -> target.animations().length).sum();
-        Cera.LOGGER.info("[AnimatedTextures] Loaded {} animations across {} textures", count, loaded.size());
-    }
-
-    public void apply(Identifier id) {
-        if (this.targets.isEmpty() || !Cera.CONFIG.animatedTextures) return;
-
-        TextureManager textures = Minecraft.getInstance().getTextureManager();
-        Texture current = textures.get(id);
-        Target target = this.targets.get(id);
-
-        if (target == null) {
-            if (current instanceof AnimatedTexture animated) restore(textures, id, animated);
-            return;
-        }
-        if (current instanceof AnimatedTexture animated) {
-            if (animated.matches(target.width(), target.height())) {
-                animated.reset(target.pixels(), target.animations());
-            } else {
-                restore(textures, id, animated);
-            }
-        } else if (current instanceof SimpleTexture) {
-            ((AbstractTexture) current).clearGlId();
-            textures.register(id, new AnimatedTexture(target.pixels(), target.width(), target.height(), target.animations()));
-        }
-    }
-
-    private static void restore(TextureManager textures, Identifier id, AnimatedTexture animated) {
-        animated.disable();
-        animated.clearGlId();
-        textures.register(id, new SimpleTexture(id));
+        return loaded;
     }
 
     private static void collect(ResourceManager resources, String directory, Map<Identifier, List<Animation>> grouped) {
@@ -270,8 +284,6 @@ public final class AnimatedTextures implements ResourceReloadListener {
     }
 
     private static final class AnimatedTexture extends DynamicTexture implements TickableTexture {
-        private static final Animation[] NONE = new Animation[0];
-
         private final int width;
         private final int height;
         private int[] base;
@@ -294,10 +306,6 @@ public final class AnimatedTextures implements ResourceReloadListener {
             this.base = base;
             this.animations = animations;
             this.repaint();
-        }
-
-        void disable() {
-            this.animations = NONE;
         }
 
         @Override

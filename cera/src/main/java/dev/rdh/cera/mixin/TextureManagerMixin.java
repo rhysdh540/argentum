@@ -1,5 +1,7 @@
 package dev.rdh.cera.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import net.minecraft.client.render.texture.Texture;
 import net.minecraft.client.render.texture.TextureManager;
 import net.minecraft.resource.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
@@ -50,8 +52,17 @@ public class TextureManagerMixin implements CeraTextureManagerExtension {
         return cera$randomEntities.apply(texture);
     }
 
-    @Inject(method = "bind", at = @At("HEAD"))
-    private void cera$applyAnimatedTexture(Identifier texture, CallbackInfo ci) {
-        cera$animatedTextures.apply(texture);
+    @ModifyExpressionValue(
+        method = "bind",
+        at = @At(value = "INVOKE", target = "Ljava/util/Map;get(Ljava/lang/Object;)Ljava/lang/Object;")
+    )
+    private Object cera$redirectAnimatedTexture(Object bound, Identifier texture) {
+        Texture tex = cera$animatedTextures.overrideFor(texture);
+        return tex != null ? tex : bound;
+    }
+
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void cera$tickAnimatedTextures(CallbackInfo ci) {
+        cera$animatedTextures.tick();
     }
 }
