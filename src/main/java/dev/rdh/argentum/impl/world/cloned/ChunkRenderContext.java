@@ -153,7 +153,7 @@ public final class ChunkRenderContext implements WorldView {
         return section == null ? Biome.DEFAULT : section.getBiome(x & 15, z & 15);
     }
 
-    public int getBiomeColor(BlockPos pos, BiomeColorCache.ColorType type) {
+    public int getBiomeColor(BlockPos pos, BiomeColorCache.BiomeColorSource type) {
         return this.biomeColorCache.getColor(type, pos.getX(), pos.getY(), pos.getZ());
     }
 

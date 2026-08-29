@@ -4,7 +4,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 
-public final class BiomeColorCache extends org.embeddedt.embeddium.impl.biome.BiomeColorCache<Biome, BiomeColorCache.ColorType> {
+public final class BiomeColorCache extends org.embeddedt.embeddium.impl.biome.BiomeColorCache<Biome, BiomeColorCache.BiomeColorSource> {
     private final Source source;
     private final BlockPos.Mutable cursor = new BlockPos.Mutable();
 
@@ -23,19 +23,34 @@ public final class BiomeColorCache extends org.embeddedt.embeddium.impl.biome.Bi
     }
 
     @Override
-    protected int resolveColor(ColorType type, Biome biome, int x, int y, int z) {
+    protected int resolveColor(BiomeColorSource resolver, Biome biome, int x, int y, int z) {
         this.cursor.set(x, y, z);
-        return switch (type) {
-            case GRASS -> biome.getGrassColor(this.cursor);
-            case FOLIAGE -> biome.getFoliageColor(this.cursor);
-            case WATER -> biome.waterFogColor;
-        };
+        return resolver.resolve(biome, this.cursor);
     }
 
-    public enum ColorType {
-        GRASS,
-        FOLIAGE,
-        WATER
+    public interface BiomeColorSource {
+        int resolve(Biome biome, BlockPos pos);
+    }
+
+    public enum ColorType implements BiomeColorSource {
+        GRASS {
+            @Override
+            public int resolve(Biome biome, BlockPos pos) {
+                return biome.getGrassColor(pos);
+            }
+        },
+        FOLIAGE {
+            @Override
+            public int resolve(Biome biome, BlockPos pos) {
+                return biome.getFoliageColor(pos);
+            }
+        },
+        WATER {
+            @Override
+            public int resolve(Biome biome, BlockPos pos) {
+                return biome.waterFogColor;
+            }
+        }
     }
 
     private static final class Source {
