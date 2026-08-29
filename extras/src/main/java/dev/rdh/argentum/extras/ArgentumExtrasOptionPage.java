@@ -87,7 +87,7 @@ final class ArgentumExtrasOptionPage {
         OptionGroup sky = OptionGroup.createBuilder()
                 .setId(id("sky"))
                 .add(toggle("sky", (c, v) -> c.sky = v, c -> c.sky))
-                .add(toggle("lowerSky", (c, v) -> c.lowerSky = v, c -> c.lowerSky))
+                .add(toggle("lower_sky", (c, v) -> c.lowerSky = v, c -> c.lowerSky))
                 .add(toggle("sun_and_moon", (c, v) -> c.sunAndMoon = v, c -> c.sunAndMoon))
                 .add(toggle("stars", (c, v) -> c.stars = v, c -> c.stars))
                 .build();
@@ -167,11 +167,12 @@ final class ArgentumExtrasOptionPage {
     }
 
     private static OptionImpl<ArgentumExtrasConfig, Boolean> toggle(String name,
-            BiConsumer<ArgentumExtrasConfig, Boolean> setter, Function<ArgentumExtrasConfig, Boolean> getter) {
+            BiConsumer<ArgentumExtrasConfig, Boolean> setter, Function<ArgentumExtrasConfig, Boolean> getter, OptionFlag... flags) {
         return OptionImpl.createBuilder(boolean.class, ArgentumExtras.CONFIG_STORAGE)
                 .setId(id(name))
                 .setControl(TickBoxControl::new)
                 .setBinding(setter, getter)
+                .setFlags(flags)
                 .build();
     }
 

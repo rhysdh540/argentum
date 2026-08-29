@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "minecraft": "1.8.9",
-    "lenis": "*"
+    "lenis": "*",
+    "osl": ">=0.20"
   },
   "accessWidener": "argentum.classtweaker",
   "mixins": ["mixins.argentum.json"]
