@@ -1,9 +1,11 @@
-package dev.rdh.cera.modules;
+package dev.rdh.cera.modules.colors;
 
 import dev.rdh.cera.Cera;
 import dev.rdh.cera.props.BlockMatcher;
 import dev.rdh.cera.props.Props;
-import dev.rdh.cera.modules.CustomColormaps.Colormap.Format;
+import dev.rdh.cera.modules.colors.CustomColormaps.Colormap.Format;
+import dev.rdh.argentum.impl.world.biome.BiomeColorCache;
+import dev.rdh.argentum.impl.world.biome.BiomeColorCache.BiomeColorSource;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -34,7 +36,42 @@ public final class CustomColormaps implements ResourceReloadListener {
 
     @Override
     public void resourcesReloaded(ResourceManager resources) {
-        this.state = load(resources);
+        Map<Block, List<Colormap>> byBlock = new Object2ObjectOpenHashMap<>();
+        for (String directory : DIRECTORIES) {
+            resources.findResources("minecraft", directory, id -> id.identifier().endsWith(".properties"))
+                    .values().forEach(resource -> loadCustom(resource, resources, byBlock));
+        }
+        loadPaletteBlocks(resources, "optifine/color.properties", byBlock);
+        loadPaletteBlocks(resources, "mcpatcher/color.properties", byBlock);
+        Map<Block, Colormap[]> blockColormaps = new Object2ObjectOpenHashMap<>();
+        byBlock.forEach((block, list) -> blockColormaps.put(block, list.toArray(Colormap[]::new)));
+
+        Colormap swampGrass = loadNamed(resources, "swampgrass.png", "swampgrasscolor.png");
+        Colormap swampFoliage = loadNamed(resources, "swampfoliage.png", "swampfoliagecolor.png");
+        this.state = new State(
+                Map.copyOf(blockColormaps),
+                loadNamed(resources, "water.png", "watercolorX.png"),
+                loadNamed(resources, "pine.png", "pinecolor.png"),
+                loadNamed(resources, "birch.png", "birchcolor.png"),
+                swampGrass, swampFoliage,
+                swampSource(swampGrass, true), swampSource(swampFoliage, false),
+                loadNamed(resources, "redstone.png", "redstonecolor.png"),
+                loadNamed(resources, "stem.png", "stemcolor.png"),
+                loadNamed(resources, "pumpkinstem.png"),
+                loadNamed(resources, "melonstem.png")
+        );
+
+		StringBuilder sb = new StringBuilder("[CustomColormaps] loaded {} block maps");
+        if (state.water != null) sb.append("/water");
+        if (state.pine != null) sb.append("/pine");
+        if (state.birch != null) sb.append("/birch");
+        if (state.swampGrass != null) sb.append("/swampGrass");
+        if (state.swampFoliage != null) sb.append("/swampFoliage");
+        if (state.redstone != null) sb.append("/redstone");
+        if (state.stem != null) sb.append("/stem");
+        if (state.pumpkinStem != null) sb.append("/pumpkinStem");
+        if (state.melonStem != null) sb.append("/melonStem");
+        Cera.LOGGER.info(sb.toString(), state.blockColormaps.size());
     }
 
     public int getColor(BlockState state, ChunkRenderContext world, BlockPos pos) {
@@ -45,7 +82,7 @@ public final class CustomColormaps implements ResourceReloadListener {
         Colormap[] matched = s.blockColormaps.get(block);
         if (matched != null) {
             for (Colormap colormap : matched) {
-                if (colormap.matches(state)) return colormap.getColor(world.getBiome(pos), pos);
+                if (colormap.matches(state)) return colormap.resolve(world.getBiome(pos), pos);
             }
         }
 
@@ -67,39 +104,53 @@ public final class CustomColormaps implements ResourceReloadListener {
         }
         if (block == Blocks.LEAVES) {
             PlanksBlock.Variant variant = state.get(LeavesBlock.VARIANT);
-            if (variant == PlanksBlock.Variant.SPRUCE && s.pine != null) return s.pine.getColor(world.getBiome(pos), pos);
-            if (variant == PlanksBlock.Variant.BIRCH && s.birch != null) return s.birch.getColor(world.getBiome(pos), pos);
+            if (variant == PlanksBlock.Variant.SPRUCE && s.pine != null) return s.pine.resolve(world.getBiome(pos), pos);
+            if (variant == PlanksBlock.Variant.BIRCH && s.birch != null) return s.birch.resolve(world.getBiome(pos), pos);
         }
         if ((block == Blocks.WATER || block == Blocks.FLOWING_WATER) && s.water != null) {
-            return s.water.getColor(world.getBiome(pos), pos);
+            return s.water.resolve(world.getBiome(pos), pos);
         }
         if (s.swampGrass != null || s.swampFoliage != null) {
             Biome biome = world.getBiome(pos);
             if (biome == Biome.SWAMPLAND) {
-                if (s.swampGrass != null && isGrass(block)) return s.swampGrass.getColor(biome, pos);
-                if (s.swampFoliage != null && isFoliage(block)) return s.swampFoliage.getColor(biome, pos);
+                if (s.swampGrass != null && isGrass(block)) return s.swampGrass.resolve(biome, pos);
+                if (s.swampFoliage != null && isFoliage(block)) return s.swampFoliage.resolve(biome, pos);
             }
         }
         return -1;
     }
 
-    public boolean appliesBiomeTint(BlockState state) {
-        if (!Cera.CONFIG.customColors) return false;
+    public BiomeColorSource resolverFor(BlockState state) {
+        if (!Cera.CONFIG.customColors) return null;
         State s = this.state;
         Block block = state.getBlock();
 
         Colormap[] matched = s.blockColormaps.get(block);
         if (matched != null) {
             for (Colormap colormap : matched) {
-                if (colormap.matches(state)) return colormap.format() != Colormap.Format.FIXED;
+                if (colormap.matches(state)) return colormap;
             }
         }
         if (block == Blocks.LEAVES) {
             PlanksBlock.Variant variant = state.get(LeavesBlock.VARIANT);
-            if (variant == PlanksBlock.Variant.SPRUCE) return s.pine != null;
-            if (variant == PlanksBlock.Variant.BIRCH) return s.birch != null;
+            if (variant == PlanksBlock.Variant.SPRUCE && s.pine != null) return s.pine;
+            if (variant == PlanksBlock.Variant.BIRCH && s.birch != null) return s.birch;
         }
-        return (block == Blocks.WATER || block == Blocks.FLOWING_WATER) && s.water != null;
+        if ((block == Blocks.WATER || block == Blocks.FLOWING_WATER) && s.water != null) return s.water;
+        if (isGrass(block)) return s.swampGrassSource;
+        if (isFoliage(block)) return s.swampFoliageSource;
+        return null;
+    }
+
+    public boolean hasBlockColormap(BlockState state) {
+        if (!Cera.CONFIG.customColors) return false;
+        Colormap[] matched = this.state.blockColormaps.get(state.getBlock());
+        if (matched != null) {
+            for (Colormap colormap : matched) {
+                if (colormap.matches(state)) return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isGrass(Block block) {
@@ -110,41 +161,13 @@ public final class CustomColormaps implements ResourceReloadListener {
         return block == Blocks.LEAVES || block == Blocks.LEAVES2 || block == Blocks.VINE;
     }
 
-    private static State load(ResourceManager resources) {
-        Map<Block, List<Colormap>> byBlock = new Object2ObjectOpenHashMap<>();
-        for (String directory : DIRECTORIES) {
-            resources.findResources("minecraft", directory, id -> id.identifier().endsWith(".properties"))
-                    .values().forEach(resource -> loadCustom(resource, resources, byBlock));
-        }
-        Map<Block, Colormap[]> blockColormaps = new Object2ObjectOpenHashMap<>();
-        byBlock.forEach((block, list) -> blockColormaps.put(block, list.toArray(Colormap[]::new)));
-
-        State s = new State(
-                Map.copyOf(blockColormaps),
-                loadNamed(resources, Format.VANILLA, "water.png", "watercolorX.png"),
-                loadNamed(resources, Format.VANILLA, "pine.png", "pinecolor.png"),
-                loadNamed(resources, Format.VANILLA, "birch.png", "birchcolor.png"),
-                loadNamed(resources, Format.VANILLA, "swampgrass.png", "swampgrasscolor.png"),
-                loadNamed(resources, Format.VANILLA, "swampfoliage.png", "swampfoliagecolor.png"),
-                loadNamed(resources, Format.VANILLA, "redstone.png", "redstonecolor.png"),
-                loadNamed(resources, Format.VANILLA, "stem.png", "stemcolor.png"),
-                loadNamed(resources, Format.VANILLA, "pumpkinstem.png"),
-                loadNamed(resources, Format.VANILLA, "melonstem.png")
-        );
-
-        StringBuilder sb = new StringBuilder("[CustomColormaps] loaded {} block maps");
-        if (s.water != null) sb.append("/water");
-        if (s.pine != null) sb.append("/pine");
-        if (s.birch != null) sb.append("/birch");
-        if (s.swampGrass != null) sb.append("/swampGrass");
-        if (s.swampFoliage != null) sb.append("/swampFoliage");
-        if (s.redstone != null) sb.append("/redstone");
-        if (s.stem != null) sb.append("/stem");
-        if (s.pumpkinStem != null) sb.append("/pumpkinStem");
-        if (s.melonStem != null) sb.append("/melonStem");
-        Cera.LOGGER.info(sb.toString(), s.blockColormaps.size());
-
-        return s;
+    private static BiomeColorSource swampSource(Colormap swamp, boolean grass) {
+        if (swamp == null) return null;
+        return (biome, pos) -> {
+			if(biome == Biome.SWAMPLAND) return swamp.resolve(biome, pos);
+			if(grass) return biome.getGrassColor(pos);
+	        return biome.getFoliageColor(pos);
+		};
     }
 
     private static void loadCustom(Resource resource, ResourceManager resources, Map<Block, List<Colormap>> byBlock) {
@@ -177,12 +200,40 @@ public final class CustomColormaps implements ResourceReloadListener {
         }
     }
 
-    private static Colormap loadNamed(ResourceManager resources, Format format, String... names) {
+    // OptiFine color.properties inline block colormaps: palette.block.<colormap path>=<block list>
+    private static void loadPaletteBlocks(ResourceManager resources, String file, Map<Block, List<Colormap>> byBlock) {
+        Resource resource = resources.getResource(new Identifier(file)).orElse(null);
+        if (resource == null) return;
+        String base = file.substring(0, file.lastIndexOf('/') + 1);
+        try {
+            Props props = new Props(resource);
+            for (String key : props.properties().stringPropertyNames()) {
+                if (!key.startsWith("palette.block.")) continue;
+                Object2IntMap<Block> blocks = BlockMatcher.parseBlocks(props.get(key));
+                if (blocks.isEmpty()) continue;
+                String path = stripPng(key.substring("palette.block.".length()));
+                path = path.startsWith("~/") || path.startsWith("/") ? path.replaceFirst("^~?/", "") : base + path;
+                Image image = readImage(resources, withPng(new Identifier(path)));
+                if (image == null) {
+                    Cera.LOGGER.warn("[CustomColors] Palette not found: {}", key);
+                    continue;
+                }
+                Colormap colormap = new Colormap(Format.VANILLA, image.pixels(), image.width(), image.height(), 0, 0, 0, blocks);
+                for (Block block : blocks.keySet()) {
+                    byBlock.computeIfAbsent(block, _ -> new ArrayList<>()).add(colormap);
+                }
+            }
+        } catch (IOException e) {
+            Cera.LOGGER.warn("[CustomColors] Failed to read {}", file, e);
+        }
+    }
+
+    private static Colormap loadNamed(ResourceManager resources, String... names) {
         for (String directory : DIRECTORIES) {
             for (String name : names) {
                 Image image = readImage(resources, new Identifier(directory + name));
                 if (image != null) {
-                    return new Colormap(format, image.pixels(), image.width(), image.height(), 0, 0, 0, null);
+                    return new Colormap(Format.VANILLA, image.pixels(), image.width(), image.height(), 0, 0, 0, null);
                 }
             }
         }
@@ -228,10 +279,11 @@ public final class CustomColormaps implements ResourceReloadListener {
             Colormap water,
             Colormap pine, Colormap birch,
             Colormap swampGrass, Colormap swampFoliage,
+            BiomeColorSource swampGrassSource, BiomeColorSource swampFoliageSource,
             Colormap redstone,
             Colormap stem, Colormap pumpkinStem, Colormap melonStem
     ) {
-        static final State EMPTY = new State(Map.of(), null, null, null, null, null, null, null, null, null);
+        static final State EMPTY = new State(Map.of(), null, null, null, null, null, null, null, null, null, null, null);
     }
 
     record Colormap(
@@ -240,14 +292,15 @@ public final class CustomColormaps implements ResourceReloadListener {
             int yVariance, int yOffset,
             int fixedColor,
             Object2IntMap<Block> blocks
-    ) {
+    ) implements BiomeColorCache.BiomeColorSource {
         enum Format { VANILLA, GRID, FIXED }
 
         boolean matches(BlockState state) {
             return BlockMatcher.matches(this.blocks, state);
         }
 
-        int getColor(Biome biome, BlockPos pos) {
+        @Override
+        public int resolve(Biome biome, BlockPos pos) {
             return switch (this.format) {
                 case FIXED -> this.fixedColor;
                 case VANILLA -> {

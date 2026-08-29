@@ -2,7 +2,7 @@ package dev.rdh.cera.mixin;
 
 import dev.rdh.cera.ext.CeraTextureAtlasExtension;
 import dev.rdh.cera.modules.BetterGrass;
-import dev.rdh.cera.modules.CustomColormaps;
+import dev.rdh.cera.modules.colors.CustomColormaps;
 import dev.rdh.cera.modules.NaturalTextures;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;

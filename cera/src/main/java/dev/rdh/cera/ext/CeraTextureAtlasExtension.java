@@ -1,7 +1,7 @@
 package dev.rdh.cera.ext;
 
 import dev.rdh.cera.modules.BetterGrass;
-import dev.rdh.cera.modules.CustomColormaps;
+import dev.rdh.cera.modules.colors.CustomColormaps;
 import dev.rdh.cera.modules.NaturalTextures;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 

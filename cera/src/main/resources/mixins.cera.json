@@ -13,6 +13,7 @@
     "AbstractArmorLayerMixin",
     "EntityMixin",
     "FastBlockRendererMixin",
+    "MapColorAccessor",
     "ItemModelShaperMixin",
     "ItemRendererMixin",
     "MinecraftMixin",

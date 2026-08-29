@@ -1,11 +1,12 @@
 package dev.rdh.cera.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalIntRef;
 import dev.rdh.cera.modules.BetterGrass;
-import dev.rdh.cera.modules.CustomColormaps;
+import dev.rdh.cera.modules.colors.CustomColormaps;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import dev.rdh.cera.modules.ctm.CtmRenderContext;
 import dev.rdh.cera.modules.NaturalTextures;
@@ -52,14 +53,14 @@ public class FastBlockRendererMixin {
     @Unique
     private final CtmRenderContext cera$ctmContext = new CtmRenderContext(this.cera$betterGrass);
     @Unique
-    private CustomColormaps cera$customColormaps = Minecraft.getInstance().getBlocksAtlas().cera$getCustomColormaps();
+    private final CustomColormaps cera$customColormaps = Minecraft.getInstance().getBlocksAtlas().cera$getCustomColormaps();
     @Unique
     private BlockState cera$colorState = null;
 
-    @WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Ldev/rdh/argentum/impl/render/terrain/compile/pipeline/FastBlockRenderer;renderQuads(Ljava/util/List;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/state/BlockState;Ldev/rdh/argentum/impl/world/cloned/ChunkRenderContext;Lorg/embeddedt/embeddium/impl/model/light/LightPipeline;Lnet/minecraft/util/math/Direction;ILdev/rdh/argentum/impl/world/biome/BiomeColorCache$ColorType;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;Ldev/rdh/argentum/impl/render/terrain/compile/PrimitiveBuiltRenderSectionData;)V"))
+    @WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Ldev/rdh/argentum/impl/render/terrain/compile/pipeline/FastBlockRenderer;renderQuads(Ljava/util/List;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/state/BlockState;Ldev/rdh/argentum/impl/world/cloned/ChunkRenderContext;Lorg/embeddedt/embeddium/impl/model/light/LightPipeline;Lnet/minecraft/util/math/Direction;ILdev/rdh/argentum/impl/world/biome/BiomeColorCache$BiomeColorSource;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;Ldev/rdh/argentum/impl/render/terrain/compile/PrimitiveBuiltRenderSectionData;)V"))
     private void cera$renderQuads(FastBlockRenderer renderer, List<BakedQuad> quads, BlockPos pos,
             BlockState colorState, ChunkRenderContext world, LightPipeline lighter, Direction cullFace,
-            int flags, BiomeColorCache.ColorType colorType, Material material,
+            int flags, BiomeColorCache.BiomeColorSource colorType, Material material,
             ChunkBuildBuffers buffers, PrimitiveBuiltRenderSectionData renderData, Operation<Void> original) {
         var state = world.getBlockState(pos);
         this.cera$overlays.clear();
@@ -68,16 +69,17 @@ public class FastBlockRendererMixin {
                 this.cera$overlays, this.cera$ctmContext
         );
         this.cera$colorState = colorState;
-        if (colorType == null && this.cera$customColormaps.appliesBiomeTint(state)) {
-            colorType = BiomeColorCache.ColorType.FOLIAGE;
-        }
+        BiomeColorCache.BiomeColorSource resolver = this.cera$customColormaps.resolverFor(state);
+        if (resolver != null) colorType = resolver;
         original.call(renderer, transformed, pos, colorState, world, lighter, cullFace, flags, colorType, material, buffers, renderData);
         for (ConnectedTextures.Overlay overlay : this.cera$overlays) {
             Material overlayMaterial = buffers.getRenderPassConfiguration()
                     .getMaterialForRenderType(overlay.layer());
             this.cera$colorState = overlay.tintState();
+            BiomeColorCache.BiomeColorSource overlayType = this.cera$customColormaps.resolverFor(overlay.tintState());
+            if (overlayType == null) overlayType = cera$getBiomeColorType(overlay.tintState());
             original.call(renderer, List.of(overlay.quad()), pos, overlay.tintState(), world, lighter,
-                    cullFace, flags, cera$getBiomeColorType(overlay.tintState()),
+                    cullFace, flags, overlayType,
                     overlayMaterial, buffers, renderData
             );
         }
@@ -89,10 +91,9 @@ public class FastBlockRendererMixin {
         return color != -1 ? color : original.call(block, world, pos, tint);
     }
 
-    @WrapOperation(method = {"renderQuads", "getVertexColors"}, at = @At(value = "INVOKE", target = "Ldev/rdh/argentum/impl/world/cloned/ChunkRenderContext;getBiomeColor(Lnet/minecraft/util/math/BlockPos;Ldev/rdh/argentum/impl/world/biome/BiomeColorCache$ColorType;)I", remap = false))
-    private int cera$biomeColormap(ChunkRenderContext world, BlockPos pos, BiomeColorCache.ColorType type, Operation<Integer> original) {
-        int color = this.cera$customColormaps.getColor(this.cera$colorState, world, pos);
-        return color != -1 ? color : original.call(world, pos, type);
+    @ModifyExpressionValue(method = "renderQuads", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resource/model/BakedQuad;hasTint()Z", remap = true))
+    private boolean cera$forceTint(boolean original) {
+        return original || this.cera$customColormaps.hasBlockColormap(this.cera$colorState);
     }
 
     @Unique
