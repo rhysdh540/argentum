@@ -15,9 +15,3 @@ A non-exhaustive list of features that currently exist:
 - FXAA (fast approximate anti-aliasing)
 - Weather settings
 - Text shadows toggling
-
-Along with that, some other features are planned:
-
-- Render resolution scaling
-- Sign text distance culling
-- Item frame LODs
