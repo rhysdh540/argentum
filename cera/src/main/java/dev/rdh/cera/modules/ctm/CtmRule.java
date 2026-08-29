@@ -1,6 +1,8 @@
 package dev.rdh.cera.modules.ctm;
 
 import dev.rdh.cera.Cera;
+import dev.rdh.cera.props.BlockMatcher;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.block.AbstractLogBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -45,7 +47,7 @@ record CtmRule(
         Tile[] tiles,
         Action action,
         int metadataMax,
-        Map<Block, Integer> connectBlocks,
+        Object2IntMap<Block> connectBlocks,
         Set<String> connectTiles
 ) {
     boolean matches(WorldView world, BlockState state, BlockPos pos, Direction face, TextureAtlasSprite sprite) {
@@ -226,8 +228,8 @@ record CtmRule(
         }
     }
 
-    private boolean connects(WorldView world, BlockState state, BlockPos pos, BlockPos otherPos,
-            Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
+    private boolean connects(WorldView world, BlockState state, BlockPos ignoredPos, BlockPos otherPos,
+							 Direction face, TextureAtlasSprite sprite, CtmRenderContext context) {
         if (!connectsOnce(world, state, otherPos, face, sprite, context)) return false;
         return !innerSeams || !connectsOnce(world, state, context.offset(otherPos, face), face, sprite, context);
     }
@@ -247,10 +249,7 @@ record CtmRule(
     }
 
     boolean matchesConnectBlock(BlockState state) {
-        if (connectBlocks.isEmpty()) return true;
-        Integer mask = connectBlocks.get(state.getBlock());
-        int metadata = state.getBlock().getMetadataFromState(state);
-        return mask != null && (mask & 1 << metadata) != 0;
+        return connectBlocks.isEmpty() || BlockMatcher.matches(connectBlocks, state);
     }
 
     boolean matchesConnectTile(WorldView world, BlockState state, BlockPos pos, Direction face, CtmRenderContext context) {
@@ -332,18 +331,18 @@ record CtmRule(
     }
 
     static Replacement random(int[] weights, int randomLoops, int symmetry, boolean linked) {
-        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+        return new Replacement((rule, world, state, pos, geometry, _, _) ->
                 rule.random(world, state, pos, geometry.face,
                         weights, randomLoops, symmetry, linked), false);
     }
 
     static Replacement repeat(int width, int height, int symmetry) {
-        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+        return new Replacement((rule, _, _, pos, geometry, _, _) ->
                 rule.repeat(pos, geometry.face, width, height, symmetry), false);
     }
 
     static Replacement fixed() {
-        return new Replacement((rule, world, state, pos, geometry, sprite, context) ->
+        return new Replacement((rule, _, _, _, _, _, _) ->
                 rule.tiles[0], false);
     }
 
