@@ -5,6 +5,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalIntRef;
 import dev.rdh.cera.modules.BetterGrass;
+import dev.rdh.cera.modules.CustomColormaps;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import dev.rdh.cera.modules.ctm.CtmRenderContext;
 import dev.rdh.cera.modules.NaturalTextures;
@@ -23,6 +24,7 @@ import net.minecraft.client.resource.model.BakedQuad;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.WorldView;
 import org.embeddedt.embeddium.impl.model.light.LightPipeline;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadOrientation;
@@ -32,6 +34,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
@@ -48,6 +51,10 @@ public class FastBlockRendererMixin {
     private final List<ConnectedTextures.Overlay> cera$overlays = new ObjectArrayList<>();
     @Unique
     private final CtmRenderContext cera$ctmContext = new CtmRenderContext(this.cera$betterGrass);
+    @Unique
+    private CustomColormaps cera$customColormaps = Minecraft.getInstance().getBlocksAtlas().cera$getCustomColormaps();
+    @Unique
+    private BlockState cera$colorState = null;
 
     @WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Ldev/rdh/argentum/impl/render/terrain/compile/pipeline/FastBlockRenderer;renderQuads(Ljava/util/List;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/state/BlockState;Ldev/rdh/argentum/impl/world/cloned/ChunkRenderContext;Lorg/embeddedt/embeddium/impl/model/light/LightPipeline;Lnet/minecraft/util/math/Direction;ILdev/rdh/argentum/impl/world/biome/BiomeColorCache$ColorType;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;Ldev/rdh/argentum/impl/render/terrain/compile/PrimitiveBuiltRenderSectionData;)V"))
     private void cera$renderQuads(FastBlockRenderer renderer, List<BakedQuad> quads, BlockPos pos,
@@ -60,15 +67,32 @@ public class FastBlockRendererMixin {
                 this.cera$betterGrass.getFaceQuads(world, state, pos, cullFace, quads),
                 this.cera$overlays, this.cera$ctmContext
         );
+        this.cera$colorState = colorState;
+        if (colorType == null && this.cera$customColormaps.appliesBiomeTint(state)) {
+            colorType = BiomeColorCache.ColorType.FOLIAGE;
+        }
         original.call(renderer, transformed, pos, colorState, world, lighter, cullFace, flags, colorType, material, buffers, renderData);
         for (ConnectedTextures.Overlay overlay : this.cera$overlays) {
             Material overlayMaterial = buffers.getRenderPassConfiguration()
                     .getMaterialForRenderType(overlay.layer());
+            this.cera$colorState = overlay.tintState();
             original.call(renderer, List.of(overlay.quad()), pos, overlay.tintState(), world, lighter,
                     cullFace, flags, cera$getBiomeColorType(overlay.tintState()),
                     overlayMaterial, buffers, renderData
             );
         }
+    }
+
+    @WrapOperation(method = "renderQuads", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/Block;getColor(Lnet/minecraft/world/WorldView;Lnet/minecraft/util/math/BlockPos;I)I", remap = true))
+    private int cera$blockColormap(Block block, WorldView world, BlockPos pos, int tint, Operation<Integer> original) {
+        int color = this.cera$customColormaps.getColor(this.cera$colorState, (ChunkRenderContext) world, pos);
+        return color != -1 ? color : original.call(block, world, pos, tint);
+    }
+
+    @WrapOperation(method = {"renderQuads", "getVertexColors"}, at = @At(value = "INVOKE", target = "Ldev/rdh/argentum/impl/world/cloned/ChunkRenderContext;getBiomeColor(Lnet/minecraft/util/math/BlockPos;Ldev/rdh/argentum/impl/world/biome/BiomeColorCache$ColorType;)I", remap = false))
+    private int cera$biomeColormap(ChunkRenderContext world, BlockPos pos, BiomeColorCache.ColorType type, Operation<Integer> original) {
+        int color = this.cera$customColormaps.getColor(this.cera$colorState, world, pos);
+        return color != -1 ? color : original.call(world, pos, type);
     }
 
     @Unique
@@ -93,21 +117,18 @@ public class FastBlockRendererMixin {
 
     @Inject(method = "writeQuad", at = @At("HEAD"))
     private void cera$prepareNaturalTexture(BakedQuadView quad, BlockPos pos, Material material,
-                                            ModelQuadOrientation orientation, ChunkBuildBuffers buffers, CallbackInfo ci, @Share("transform") LocalIntRef transform) {
+                                            ModelQuadOrientation orientation, ChunkBuildBuffers buffers, CallbackInfo ci,
+                                            @Share("transform") LocalIntRef transform) {
         transform.set(this.cera$naturalTextures.getTransform(quad, pos));
     }
 
-    @WrapOperation(method = "writeQuad",
-            at = @At(value = "INVOKE",
-                    target = "Lorg/embeddedt/embeddium/impl/model/quad/BakedQuadView;getTexU(I)F"))
-    private float cera$rotateNaturalTextureU(BakedQuadView quad, int vertex, Operation<Float> original, @Share("transform") LocalIntRef transform) {
-        return original.call(quad, NaturalTextures.transformVertex(transform.get(), vertex));
+    @ModifyArg(method = "writeQuad", at = @At(value = "INVOKE", target = "Lorg/embeddedt/embeddium/impl/model/quad/BakedQuadView;getTexU(I)F"))
+    private int cera$rotateNaturalTextureU(int u, @Share("transform") LocalIntRef transform) {
+        return NaturalTextures.transformVertex(transform.get(), u);
     }
 
-    @WrapOperation(method = "writeQuad",
-            at = @At(value = "INVOKE",
-                    target = "Lorg/embeddedt/embeddium/impl/model/quad/BakedQuadView;getTexV(I)F"))
-    private float cera$rotateNaturalTextureV(BakedQuadView quad, int vertex, Operation<Float> original, @Share("transform") LocalIntRef transform) {
-        return original.call(quad, NaturalTextures.transformVertex(transform.get(), vertex));
+    @ModifyArg(method = "writeQuad", at = @At(value = "INVOKE", target = "Lorg/embeddedt/embeddium/impl/model/quad/BakedQuadView;getTexV(I)F"))
+    private int cera$rotateNaturalTextureV(int v, @Share("transform") LocalIntRef transform) {
+        return NaturalTextures.transformVertex(transform.get(), v);
     }
 }

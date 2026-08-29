@@ -10,6 +10,7 @@ public class CeraConfig {
     public DynamicLights.Mode dynamicLights = DynamicLights.Mode.FANCY;
     public boolean naturalTextures = true;
     public boolean animatedTextures = true;
+    public boolean customColors = true;
     public boolean randomEntities = true;
     public boolean customSky = true;
     public boolean customGuis = true;

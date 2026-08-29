@@ -92,15 +92,11 @@ public final class BlockMatcher {
             Property property = state.properties().stream()
                     .filter(candidate -> candidate.getName().equals(entry.getKey()))
                     .findFirst().orElse(null);
-            if (property == null || !entry.getValue().contains(propertyValueName(property, state.get(property)))) {
+			if (property == null || !entry.getValue().contains(property.getName(state.get(property)))) {
                 return false;
             }
         }
         return true;
-    }
-
-    private static <T extends Comparable<T>> String propertyValueName(Property<T> property, T value) {
-        return property.getName(value);
     }
 
     private static boolean startsWithDigit(String value) {

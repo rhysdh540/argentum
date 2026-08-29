@@ -2,6 +2,7 @@ package dev.rdh.cera.mixin;
 
 import dev.rdh.cera.ext.CeraTextureAtlasExtension;
 import dev.rdh.cera.modules.BetterGrass;
+import dev.rdh.cera.modules.CustomColormaps;
 import dev.rdh.cera.modules.NaturalTextures;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -31,10 +32,17 @@ public class TextureAtlasMixin implements CeraTextureAtlasExtension {
     private final ConnectedTextures cera$connectedTextures = new ConnectedTextures();
     @Unique
     private final NaturalTextures cera$naturalTextures = new NaturalTextures();
+    @Unique
+    private final CustomColormaps cera$customColormaps = new CustomColormaps();
 
     @Override
     public BetterGrass cera$getBetterGrass() {
         return this.cera$betterGrass;
+    }
+
+    @Override
+    public CustomColormaps cera$getCustomColormaps() {
+        return this.cera$customColormaps;
     }
 
     @Override

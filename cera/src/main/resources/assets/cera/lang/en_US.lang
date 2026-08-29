@@ -26,5 +26,7 @@ cera.options.value.dynamic_lights.fast=Fast
 cera.options.value.dynamic_lights.fancy=Fancy
 cera.options.animated_textures.name=Animated Textures
 cera.options.animated_textures.tooltip=Animates regions of GUI, entity and other non-block textures from resource pack rules.
+cera.options.custom_colors.name=Custom Colors
+cera.options.custom_colors.tooltip=Recolors foliage and water from resource pack rules.
 cera.options.random_entities.name=Random Entities
 cera.options.random_entities.tooltip=Randomizes entity and block entity textures from resource pack rules.
