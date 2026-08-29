@@ -25,57 +25,42 @@ public class WorldRendererMixin {
     @Final
     private Minecraft minecraft;
 
-    @ModifyExpressionValue(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/dimension/Dimension;getSunriseColor(FF)[F"))
+    @ModifyExpressionValue(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/dimension/Dimension;getSunriseColor(FF)[F"))
     private float[] argentumExtras$hideSunrise(float[] color) {
         return ArgentumExtras.CONFIG.sky ? color : null;
     }
 
-    @WrapWithCondition(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/VertexBuffer;draw(I)V",
-                    ordinal = 0))
+    @WrapWithCondition(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/VertexBuffer;draw(I)V", ordinal = 0))
     private boolean argentumExtras$drawSky(VertexBuffer buffer, int mode) {
         return ArgentumExtras.CONFIG.sky;
     }
 
-    @WrapWithCondition(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V",
-                    ordinal = 0))
+    @WrapWithCondition(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V", ordinal = 0))
     private boolean argentumExtras$drawSky(int list) {
         return ArgentumExtras.CONFIG.sky;
     }
 
-    @WrapWithCondition(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/VertexBuffer;draw(I)V",
-                    ordinal = 2))
+    @WrapWithCondition(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/VertexBuffer;draw(I)V", ordinal = 2))
     private boolean argentumExtras$drawDarkSky(VertexBuffer buffer, int mode) {
         return ArgentumExtras.CONFIG.sky;
     }
 
-    @WrapWithCondition(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V",
-                    ordinal = 2))
+    @WrapWithCondition(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V", ordinal = 2))
     private boolean argentumExtras$drawDarkSky(int list) {
         return ArgentumExtras.CONFIG.sky;
     }
 
-    @ModifyArg(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;color4f(FFFF)V",
-                    ordinal = 0), index = 3)
+    @ModifyArg(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;color4f(FFFF)V", ordinal = 0), index = 3)
     private float argentumExtras$celestialAlpha(float alpha) {
         return ArgentumExtras.CONFIG.sunAndMoon ? alpha : 0.0F;
     }
 
-    @WrapWithCondition(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/VertexBuffer;draw(I)V",
-                    ordinal = 1))
+    @WrapWithCondition(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/VertexBuffer;draw(I)V", ordinal = 1))
     private boolean argentumExtras$drawStars(VertexBuffer buffer, int mode) {
         return ArgentumExtras.CONFIG.stars;
     }
 
-    @WrapWithCondition(method = "renderSky",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V",
-                    ordinal = 1))
+    @WrapWithCondition(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V", ordinal = 1))
     private boolean argentumExtras$drawStars(int list) {
         return ArgentumExtras.CONFIG.stars;
     }
@@ -103,5 +88,12 @@ public class WorldRendererMixin {
         } else {
             return f;
         }
+    }
+
+    // this is somewhat cursed since we wrap a method that argentum redirects...
+    // but it seems to work
+    @WrapWithCondition(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/platform/GlStateManager;callList(I)V", ordinal = 3))
+    private boolean argentumExtras$drawLowerSky(int list) {
+        return ArgentumExtras.CONFIG.lowerSky;
     }
 }

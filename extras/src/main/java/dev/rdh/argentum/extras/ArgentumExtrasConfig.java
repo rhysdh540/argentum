@@ -35,6 +35,7 @@ public class ArgentumExtrasConfig {
     public boolean nameTags = true;
     public boolean secondNameTagLayer = true;
     public boolean sky = true;
+    public boolean lowerSky = false;
     public boolean sunAndMoon = true;
     public boolean stars = true;
     public int vignetteStrength = 100;
@@ -63,6 +64,7 @@ public class ArgentumExtrasConfig {
         this.vignetteStrength = Math.clamp(this.vignetteStrength, 0, 100);
         this.weatherRenderDistance = Math.clamp(this.weatherRenderDistance, 0, 15);
         this.weatherDensity = Math.clamp(this.weatherDensity, 0, 100);
+        this.blockOutlineWidth = Math.clamp(this.blockOutlineWidth, 1.0f, 5.0f);
     }
 
 }
