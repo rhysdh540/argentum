@@ -8,4 +8,9 @@ public interface TextRendererExtension {
     default void argentum$endBatch() {
         throw new UnsupportedOperationException();
     }
+
+    /** Drops cached text geometry so it re-bakes (e.g. after the §-code color palette changes). */
+    default void argentum$invalidateTextCache() {
+        throw new UnsupportedOperationException();
+    }
 }

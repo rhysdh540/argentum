@@ -50,7 +50,10 @@ final class CeraOptionPage {
                 .add(OptionImpl.createBuilder(boolean.class, Cera.CONFIG_STORAGE)
                         .setId(id("custom_colors"))
                         .setControl(TickBoxControl::new)
-                        .setBinding((config, value) -> config.customColors = value, config -> config.customColors)
+                        .setBinding((config, value) -> {
+                            config.customColors = value;
+                            Minecraft.getInstance().cera$getCustomColors().reapplyTextColors();
+                        }, config -> config.customColors)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, Cera.CONFIG_STORAGE)

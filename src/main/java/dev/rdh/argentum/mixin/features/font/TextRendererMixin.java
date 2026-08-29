@@ -495,6 +495,11 @@ public abstract class TextRendererMixin implements TextRendererExtension {
     }
 
     @Override
+    public void argentum$invalidateTextCache() {
+        this.celeritas$geometryCache.clear();
+    }
+
+    @Override
     public void argentum$beginBatch(Runnable beforeImmediateText) {
         if (this.celeritas$elementBatchDepth++ == 0) {
             this.celeritas$beforeImmediateText = beforeImmediateText;

@@ -142,6 +142,20 @@ public final class CustomColormaps implements ResourceReloadListener {
         return null;
     }
 
+    /** Redstone colormap sample for a wire power level (for reddust particles), or {@code -1} if not loaded. */
+    public int redstoneColor(int level) {
+        if (!Cera.CONFIG.customColors) return -1;
+        Colormap redstone = this.state.redstone;
+        return redstone != null ? redstone.getColorByIndex(level) : -1;
+    }
+
+    /** Biome water-colormap sample (for particle tinting), or {@code -1} if no water colormap is loaded. */
+    public int waterColor(Biome biome, BlockPos pos) {
+        if (!Cera.CONFIG.customColors) return -1;
+        Colormap water = this.state.water;
+        return water != null ? water.resolve(biome, pos) : -1;
+    }
+
     public boolean hasBlockColormap(BlockState state) {
         if (!Cera.CONFIG.customColors) return false;
         Colormap[] matched = this.state.blockColormaps.get(state.getBlock());
