@@ -30,7 +30,6 @@ public class GameRendererMixin {
     @Shadow @Final private int[] lightMapPixels;
     @Shadow private float lightMapFlicker;
 
-    // Vanilla has just filled lightMapPixels; overwrite it with the custom lightmap before it uploads the texture.
     @Inject(method = "updateLightMap", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/texture/DynamicTexture;upload()V"))
     private void cera$customLightmap(float tickDelta, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();

@@ -24,7 +24,6 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
     private void cera$emissivePass(LivingEntityRenderer<T> self, LivingEntity entity, float limbAngle, float limbDistance,
             float tickDelta, float headYaw, float headPitch, float scale, Operation<Void> original) {
         EmissiveTextures emissive = Minecraft.getInstance().getTextureManager().cera$getEmissiveTextures();
-        // When instanced, argentum draws emissive overlays per submitted instance, so skip the re-render.
         EntityInstancing instancing = EntityInstancing.current();
         boolean instanced = instancing != null && instancing.isBatchActive();
         if (this.solidRender || instanced || !emissive.active()) {

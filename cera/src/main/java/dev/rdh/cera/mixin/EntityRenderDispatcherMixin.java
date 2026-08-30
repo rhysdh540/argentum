@@ -20,18 +20,12 @@ public class EntityRenderDispatcherMixin implements CeraEntityRenderDispatcherEx
         return this.cera$entityContext;
     }
 
-    @Inject(
-            method = "render(Lnet/minecraft/entity/Entity;DDDFFZ)Z",
-            at = @At("HEAD")
-    )
+    @Inject(method = "render(Lnet/minecraft/entity/Entity;DDDFFZ)Z", at = @At("HEAD"))
     private void cera$beginEntityRender(Entity entity, double x, double y, double z, float yaw, float tickDelta, boolean hitbox, CallbackInfoReturnable<Boolean> cir) {
         this.cera$entityContext.begin(entity);
     }
 
-    @Inject(
-            method = "render(Lnet/minecraft/entity/Entity;DDDFFZ)Z",
-            at = @At("RETURN")
-    )
+    @Inject(method = "render(Lnet/minecraft/entity/Entity;DDDFFZ)Z", at = @At("RETURN"))
     private void cera$endEntityRender(Entity entity, double x, double y, double z, float yaw, float tickDelta, boolean hitbox, CallbackInfoReturnable<Boolean> ci) {
         this.cera$entityContext.end(entity);
     }

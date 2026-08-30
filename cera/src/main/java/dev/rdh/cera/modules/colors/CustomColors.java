@@ -343,8 +343,9 @@ public final class CustomColors implements ResourceReloadListener {
         }
     }
 
-    // OptiFine/MCPatcher legacy effect names -> 1.8.9 status effect ids (potion.water has no effect and is skipped).
+    // OptiFine/MCPatcher legacy effect names -> 1.8.9 status effect ids.
     private static final Map<String, Integer> LEGACY_POTIONS = Map.ofEntries(
+            Map.entry("water", 0),
             Map.entry("moveSpeed", 1),
             Map.entry("moveSlowdown", 2),
             Map.entry("digSpeed", 3),

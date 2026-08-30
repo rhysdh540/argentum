@@ -126,8 +126,6 @@ public final class EmissiveTextures {
         return emissive != null ? emissive : EMPTY;
     }
 
-    // The _e overlay location for a bound texture, or null. Public for renderers (e.g. arrows) that
-    // resolve their own texture rather than going through resolveBound's bind swap.
     public Identifier emissiveTexture(Identifier loc) {
         return active() ? emissiveLocation(loc) : null;
     }

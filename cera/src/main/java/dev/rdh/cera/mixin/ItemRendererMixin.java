@@ -81,7 +81,6 @@ public class ItemRendererMixin {
         this.textureManager.bind(TextureAtlas.BLOCKS_LOCATION);
     }
 
-    // Render the item, then re-render its emissive sprite quads at full brightness on top.
     @WrapOperation(method = "renderItem(Lnet/minecraft/item/ItemStack;Lnet/minecraft/client/resource/model/BakedModel;)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/ItemRenderer;render(Lnet/minecraft/client/resource/model/BakedModel;Lnet/minecraft/item/ItemStack;)V"))
     private void cera$itemEmissivePass(ItemRenderer self, BakedModel model, ItemStack stack, Operation<Void> original) {
@@ -104,7 +103,6 @@ public class ItemRendererMixin {
         }
     }
 
-    // On the emissive pass, draw each quad's _e twin (skip quads without one); otherwise just flag them.
     @WrapOperation(method = "renderQuads(Lnet/minecraft/client/render/vertex/BufferBuilder;Ljava/util/List;ILnet/minecraft/item/ItemStack;)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/ItemRenderer;renderQuad(Lnet/minecraft/client/render/vertex/BufferBuilder;Lnet/minecraft/client/resource/model/BakedQuad;I)V"))
     private void cera$emissiveQuad(ItemRenderer self, BufferBuilder buffer, BakedQuad quad, int color, Operation<Void> original) {

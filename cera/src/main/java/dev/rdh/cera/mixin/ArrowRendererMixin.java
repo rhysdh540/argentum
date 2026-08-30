@@ -19,14 +19,11 @@ public class ArrowRendererMixin {
     @Unique
     private boolean cera$reentrant;
 
-    // Instancing-off path (the instanced path is handled in EntityInstancingMixin): two-pass re-render,
-    // swapping to the _e texture at full brightness on the second pass.
     @Inject(method = "render(Lnet/minecraft/entity/projectile/ArrowEntity;DDDFF)V", at = @At("HEAD"), cancellable = true)
     private void cera$emissiveArrow(ArrowEntity arrow, double x, double y, double z, float yaw, float tickDelta, CallbackInfo ci) {
         if (this.cera$reentrant) return;
         EmissiveTextures emissive = Minecraft.getInstance().getTextureManager().cera$getEmissiveTextures();
         if (emissive.emissiveTexture(CERA$ARROW) == null) return;
-        // Instancing on: argentum instances the arrow and EntityInstancingMixin adds the overlay; skip here.
         EntityInstancing instancing = EntityInstancing.current();
         if (instancing != null && instancing.isBatchActive()) return;
 

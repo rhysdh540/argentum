@@ -7,8 +7,6 @@ import net.minecraft.resource.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-// Supplies the emissive overlay identifier for instanced rendering; argentum handles the rest (the
-// full-bright EMISSIVE_REPLACE twin, its pass and depth state).
 @Mixin(value = ModelInstancer.class, remap = false)
 public class ModelInstancerMixin {
     @ModifyReturnValue(method = "emissiveOverlay", at = @At("RETURN"))
