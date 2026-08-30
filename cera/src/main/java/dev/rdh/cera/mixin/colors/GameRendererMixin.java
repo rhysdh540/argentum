@@ -7,11 +7,14 @@ import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.living.effect.StatusEffect;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import org.objectweb.asm.Opcodes;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,6 +27,18 @@ public class GameRendererMixin {
     @Shadow private float fogGreen;
     @Shadow private float fogBlue;
     @Shadow private boolean thiccFog;
+    @Shadow @Final private int[] lightMapPixels;
+    @Shadow private float lightMapFlicker;
+
+    // Vanilla has just filled lightMapPixels; overwrite it with the custom lightmap before it uploads the texture.
+    @Inject(method = "updateLightMap", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/texture/DynamicTexture;upload()V"))
+    private void cera$customLightmap(float tickDelta, CallbackInfo ci) {
+        Minecraft mc = Minecraft.getInstance();
+        World world = mc.world;
+        if (world == null || mc.player == null) return;
+        boolean nightvision = mc.player.hasStatusEffect(StatusEffect.NIGHTVISION);
+        mc.cera$getLightMaps().apply(this.lightMapPixels, world, this.lightMapFlicker, tickDelta, nightvision, mc.options.gamma);
+    }
 
     // somehow mixin doesn't realize that it can localcapture this, so this seems to be necessary sadly
     @ModifyExpressionValue(method = "setupClearColor", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/Camera;getBlockInside(Lnet/minecraft/world/World;Lnet/minecraft/entity/Entity;F)Lnet/minecraft/block/Block;"))

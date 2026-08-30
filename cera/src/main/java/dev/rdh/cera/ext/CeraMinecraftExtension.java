@@ -4,6 +4,7 @@ import dev.rdh.cera.modules.colors.CustomColors;
 import dev.rdh.cera.modules.DynamicLights;
 import dev.rdh.cera.modules.OptifineCosmetics;
 import dev.rdh.cera.modules.cit.CustomItems;
+import dev.rdh.cera.modules.colors.LightMaps;
 
 public interface CeraMinecraftExtension {
     default DynamicLights.Rules cera$getDynamicLightRules() {
@@ -11,6 +12,10 @@ public interface CeraMinecraftExtension {
     }
 
     default CustomColors cera$getCustomColors() {
+        throw new UnsupportedOperationException();
+    }
+
+    default LightMaps cera$getLightMaps() {
         throw new UnsupportedOperationException();
     }
 

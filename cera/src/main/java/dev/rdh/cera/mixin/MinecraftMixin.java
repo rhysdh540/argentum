@@ -2,6 +2,7 @@ package dev.rdh.cera.mixin;
 
 import dev.rdh.cera.ext.CeraMinecraftExtension;
 import dev.rdh.cera.modules.colors.CustomColors;
+import dev.rdh.cera.modules.colors.LightMaps;
 import dev.rdh.cera.modules.DynamicLights;
 import dev.rdh.cera.modules.OptifineCosmetics;
 import dev.rdh.cera.modules.cit.CustomItems;
@@ -23,6 +24,8 @@ public class MinecraftMixin implements CeraMinecraftExtension {
     private final OptifineCosmetics cera$optifineCosmetics = new OptifineCosmetics();
     @Unique
     private final CustomColors cera$customColors = new CustomColors();
+    @Unique
+    private final LightMaps cera$lightMaps = new LightMaps();
 
     @Override
     public DynamicLights.Rules cera$getDynamicLightRules() {
@@ -32,6 +35,11 @@ public class MinecraftMixin implements CeraMinecraftExtension {
     @Override
     public CustomColors cera$getCustomColors() {
         return this.cera$customColors;
+    }
+
+    @Override
+    public LightMaps cera$getLightMaps() {
+        return this.cera$lightMaps;
     }
 
     @Override
