@@ -6,6 +6,7 @@ import dev.rdh.cera.modules.colors.CustomColormaps;
 import dev.rdh.cera.modules.NaturalTextures;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.resource.manager.ResourceManager;
@@ -62,6 +63,7 @@ public class TextureAtlasMixin implements CeraTextureAtlasExtension {
             TextureAtlas thiz = (TextureAtlas) (Object) this;
             this.cera$betterGrass.reload(oslResources, thiz, this.sourcedSprites);
             this.cera$connectedTextures.reload(oslResources, thiz, this.sourcedSprites);
+            Minecraft.getInstance().getTextureManager().cera$getEmissiveTextures().reload(oslResources, thiz, this.sourcedSprites);
         }
     }
 

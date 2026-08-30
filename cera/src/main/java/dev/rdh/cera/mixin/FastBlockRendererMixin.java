@@ -6,6 +6,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalIntRef;
 import dev.rdh.cera.modules.BetterGrass;
+import dev.rdh.cera.modules.EmissiveTextures;
 import dev.rdh.cera.modules.colors.CustomColormaps;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import dev.rdh.cera.modules.ctm.CtmRenderContext;
@@ -21,17 +22,22 @@ import net.minecraft.block.DoublePlantBlock;
 import net.minecraft.block.LeavesBlock;
 import net.minecraft.block.PlanksBlock;
 import net.minecraft.block.state.BlockState;
+import net.minecraft.client.render.block.BlockLayer;
+import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.resource.model.BakedQuad;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.WorldView;
 import org.embeddedt.embeddium.impl.model.light.LightPipeline;
+import org.embeddedt.embeddium.impl.model.light.data.QuadLightData;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadOrientation;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildBuffers;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.material.Material;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -55,7 +61,16 @@ public class FastBlockRendererMixin {
     @Unique
     private final CustomColormaps cera$customColormaps = Minecraft.getInstance().getBlocksAtlas().cera$getCustomColormaps();
     @Unique
+    private final EmissiveTextures cera$emissiveTextures = Minecraft.getInstance().getTextureManager().cera$getEmissiveTextures();
+    @Unique
+    private final List<BakedQuad> cera$emissiveQuads = new ObjectArrayList<>();
+    @Unique
+    private boolean cera$emissive = false;
+    @Unique
     private BlockState cera$colorState = null;
+
+    @Shadow @Final
+    private QuadLightData quadLight;
 
     @WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Ldev/rdh/argentum/impl/render/terrain/compile/pipeline/FastBlockRenderer;renderQuads(Ljava/util/List;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/state/BlockState;Ldev/rdh/argentum/impl/world/cloned/ChunkRenderContext;Lorg/embeddedt/embeddium/impl/model/light/LightPipeline;Lnet/minecraft/util/math/Direction;ILdev/rdh/argentum/impl/world/biome/BiomeColorCache$BiomeColorSource;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;Ldev/rdh/argentum/impl/render/terrain/compile/PrimitiveBuiltRenderSectionData;)V"))
     private void cera$renderQuads(FastBlockRenderer renderer, List<BakedQuad> quads, BlockPos pos,
@@ -83,6 +98,28 @@ public class FastBlockRendererMixin {
                     overlayMaterial, buffers, renderData
             );
         }
+        if (this.cera$emissiveTextures.active()) {
+            this.cera$emissiveQuads.clear();
+            for (BakedQuad quad : transformed) {
+                var sprite = (TextureAtlasSprite) BakedQuadView.of(quad).celeritas$getSprite();
+                TextureAtlasSprite emissive = this.cera$emissiveTextures.emissiveSprite(sprite);
+                if (emissive != null) this.cera$emissiveQuads.add(EmissiveTextures.resprite(quad, sprite, emissive));
+            }
+            if (!this.cera$emissiveQuads.isEmpty()) {
+                Material emissiveMaterial = buffers.getRenderPassConfiguration()
+                        .getMaterialForRenderType(BlockLayer.CUTOUT_MIPPED);
+                this.cera$emissive = true;
+                original.call(renderer, this.cera$emissiveQuads, pos, colorState, world, lighter,
+                        cullFace, flags, colorType, emissiveMaterial, buffers, renderData);
+                this.cera$emissive = false;
+            }
+        }
+    }
+
+    @Inject(method = "renderQuads", at = @At(value = "INVOKE", target = "Lorg/embeddedt/embeddium/impl/model/light/LightPipeline;calculate(Lorg/embeddedt/embeddium/impl/model/quad/ModelQuadView;IIILorg/embeddedt/embeddium/impl/model/light/data/QuadLightData;Lorg/embeddedt/embeddium/impl/model/quad/properties/ModelQuadFacing;Lorg/embeddedt/embeddium/impl/model/quad/properties/ModelQuadFacing;ZZ)V", shift = At.Shift.AFTER))
+    private void cera$fullbrightEmissive(CallbackInfo ci) {
+        if (!this.cera$emissive) return;
+        for (int i = 0; i < 4; i++) this.quadLight.lm[i] |= 0xF0;
     }
 
     @WrapOperation(method = "renderQuads", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/Block;getColor(Lnet/minecraft/world/WorldView;Lnet/minecraft/util/math/BlockPos;I)I", remap = true))

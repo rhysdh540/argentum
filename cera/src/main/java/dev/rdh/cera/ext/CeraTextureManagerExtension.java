@@ -2,10 +2,15 @@ package dev.rdh.cera.ext;
 
 import dev.rdh.cera.modules.AnimatedTextures;
 import dev.rdh.cera.modules.CustomGuis;
+import dev.rdh.cera.modules.EmissiveTextures;
 import dev.rdh.cera.modules.random.RandomEntities;
 
 public interface CeraTextureManagerExtension {
 	default CustomGuis cera$getCustomGuis() {
+		throw new UnsupportedOperationException();
+	}
+
+	default EmissiveTextures cera$getEmissiveTextures() {
 		throw new UnsupportedOperationException();
 	}
 

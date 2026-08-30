@@ -1,20 +1,28 @@
 package dev.rdh.cera.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import dev.rdh.cera.modules.EmissiveTextures;
 import dev.rdh.cera.modules.cit.CustomItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.entity.ItemRenderer;
 import net.minecraft.client.render.model.block.ModelTransformations;
 import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.client.render.texture.TextureAtlas;
+import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.render.texture.TextureManager;
+import net.minecraft.client.render.vertex.BufferBuilder;
 import net.minecraft.client.resource.ModelIdentifier;
 import net.minecraft.client.resource.model.BakedModel;
+import net.minecraft.client.resource.model.BakedQuad;
 import net.minecraft.client.resource.model.ModelManager;
 import net.minecraft.entity.living.LivingEntity;
 import net.minecraft.item.ItemStack;
+import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
@@ -22,6 +30,11 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class ItemRendererMixin {
     @Shadow @Final
     private TextureManager textureManager;
+
+    @Unique
+    private boolean cera$hasEmissive;
+    @Unique
+    private boolean cera$emissive;
 
     @Shadow
     private void render(BakedModel model, int color) {
@@ -66,5 +79,42 @@ public class ItemRendererMixin {
         GlStateManager.depthFunc(515);
         GlStateManager.depthMask(true);
         this.textureManager.bind(TextureAtlas.BLOCKS_LOCATION);
+    }
+
+    // Render the item, then re-render its emissive sprite quads at full brightness on top.
+    @WrapOperation(method = "renderItem(Lnet/minecraft/item/ItemStack;Lnet/minecraft/client/resource/model/BakedModel;)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/ItemRenderer;render(Lnet/minecraft/client/resource/model/BakedModel;Lnet/minecraft/item/ItemStack;)V"))
+    private void cera$itemEmissivePass(ItemRenderer self, BakedModel model, ItemStack stack, Operation<Void> original) {
+        EmissiveTextures emissive = Minecraft.getInstance().getTextureManager().cera$getEmissiveTextures();
+        if (!emissive.active()) {
+            original.call(self, model, stack);
+            return;
+        }
+        this.cera$hasEmissive = false;
+        original.call(self, model, stack);
+        if (this.cera$hasEmissive) {
+            emissive.forceFullbright();
+            this.cera$emissive = true;
+            try {
+                original.call(self, model, stack);
+            } finally {
+                this.cera$emissive = false;
+                emissive.restoreBrightness();
+            }
+        }
+    }
+
+    // On the emissive pass, draw each quad's _e twin (skip quads without one); otherwise just flag them.
+    @WrapOperation(method = "renderQuads(Lnet/minecraft/client/render/vertex/BufferBuilder;Ljava/util/List;ILnet/minecraft/item/ItemStack;)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/ItemRenderer;renderQuad(Lnet/minecraft/client/render/vertex/BufferBuilder;Lnet/minecraft/client/resource/model/BakedQuad;I)V"))
+    private void cera$emissiveQuad(ItemRenderer self, BufferBuilder buffer, BakedQuad quad, int color, Operation<Void> original) {
+        var base = (TextureAtlasSprite) BakedQuadView.of(quad).celeritas$getSprite();
+        TextureAtlasSprite twin = Minecraft.getInstance().getTextureManager().cera$getEmissiveTextures().emissiveSprite(base);
+        if (this.cera$emissive) {
+            if (twin != null) original.call(self, buffer, EmissiveTextures.resprite(quad, base, twin), color);
+            return;
+        }
+        if (twin != null) this.cera$hasEmissive = true;
+        original.call(self, buffer, quad, color);
     }
 }

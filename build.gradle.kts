@@ -63,9 +63,7 @@ loom {
 }
 
 dependencies {
-    include(implementation("org.joml:joml:1.10.5")!!)
-    implementation("it.unimi.dsi:fastutil:8.5.15")
-    implementation("org.apache.logging.log4j:log4j-api:2.0-beta9")
+    include(api("org.joml:joml:1.10.5")!!)
     include(api("org.embeddedt.celeritas:celeritas-common:${property("celeritas_version")}")!!)
 }
 

@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import dev.rdh.cera.ext.CeraTextureManagerExtension;
 import dev.rdh.cera.modules.AnimatedTextures;
 import dev.rdh.cera.modules.CustomGuis;
+import dev.rdh.cera.modules.EmissiveTextures;
 import dev.rdh.cera.modules.random.RandomEntities;
 
 @Mixin(TextureManager.class)
@@ -27,9 +28,17 @@ public class TextureManagerMixin implements CeraTextureManagerExtension {
     @Unique
     private final RandomEntities cera$randomEntities = new RandomEntities();
 
+    @Unique
+    private final EmissiveTextures cera$emissiveTextures = new EmissiveTextures();
+
     @Override
     public AnimatedTextures cera$getAnimatedTextures() {
         return this.cera$animatedTextures;
+    }
+
+    @Override
+    public EmissiveTextures cera$getEmissiveTextures() {
+        return this.cera$emissiveTextures;
     }
 
     @Override
@@ -50,6 +59,11 @@ public class TextureManagerMixin implements CeraTextureManagerExtension {
     @ModifyVariable(method = "bind", at = @At("HEAD"), argsOnly = true)
     private Identifier cera$randomizeEntityTexture(Identifier texture) {
         return cera$randomEntities.apply(texture);
+    }
+
+    @ModifyVariable(method = "bind", at = @At("HEAD"), argsOnly = true)
+    private Identifier cera$emissiveTexture(Identifier texture) {
+        return cera$emissiveTextures.resolveBound(texture);
     }
 
     @ModifyExpressionValue(

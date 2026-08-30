@@ -82,6 +82,16 @@ final class InstanceBatcher {
             textureCount += culled.textures;
             GlStateManager.disableCull();
         }
+        if (this.has(InstanceRenderPass.EMISSIVE_REPLACE)) {
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GlStateManager.depthMask(false);
+            Stats replace = this.renderPass(commandList, program, InstanceRenderPass.EMISSIVE_REPLACE);
+            draws += replace.draws;
+            textureCount += replace.textures;
+            GlStateManager.depthMask(true);
+            GlStateManager.disableBlend();
+        }
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         if (this.has(InstanceRenderPass.ITEM)) {
@@ -102,7 +112,11 @@ final class InstanceBatcher {
         draws += translucent.draws;
         textureCount += translucent.textures;
         GlStateManager.blendFunc(1, 1);
+        // Additive emissive overlays sit on already-drawn geometry; writing depth only makes their
+        // (uncensored, non-culled) coplanar faces z-fight, so test against the base depth without writing.
+        GlStateManager.depthMask(false);
         Stats emissive = this.renderPass(commandList, program, InstanceRenderPass.EMISSIVE);
+        GlStateManager.depthMask(true);
         draws += emissive.draws;
         textureCount += emissive.textures;
         Stats charge = this.renderPass(commandList, program, InstanceRenderPass.CREEPER_CHARGE);
