@@ -1,4 +1,4 @@
-package dev.rdh.cera.mixin;
+package dev.rdh.cera.mixin.colors;
 
 import net.minecraft.block.material.MapColor;
 import org.spongepowered.asm.mixin.Mixin;

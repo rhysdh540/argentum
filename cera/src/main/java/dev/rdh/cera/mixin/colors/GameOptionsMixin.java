@@ -1,4 +1,4 @@
-package dev.rdh.cera.mixin;
+package dev.rdh.cera.mixin.colors;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.Minecraft;

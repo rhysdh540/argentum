@@ -1,12 +1,10 @@
-package dev.rdh.cera.mixin;
+package dev.rdh.cera.mixin.colors;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.particle.LiquidDripParticle;
 import net.minecraft.client.entity.particle.Particle;
-import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

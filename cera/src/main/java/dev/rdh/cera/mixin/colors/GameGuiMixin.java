@@ -1,4 +1,4 @@
-package dev.rdh.cera.mixin;
+package dev.rdh.cera.mixin.colors;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GameGui;
@@ -6,9 +6,6 @@ import net.minecraft.client.gui.GameGui;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Constant;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.ModifyConstant;
 
 @Mixin(GameGui.class)
 public class GameGuiMixin {

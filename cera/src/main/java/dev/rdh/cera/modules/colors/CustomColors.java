@@ -1,7 +1,7 @@
 package dev.rdh.cera.modules.colors;
 
 import dev.rdh.cera.Cera;
-import dev.rdh.cera.mixin.MapColorAccessor;
+import dev.rdh.cera.mixin.colors.MapColorAccessor;
 import dev.rdh.cera.mixin.TextRendererInvoker;
 import dev.rdh.cera.props.Props;
 import dev.rdh.argentum.impl.ext.TextRendererExtension;

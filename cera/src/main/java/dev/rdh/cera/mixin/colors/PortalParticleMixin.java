@@ -1,4 +1,4 @@
-package dev.rdh.cera.mixin;
+package dev.rdh.cera.mixin.colors;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.particle.Particle;

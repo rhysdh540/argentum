@@ -1,11 +1,10 @@
-package dev.rdh.cera.mixin;
+package dev.rdh.cera.mixin.colors;
 
 import net.minecraft.block.Blocks;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.particle.Particle;
 import net.minecraft.client.entity.particle.RedstoneParticle;
-import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
