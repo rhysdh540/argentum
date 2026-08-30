@@ -87,6 +87,9 @@ public final class CustomColors implements ResourceReloadListener {
     private volatile int expBarTextColor = -1;
     private volatile int bossTextColor = -1;
     private volatile int armorDefaultColor = -1;
+    private volatile int netherFogColor = -1;
+    private volatile int endFogColor = -1;
+    private volatile int endSkyColor = -1;
     private volatile CloudMode cloudMode = CloudMode.DEFAULT;
     private volatile int[] lavaDropPalette;
     private volatile int[] xpOrbPalette;
@@ -103,6 +106,7 @@ public final class CustomColors implements ResourceReloadListener {
         int[] text = unsetTextColors();
         int waterColor = -1, lavaColor = -1, portalColor = -1, lilypad = -1, signText = -1;
         int expBar = -1, bossText = -1, armorDefault = -1;
+        int netherFog = -1, endFog = -1, endSky = -1;
         CloudMode clouds = CloudMode.DEFAULT;
         int xpTime = 628;
 
@@ -126,6 +130,9 @@ public final class CustomColors implements ResourceReloadListener {
                 expBar = props.getColor("text.xpbar").orElse(expBar);
                 bossText = props.getColor("text.boss").orElse(bossText);
                 armorDefault = props.getColor("armor.default").orElse(armorDefault);
+                netherFog = props.getColor("fog.nether").orElse(netherFog);
+                endFog = props.getColor("fog.end").orElse(endFog);
+                endSky = props.getColor("sky.end").orElse(endSky);
                 clouds = parseCloudMode(props.get("clouds"), clouds);
                 xpTime = props.getInt("xporb.time", xpTime).orElse(xpTime);
             } catch (IOException e) {
@@ -147,6 +154,9 @@ public final class CustomColors implements ResourceReloadListener {
         this.expBarTextColor = expBar;
         this.bossTextColor = bossText;
         this.armorDefaultColor = armorDefault;
+        this.netherFogColor = netherFog;
+        this.endFogColor = endFog;
+        this.endSkyColor = endSky;
         this.cloudMode = clouds;
         this.lavaDropPalette = readPalette(resources, "lavadrop.png");
         this.xpOrbPalette = readPalette(resources, "xporb.png");
@@ -207,6 +217,18 @@ public final class CustomColors implements ResourceReloadListener {
 
     public int getArmorDefaultColor(int fallback) {
         return enabled() && this.armorDefaultColor >= 0 ? this.armorDefaultColor : fallback;
+    }
+
+    public int getNetherFogColor(int fallback) {
+        return enabled() && this.netherFogColor >= 0 ? this.netherFogColor : fallback;
+    }
+
+    public int getEndFogColor(int fallback) {
+        return enabled() && this.endFogColor >= 0 ? this.endFogColor : fallback;
+    }
+
+    public int getEndSkyColor(int fallback) {
+        return enabled() && this.endSkyColor >= 0 ? this.endSkyColor : fallback;
     }
 
     public CloudMode getCloudMode() {

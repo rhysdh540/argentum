@@ -58,7 +58,11 @@ public final class CustomColormaps implements ResourceReloadListener {
                 loadNamed(resources, "redstone.png", "redstonecolor.png"),
                 loadNamed(resources, "stem.png", "stemcolor.png"),
                 loadNamed(resources, "pumpkinstem.png"),
-                loadNamed(resources, "melonstem.png")
+                loadNamed(resources, "melonstem.png"),
+                loadNamed(resources, "sky0.png", "skycolor0.png"),
+                loadNamed(resources, "fog0.png", "fogcolor0.png"),
+                loadNamed(resources, "underwater.png", "underwatercolor.png"),
+                loadNamed(resources, "underlava.png", "underlavacolor.png")
         );
 
 		StringBuilder sb = new StringBuilder("[CustomColormaps] loaded {} block maps");
@@ -151,9 +155,32 @@ public final class CustomColormaps implements ResourceReloadListener {
 
     /** Biome water-colormap sample (for particle tinting), or {@code -1} if no water colormap is loaded. */
     public int waterColor(Biome biome, BlockPos pos) {
+        return sampleWorld(this.state.water, biome, pos);
+    }
+
+    /** Overworld sky-colormap sample ({@code sky0.png}), or {@code -1}. */
+    public int skyColor(Biome biome, BlockPos pos) {
+        return sampleWorld(this.state.sky, biome, pos);
+    }
+
+    /** Overworld fog-colormap sample ({@code fog0.png}), or {@code -1}. */
+    public int fogColor(Biome biome, BlockPos pos) {
+        return sampleWorld(this.state.fog, biome, pos);
+    }
+
+    /** Underwater tint sample ({@code underwater.png}), or {@code -1}. */
+    public int underwaterColor(Biome biome, BlockPos pos) {
+        return sampleWorld(this.state.underwater, biome, pos);
+    }
+
+    /** Under-lava tint sample ({@code underlava.png}), or {@code -1}. */
+    public int underlavaColor(Biome biome, BlockPos pos) {
+        return sampleWorld(this.state.underlava, biome, pos);
+    }
+
+    private int sampleWorld(Colormap colormap, Biome biome, BlockPos pos) {
         if (!Cera.CONFIG.customColors) return -1;
-        Colormap water = this.state.water;
-        return water != null ? water.resolve(biome, pos) : -1;
+        return colormap != null ? colormap.resolve(biome, pos) : -1;
     }
 
     public boolean hasBlockColormap(BlockState state) {
@@ -295,9 +322,10 @@ public final class CustomColormaps implements ResourceReloadListener {
             Colormap swampGrass, Colormap swampFoliage,
             BiomeColorSource swampGrassSource, BiomeColorSource swampFoliageSource,
             Colormap redstone,
-            Colormap stem, Colormap pumpkinStem, Colormap melonStem
+            Colormap stem, Colormap pumpkinStem, Colormap melonStem,
+            Colormap sky, Colormap fog, Colormap underwater, Colormap underlava
     ) {
-        static final State EMPTY = new State(Map.of(), null, null, null, null, null, null, null, null, null, null, null);
+        static final State EMPTY = new State(Map.of(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     record Colormap(

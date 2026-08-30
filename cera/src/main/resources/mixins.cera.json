@@ -40,6 +40,9 @@
     "PlayerRendererMixin",
     "TextureAtlasMixin",
     "TextureManagerMixin",
+    "colors.WorldMixin",
+    "colors.EndSkyMixin",
+    "colors.GameRendererMixin",
     "WorldRendererMixin"
   ],
   "injectors": {

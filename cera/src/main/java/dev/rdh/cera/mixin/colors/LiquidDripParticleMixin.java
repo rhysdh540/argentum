@@ -22,7 +22,6 @@ public class LiquidDripParticleMixin extends Particle {
         super(null, 0, 0, 0);
     }
 
-    // tick() re-derives the drip color from its material every frame, so override here rather than in the constructor.
     @Inject(method = "tick", at = @At("TAIL"))
     private void cera$dripColor(CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
