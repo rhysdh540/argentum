@@ -35,7 +35,7 @@ public final class LightMaps implements ResourceReloadListener {
     }
 
     public boolean apply(int[] out, World world, float flicker, float tickDelta, boolean nightvision, float gamma) {
-        if (!Cera.CONFIG.customColors) return false;
+        if (!Cera.CONFIG.customLightmaps) return false;
         Pack pack = this.packs.get(world.dimension.getId());
         return pack != null && compute(pack, out, world, flicker, tickDelta, nightvision, gamma);
     }

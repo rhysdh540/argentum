@@ -11,6 +11,7 @@ public class CeraConfig {
     public boolean naturalTextures = true;
     public boolean animatedTextures = true;
     public boolean customColors = true;
+    public boolean customLightmaps = true;
     public boolean randomEntities = true;
     public boolean customSky = true;
     public boolean customGuis = true;
