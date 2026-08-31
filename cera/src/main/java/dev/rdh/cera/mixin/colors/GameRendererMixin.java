@@ -10,6 +10,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.living.effect.StatusEffect;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
@@ -69,8 +70,8 @@ public class GameRendererMixin {
             return;
         }
         if (color < 0) return;
-        this.fogRed = (color >> 16 & 0xFF) / 255.0F;
-        this.fogGreen = (color >> 8 & 0xFF) / 255.0F;
-        this.fogBlue = (color & 0xFF) / 255.0F;
+        this.fogRed = ColorARGB.unpackRed(color) / 255.0F;
+        this.fogGreen = ColorARGB.unpackGreen(color) / 255.0F;
+        this.fogBlue = ColorARGB.unpackBlue(color) / 255.0F;
     }
 }

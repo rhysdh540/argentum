@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.particle.Particle;
 import net.minecraft.client.entity.particle.PortalParticle;
 import net.minecraft.world.World;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,7 +16,7 @@ public class PortalParticleMixin {
     private void cera$portalColor(World world, double x, double y, double z, double vx, double vy, double vz, CallbackInfo ci) {
         int color = Minecraft.getInstance().cera$getCustomColors().getParticlePortalColor(-1);
         if (color >= 0) {
-            ((Particle) (Object) this).setColor((color >> 16 & 0xFF) / 255.0F, (color >> 8 & 0xFF) / 255.0F, (color & 0xFF) / 255.0F);
+            ((Particle) (Object) this).setColor(ColorARGB.unpackRed(color) / 255.0F, ColorARGB.unpackGreen(color) / 255.0F, ColorARGB.unpackBlue(color) / 255.0F);
         }
     }
 }

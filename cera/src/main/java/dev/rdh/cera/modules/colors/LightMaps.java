@@ -8,6 +8,7 @@ import net.minecraft.world.World;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -76,12 +77,12 @@ public final class LightMaps implements ResourceReloadListener {
             float r = 0, g = 0, b = 0, total = 0;
             for (int c = 0; c < count; c++) {
                 int col = buffers[c][i];
-                r += (col >> 16 & 0xFF) * weights[c];
-                g += (col >> 8 & 0xFF) * weights[c];
-                b += (col & 0xFF) * weights[c];
+                r += ColorARGB.unpackRed(col) * weights[c];
+                g += ColorARGB.unpackGreen(col) * weights[c];
+                b += ColorARGB.unpackBlue(col) * weights[c];
                 total += weights[c];
             }
-            out[i] = 0xFF000000 | (int) (r / total) << 16 | (int) (g / total) << 8 | (int) (b / total);
+            out[i] = ColorARGB.pack((int) (r / total), (int) (g / total), (int) (b / total));
         }
         return true;
     }
@@ -107,7 +108,7 @@ public final class LightMaps implements ResourceReloadListener {
                 int r = channel(this.sunRgb[sky][0] + this.torchRgb[block][0], gamma, hasGamma);
                 int g = channel(this.sunRgb[sky][1] + this.torchRgb[block][1], gamma, hasGamma);
                 int b = channel(this.sunRgb[sky][2] + this.torchRgb[block][2], gamma, hasGamma);
-                out[sky * 16 + block] = 0xFF000000 | r << 16 | g << 8 | b;
+                out[sky * 16 + block] = ColorARGB.pack(r, g, b);
             }
         }
         return true;
@@ -122,9 +123,9 @@ public final class LightMaps implements ResourceReloadListener {
             int pLow = map.pixels[offset + y * width + low];
             int pHigh = low == high ? pLow : map.pixels[offset + y * width + high];
             float weightLow = low == high ? 1.0F : dLow, weightHigh = low == high ? 0.0F : dHigh;
-            out[y][0] = (pLow >> 16 & 0xFF) * weightLow / 255.0F + (pHigh >> 16 & 0xFF) * weightHigh / 255.0F;
-            out[y][1] = (pLow >> 8 & 0xFF) * weightLow / 255.0F + (pHigh >> 8 & 0xFF) * weightHigh / 255.0F;
-            out[y][2] = (pLow & 0xFF) * weightLow / 255.0F + (pHigh & 0xFF) * weightHigh / 255.0F;
+            out[y][0] = ColorARGB.unpackRed(pLow) * weightLow / 255.0F + ColorARGB.unpackRed(pHigh) * weightHigh / 255.0F;
+            out[y][1] = ColorARGB.unpackGreen(pLow) * weightLow / 255.0F + ColorARGB.unpackGreen(pHigh) * weightHigh / 255.0F;
+            out[y][2] = ColorARGB.unpackBlue(pLow) * weightLow / 255.0F + ColorARGB.unpackBlue(pHigh) * weightHigh / 255.0F;
         }
     }
 

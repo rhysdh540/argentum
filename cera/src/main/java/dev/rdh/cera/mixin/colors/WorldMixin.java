@@ -6,6 +6,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -41,9 +42,9 @@ public class WorldMixin {
     @Unique
     private static Vec3d cera$toVec(int color, Vec3d fallback) {
         return color >= 0 ? new Vec3d(
-                (color >> 16 & 0xFF) / 255.0,
-                (color >> 8 & 0xFF) / 255.0,
-                (color & 0xFF) / 255.0
+                ColorARGB.unpackRed(color) / 255.0,
+                ColorARGB.unpackGreen(color) / 255.0,
+                ColorARGB.unpackBlue(color) / 255.0
         ) : fallback;
     }
 }

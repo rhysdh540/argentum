@@ -18,6 +18,7 @@ import net.minecraft.resource.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
 
@@ -364,13 +365,13 @@ public final class CustomColormaps implements ResourceReloadListener {
         }
 
         int getColorByIndex(int index) {
-            return this.colors[Math.clamp(index, 0, this.colors.length - 1)] & 0xFFFFFF;
+            return ColorARGB.withAlpha(this.colors[Math.clamp(index, 0, this.colors.length - 1)], 0);
         }
 
         private int sample(int cx, int cy) {
             cx = Math.clamp(cx, 0, this.width - 1);
             cy = Math.clamp(cy, 0, this.height - 1);
-            return this.colors[cy * this.width + cx] & 0xFFFFFF;
+            return ColorARGB.withAlpha(this.colors[cy * this.width + cx], 0);
         }
 
     }

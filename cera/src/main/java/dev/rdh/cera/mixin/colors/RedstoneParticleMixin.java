@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.particle.Particle;
 import net.minecraft.client.entity.particle.RedstoneParticle;
 import net.minecraft.util.math.BlockPos;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,7 +26,7 @@ public class RedstoneParticleMixin extends Particle {
         int level = state.getBlock().getMetadataFromState(state);
         int color = Minecraft.getInstance().getBlocksAtlas().cera$getCustomColormaps().redstoneColor(level);
         if (color >= 0) {
-            this.setColor((color >> 16 & 0xFF) / 255.0F, (color >> 8 & 0xFF) / 255.0F, (color & 0xFF) / 255.0F);
+            this.setColor(ColorARGB.unpackRed(color) / 255.0F, ColorARGB.unpackGreen(color) / 255.0F, ColorARGB.unpackBlue(color) / 255.0F);
         }
     }
 }

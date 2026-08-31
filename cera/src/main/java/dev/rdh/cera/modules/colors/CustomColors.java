@@ -17,6 +17,7 @@ import net.minecraft.resource.Identifier;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -270,7 +271,7 @@ public final class CustomColors implements ResourceReloadListener {
 
     private static int sample(int[] palette, int index, int fallback) {
         if (!enabled() || palette == null || palette.length == 0) return fallback;
-        return palette[Math.clamp(index, 0, palette.length - 1)] & 0xFFFFFF;
+        return ColorARGB.withAlpha(palette[Math.clamp(index, 0, palette.length - 1)], 0);
     }
 
     private static int[] readPalette(ResourceManager resources, String name) {
@@ -379,7 +380,7 @@ public final class CustomColors implements ResourceReloadListener {
             Integer ordinal = DYE_ORDINALS.get(name);
             int color = props.getColor(key).orElse(-1);
             if (ordinal != null && color >= 0) {
-                out[ordinal] = new float[]{(color >> 16 & 0xFF) / 255.0F, (color >> 8 & 0xFF) / 255.0F, (color & 0xFF) / 255.0F};
+                out[ordinal] = new float[]{ColorARGB.unpackRed(color) / 255.0F, ColorARGB.unpackGreen(color) / 255.0F, ColorARGB.unpackBlue(color) / 255.0F};
             } else {
                 Cera.LOGGER.warn("[CustomColors] Invalid dye entry: {}", key);
             }

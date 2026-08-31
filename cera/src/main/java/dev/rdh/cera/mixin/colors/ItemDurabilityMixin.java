@@ -2,6 +2,7 @@ package dev.rdh.cera.mixin.colors;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.entity.ItemRenderer;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
@@ -14,9 +15,9 @@ public class ItemDurabilityMixin {
         int g = args.get(6);
         int color = Minecraft.getInstance().cera$getCustomColors().getDurabilityColor(g, -1);
         if (color >= 0) {
-            args.set(5, color >> 16 & 0xFF); // red
-            args.set(6, color >> 8 & 0xFF); // green
-            args.set(7, color & 0xFF); // blue
+            args.set(5, ColorARGB.unpackRed(color)); // red
+            args.set(6, ColorARGB.unpackGreen(color)); // green
+            args.set(7, ColorARGB.unpackBlue(color)); // blue
         }
     }
 }

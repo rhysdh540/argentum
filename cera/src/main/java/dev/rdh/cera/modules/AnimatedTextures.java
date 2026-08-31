@@ -11,6 +11,7 @@ import net.minecraft.resource.Identifier;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
+import org.embeddedt.embeddium.api.util.ColorMixer;
 
 import javax.imageio.ImageIO;
 import java.awt.Graphics2D;
@@ -266,20 +267,12 @@ public final class AnimatedTextures implements ResourceReloadListener {
                     System.arraycopy(this.strip, source, pixels, target, this.width);
                 } else {
                     int blended = (next * this.height + v) * this.width;
+                    float ratio = (float) k;
                     for (int u = 0; u < this.width; u++) {
-                        pixels[target + u] = mix(this.strip[source + u], this.strip[blended + u], k);
+                        pixels[target + u] = ColorMixer.mix(this.strip[blended + u], this.strip[source + u], ratio);
                     }
                 }
             }
-        }
-
-        private static int mix(int first, int second, double k) {
-            double inverse = 1.0 - k;
-            int alpha = (int) ((first >>> 24) * inverse + (second >>> 24) * k);
-            int red = (int) ((first >>> 16 & 255) * inverse + (second >>> 16 & 255) * k);
-            int green = (int) ((first >>> 8 & 255) * inverse + (second >>> 8 & 255) * k);
-            int blue = (int) ((first & 255) * inverse + (second & 255) * k);
-            return alpha << 24 | red << 16 | green << 8 | blue;
         }
     }
 

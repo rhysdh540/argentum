@@ -6,9 +6,10 @@ import net.minecraft.client.entity.particle.LiquidDripParticle;
 import net.minecraft.client.entity.particle.Particle;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
+import org.embeddedt.embeddium.api.util.ColorARGB;
+import org.embeddedt.embeddium.api.util.ColorMixer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -33,7 +34,7 @@ public class LiquidDripParticleMixin extends Particle {
             int mult = mc.cera$getCustomColors().getParticleWaterColor(-1);
             if (custom < 0 && mult < 0) return;
             int biomeWater = custom >= 0 ? custom : biome.waterFogColor;
-            color = mult >= 0 ? multiply(biomeWater, mult) : biomeWater;
+            color = mult >= 0 ? ColorMixer.mul(biomeWater, mult) : biomeWater;
         } else if (this.material == Material.LAVA) {
             var colors = mc.cera$getCustomColors();
             color = colors.getLavaDropColor(this.age, colors.getParticleLavaColor(-1));
@@ -41,14 +42,6 @@ public class LiquidDripParticleMixin extends Particle {
         } else {
             return;
         }
-        this.setColor((color >> 16 & 0xFF) / 255.0F, (color >> 8 & 0xFF) / 255.0F, (color & 0xFF) / 255.0F);
-    }
-
-    @Unique
-    private static int multiply(int a, int b) {
-        int r = (a >> 16 & 0xFF) * (b >> 16 & 0xFF) / 255;
-        int g = (a >> 8 & 0xFF) * (b >> 8 & 0xFF) / 255;
-        int bl = (a & 0xFF) * (b & 0xFF) / 255;
-        return r << 16 | g << 8 | bl;
+        this.setColor(ColorARGB.unpackRed(color) / 255.0F, ColorARGB.unpackGreen(color) / 255.0F, ColorARGB.unpackBlue(color) / 255.0F);
     }
 }

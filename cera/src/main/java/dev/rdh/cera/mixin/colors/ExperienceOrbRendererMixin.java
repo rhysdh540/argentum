@@ -5,6 +5,7 @@ import dev.rdh.cera.modules.colors.CustomColors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.entity.ExperienceOrbRenderer;
 import net.minecraft.entity.ExperienceOrbEntity;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
@@ -20,9 +21,9 @@ public class ExperienceOrbRendererMixin {
         if (time > 0) timer *= 628.0F / time;
         int color = colors.getXpOrbColor(timer, -1);
         if (color >= 0) {
-            args.set(0, color >> 16 & 0xFF);
-            args.set(1, color >> 8 & 0xFF);
-            args.set(2, color & 0xFF);
+            args.set(0, ColorARGB.unpackRed(color));
+            args.set(1, ColorARGB.unpackGreen(color));
+            args.set(2, ColorARGB.unpackBlue(color));
         }
     }
 }
