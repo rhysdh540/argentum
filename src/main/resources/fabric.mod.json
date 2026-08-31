@@ -12,7 +12,8 @@
   "authors": ["rdh"],
   "contributors": ["embeddedt", "JellySquid", "IMS212"],
   "entrypoints": {
-    "client": ["dev.rdh.argentum.impl.Argentum"]
+    "client": ["dev.rdh.argentum.impl.Argentum"],
+    "modmenu": ["dev.rdh.argentum.impl.config.ModMenuCompat"]
   },
   "dependencies": {
     "minecraft": "1.8.9",

@@ -18,10 +18,7 @@ public final class VideoOptionsScreen extends Screen {
 
     public VideoOptionsScreen(Screen parent) {
         this.parent = parent;
-        this.controller = new CeleritasVideoOptionsController(
-                () -> this.minecraft.openScreen(this.parent),
-                List.of(ArgentumOptionPages.general(), ArgentumOptionPages.quality(), ArgentumOptionPages.performance(), ArgentumOptionPages.advanced()),
-                this.context) {
+        this.controller = new CeleritasVideoOptionsController(() -> this.minecraft.openScreen(this.parent), List.of(), this.context) {
             @Override
             protected void applyFlagSideEffects(Set<OptionFlag> flags) {
                 super.applyFlagSideEffects(flags);

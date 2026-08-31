@@ -26,10 +26,19 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-final class ArgentumOptionPages {
+public final class ArgentumOptionPages {
     private static final GameOptionsStorage VANILLA = new GameOptionsStorage();
     private static final ArgentumConfig CONFIG = Argentum.CONFIG;
     private static final JsonOptionStorage<ArgentumConfig> CONFIG_STORAGE = Argentum.CONFIG_STORAGE;
+
+    public static List<OptionPage> create() {
+        return List.of(
+                general(),
+                quality(),
+                performance(),
+                advanced()
+        );
+    }
 
     private static final class Group {
         private static final OptionIdentifier<Void> RENDERING = OptionIdentifier.create(Argentum.ID, "rendering");
