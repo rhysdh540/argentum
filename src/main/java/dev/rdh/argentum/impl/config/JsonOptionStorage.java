@@ -7,11 +7,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.taumc.celeritas.api.options.structure.OptionStorage;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -65,10 +67,20 @@ public final class JsonOptionStorage<T> implements OptionStorage<T> {
     public void save() {
         this.validator.accept(this.data);
         try {
-            Files.createDirectories(this.path.getParent());
-            try (Writer writer = Files.newBufferedWriter(this.path, StandardCharsets.UTF_8)) {
+            Path dir = this.path.getParent();
+
+            if (!Files.exists(dir)) {
+                Files.createDirectories(dir);
+            } else if (!Files.isDirectory(dir)) {
+                throw new IOException("Not a directory: " + dir);
+            }
+
+            Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
+
+            try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
                 gson.toJson(this.data, writer);
             }
+            Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (Exception e) {
             LOGGER.error("Could not save configuration to {}", this.path, e);
         }

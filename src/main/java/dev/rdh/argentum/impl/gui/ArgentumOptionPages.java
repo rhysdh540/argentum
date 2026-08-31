@@ -221,7 +221,7 @@ public final class ArgentumOptionPages {
                 .add(option(boolean.class, VANILLA, StandardOptions.Option.ENTITY_SHADOWS)
                         .setName(vanilla("options.entityShadows"))
                         .setControl(TickBoxControl::new)
-                        .setBinding((options, value) -> options.renderClouds = value, options -> options.renderClouds)
+                        .setBinding((options, value) -> options.entityShadows = value, options -> options.entityShadows)
                         .setImpact(OptionImpact.LOW)
                         .build())
                 .add(option(int.class, VANILLA, StandardOptions.Option.MIPMAP_LEVEL)

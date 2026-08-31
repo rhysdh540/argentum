@@ -161,8 +161,13 @@ final class InstanceBatcher {
     }
 
     private boolean has(InstanceRenderPass pass) {
-        return this.textures.get(pass).values().stream().anyMatch(batch -> batch.count != 0)
-                || this.arrayTextures.get(pass).values().stream().anyMatch(batch -> batch.count != 0);
+        for (TextureBatch batch : this.textures.get(pass).values()) {
+            if (batch.count != 0) return true;
+        }
+        for (TextureBatch batch : this.arrayTextures.get(pass).values()) {
+            if (batch.count != 0) return true;
+        }
+        return false;
     }
 
     private Stats renderPass(CommandList commandList, GlProgram<InstanceShader> program, InstanceRenderPass pass) {
@@ -175,9 +180,10 @@ final class InstanceBatcher {
                 && pass != InstanceRenderPass.TRANSLUCENT
         );
         program.getInterface().setChargePass(pass.chargePass);
+        var textureManager = Minecraft.getInstance().getTextureManager();
         for (TextureBatch texture : this.textures.get(pass).values()) {
             if (texture.count == 0) continue;
-            Minecraft.getInstance().getTextureManager().bind(texture.texture);
+            textureManager.bind(texture.texture);
             program.getInterface().setTextureArray(false);
             draws += texture.render(commandList, pass == InstanceRenderPass.TRANSLUCENT);
             textureCount++;

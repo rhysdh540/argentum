@@ -1,9 +1,11 @@
 package dev.rdh.cera.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import net.minecraft.client.render.texture.AbstractTexture;
 import net.minecraft.client.render.texture.SimpleTexture;
 import net.minecraft.client.render.texture.Texture;
 import net.minecraft.client.render.texture.TextureManager;
+import net.minecraft.client.render.texture.TextureUtil;
 import net.minecraft.resource.Identifier;
 
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
@@ -93,7 +95,25 @@ public class TextureManagerMixin implements CeraTextureManagerExtension {
     @Inject(method = "reload", at = @At("HEAD"))
     private void cera$pruneMissingTextures(CallbackInfo ci) {
         var resources = ResourceManager.client();
-        this.textures.entrySet().removeIf(entry ->
-                entry.getValue() instanceof SimpleTexture && !resources.hasResource(entry.getKey()));
+        this.textures.entrySet().removeIf(entry -> {
+            Texture texture = entry.getValue();
+
+            // A failed load leaves the shared MISSING_TEXTURE behind, and it is never a SimpleTexture
+            // afterwards. Drop the mapping once the resource is back so the next bind retries it, but
+            // never delete its GL id -- every failed texture shares the one instance.
+            if (texture == TextureUtil.MISSING_TEXTURE) {
+                return resources.hasResource(entry.getKey());
+            }
+
+            // bind() is the only thing that ever constructs a plain SimpleTexture, so this is exactly
+            // the set of pack-backed textures created on a map miss. Subclasses are excluded on
+            // purpose: HttpTexture (skins, capes) loads from the skin cache, not a resource pack.
+            if (texture.getClass() != SimpleTexture.class || resources.hasResource(entry.getKey())) {
+                return false;
+            }
+
+            ((AbstractTexture)texture).clearGlId();
+            return true;
+        });
     }
 }

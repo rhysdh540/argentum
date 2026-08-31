@@ -185,6 +185,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
         this.entityOcclusionCuller.prepare(entities, camera, cameraX, cameraY, cameraZ);
 
         int rendered = 0;
+        boolean isSelfSleeping = minecraft.getCamera() instanceof LivingEntity living && living.isSleeping();
         BlockPos.Mutable entityBlockPos = new BlockPos.Mutable();
         try {
             for (Entity entity : entities) {
@@ -201,7 +202,6 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
                     continue;
                 }
 
-                boolean isSelfSleeping = minecraft.getCamera() instanceof LivingEntity living && living.isSleeping();
                 if (entity == minecraft.getCamera() && minecraft.options.perspective == 0 && !isSelfSleeping) {
                     continue;
                 }

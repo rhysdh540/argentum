@@ -5,3 +5,5 @@ c	net/minecraft/unmapped/C_40996800	net/minecraft/entity/living/player/PlayerEnt
 	f	F	f_76552083	speedInAir
 c	net/minecraft/unmapped/C_63022874	net/minecraft/client/render/texture/HttpTexture
 	f	Ljava/io/File;	f_34993787	file
+c	net/minecraft/unmapped/C_76792751	net/minecraft/client/options/GameOptions
+	f	Z	f_53941007	entityShadows

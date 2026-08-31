@@ -81,11 +81,7 @@ public final class RenderMetrics {
     public static void recordChunkBuild(long nanos) {
         chunkBuildCount.increment();
         chunkBuildNanos.add(nanos);
-
-        long longest = longestChunkBuild.get();
-        while (nanos > longest && !longestChunkBuild.compareAndSet(longest, nanos)) {
-            longest = longestChunkBuild.get();
-        }
+        longestChunkBuild.accumulateAndGet(nanos, Math::max);
     }
 
     public static List<String> getDebugStrings() {

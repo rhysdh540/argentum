@@ -23,11 +23,11 @@ public enum LeafQuality {
         return this != FAST;
     }
 
-    public boolean rendersBlock(WorldView world, BlockPos pos) {
-        return this != ENCLOSED || !isEnclosed(world, pos);
+    public boolean rendersBlock(WorldView world, BlockPos pos, BlockPos.Mutable cursor) {
+        return this != ENCLOSED || !isEnclosed(world, pos.getX(), pos.getY(), pos.getZ(), cursor);
     }
 
-    public boolean rendersQuad(WorldView world, BlockState state, BlockPos pos, BakedQuadView quad) {
+    public boolean rendersQuad(WorldView world, BlockState state, BlockPos pos, BakedQuadView quad, BlockPos.Mutable cursor) {
         if (!(state.getBlock() instanceof AbstractLeavesBlock)
                 || !ModelQuadFlags.contains(quad.getFlags(), ModelQuadFlags.IS_ALIGNED)) {
             return true;
@@ -36,27 +36,31 @@ public enum LeafQuality {
         ModelQuadFacing face = quad.getNormalFace();
         if (!face.isDirection()) return true;
 
-        BlockPos neighborPos = pos.add(face.getStepX(), face.getStepY(), face.getStepZ());
+        int x = pos.getX() + face.getStepX();
+        int y = pos.getY() + face.getStepY();
+        int z = pos.getZ() + face.getStepZ();
         return switch (this) {
-            case HOLLOW -> !(world.getBlockState(neighborPos).getBlock() instanceof AbstractLeavesBlock);
-            case SOLID -> !isEnclosed(world, neighborPos);
+            case HOLLOW -> {
+                cursor.set(x, y, z);
+                yield !(world.getBlockState(cursor).getBlock() instanceof AbstractLeavesBlock);
+            }
+            case SOLID -> !isEnclosed(world, x, y, z, cursor);
             default -> true;
         };
     }
 
-    public boolean usesSolidMaterial(WorldView world, BlockPos pos) {
-        return this == SOLID && isEnclosed(world, pos);
+    public boolean usesSolidMaterial(WorldView world, BlockPos pos, BlockPos.Mutable cursor) {
+        return this == SOLID && isEnclosed(world, pos.getX(), pos.getY(), pos.getZ(), cursor);
     }
 
-    private static boolean isEnclosed(WorldView world, BlockPos pos) {
-        if (!(world.getBlockState(pos).getBlock() instanceof AbstractLeavesBlock)) return false;
+    private static boolean isEnclosed(WorldView world, int x, int y, int z, BlockPos.Mutable cursor) {
+        cursor.set(x, y, z);
+        if (!(world.getBlockState(cursor).getBlock() instanceof AbstractLeavesBlock)) return false;
 
-        BlockPos.Mutable neighborPos = new BlockPos.Mutable();
         for (Direction direction : DIRECTIONS) {
-            neighborPos.set(pos.getX() + direction.getOffsetX(), pos.getY() + direction.getOffsetY(), pos.getZ() + direction.getOffsetZ());
-            Block neighbor = world.getBlockState(neighborPos).getBlock();
-            if (!(neighbor instanceof AbstractLeavesBlock)
-                    && !neighbor.isFaceSolid(world, neighborPos, direction.getOpposite())) {
+            cursor.set(x + direction.getOffsetX(), y + direction.getOffsetY(), z + direction.getOffsetZ());
+            Block neighbor = world.getBlockState(cursor).getBlock();
+            if (!(neighbor instanceof AbstractLeavesBlock) && !neighbor.isFaceSolid(world, cursor, direction.getOpposite())) {
                 return false;
             }
         }

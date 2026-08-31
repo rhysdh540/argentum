@@ -16,8 +16,8 @@ import net.minecraft.client.render.vertex.VertexBuffer;
 import net.minecraft.client.render.vertex.VertexFormat;
 import net.minecraft.resource.Identifier;
 
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -32,7 +32,6 @@ import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.ext.TextRendererExtension;
 
 import java.nio.IntBuffer;
-import java.util.Map;
 
 @Mixin(TextRenderer.class)
 public abstract class TextRendererMixin implements TextRendererExtension {
@@ -107,7 +106,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
     private float celeritas$alpha = 1.0F;
 
     @Unique
-    private Map<String, Integer> celeritas$widthCache;
+    private Object2IntOpenHashMap<String> celeritas$widthCache;
 
     @Unique
     private Object2ObjectLinkedOpenHashMap<GeometryKey, Geometry> celeritas$geometryCache;
@@ -145,7 +144,8 @@ public abstract class TextRendererMixin implements TextRendererExtension {
         this.celeritas$decorationBuffer = new BufferBuilder(4 * 1024 / Integer.BYTES);
         this.celeritas$elementBuffer = new BufferBuilder(128 * 1024 / Integer.BYTES);
         this.celeritas$uploader = new BufferUploader();
-        this.celeritas$widthCache = new Object2ObjectOpenHashMap<>(256);
+        this.celeritas$widthCache = new Object2IntOpenHashMap<>(256);
+        this.celeritas$widthCache.defaultReturnValue(-1);
         this.celeritas$geometryCache = new Object2ObjectLinkedOpenHashMap<>(256);
     }
 
@@ -155,8 +155,8 @@ public abstract class TextRendererMixin implements TextRendererExtension {
             return;
         }
 
-        Integer width = this.celeritas$widthCache.get(text);
-        if (width != null) {
+        int width = this.celeritas$widthCache.getInt(text);
+        if (width != -1) {
             cir.setReturnValue(width);
         }
     }
@@ -167,7 +167,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
             return;
         }
 
-        this.celeritas$widthCache.put(text, cir.getReturnValue());
+        this.celeritas$widthCache.put(text, cir.getReturnValueI());
         if (this.celeritas$widthCache.size() > WIDTH_CACHE_SIZE) {
             this.celeritas$widthCache.clear();
         }
@@ -176,7 +176,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
     @Inject(method = {"reload", "setUnicode"}, at = @At("RETURN"))
     private void celeritas$clearCaches(CallbackInfo ci) {
         this.celeritas$widthCache.clear();
-        this.celeritas$clearGeometryCache();
+        argentum$invalidateTextCache();
     }
 
     @Inject(method = "drawLayer(Ljava/lang/String;FFIZ)I", at = @At("HEAD"))
@@ -486,16 +486,11 @@ public abstract class TextRendererMixin implements TextRendererExtension {
         GlStateManager.popMatrix();
     }
 
-    @Unique
-    private void celeritas$clearGeometryCache() {
+    @Override
+    public void argentum$invalidateTextCache() {
         for (Geometry geometry : this.celeritas$geometryCache.values()) {
             geometry.buffer().delete();
         }
-        this.celeritas$geometryCache.clear();
-    }
-
-    @Override
-    public void argentum$invalidateTextCache() {
         this.celeritas$geometryCache.clear();
     }
 

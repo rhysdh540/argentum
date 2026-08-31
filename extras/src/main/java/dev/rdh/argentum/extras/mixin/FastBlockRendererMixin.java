@@ -16,12 +16,17 @@ import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadOrientation;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildBuffers;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.material.Material;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+@SuppressWarnings("LocalMayUseName") // seems unreliable
 @Mixin(value = FastBlockRenderer.class, remap = false)
 public class FastBlockRendererMixin {
+    @Unique
+    private final BlockPos.Mutable argentumExtras$cursor = new BlockPos.Mutable();
+
     @WrapWithCondition(method = "renderQuads",
             at = @At(value = "INVOKE",
                     target = "Ldev/rdh/argentum/impl/render/terrain/compile/pipeline/FastBlockRenderer;writeQuad(Lorg/embeddedt/embeddium/impl/model/quad/BakedQuadView;Lnet/minecraft/util/math/BlockPos;Lorg/embeddedt/embeddium/impl/render/chunk/terrain/material/Material;Lorg/embeddedt/embeddium/impl/model/quad/properties/ModelQuadOrientation;Lorg/embeddedt/embeddium/impl/render/chunk/compile/ChunkBuildBuffers;)V"))
@@ -29,14 +34,14 @@ public class FastBlockRendererMixin {
             BlockPos pos, Material material, ModelQuadOrientation orientation, ChunkBuildBuffers buffers,
             @Local(argsOnly = true) BlockState colorState,
             @Local(argsOnly = true) ChunkRenderContext world) {
-        return ArgentumExtras.CONFIG.leafQuality.rendersQuad(world, colorState, pos, quad);
+        return ArgentumExtras.CONFIG.leafQuality.rendersQuad(world, colorState, pos, quad, this.argentumExtras$cursor);
     }
 
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void argentumExtras$cullEnclosedLeaf(BlockState state, BlockPos pos, ChunkRenderContext world,
             BlockLayer layer, ChunkBuildBuffers buffers, PrimitiveBuiltRenderSectionData renderData,
             CallbackInfo ci) {
-        if (!ArgentumExtras.CONFIG.leafQuality.rendersBlock(world, pos)) {
+        if (!ArgentumExtras.CONFIG.leafQuality.rendersBlock(world, pos, this.argentumExtras$cursor)) {
             ci.cancel();
         }
     }
@@ -48,7 +53,7 @@ public class FastBlockRendererMixin {
             @Local(argsOnly = true) BlockPos pos,
             @Local(argsOnly = true) ChunkRenderContext world,
             @Local(argsOnly = true) ChunkBuildBuffers buffers) {
-        if (ArgentumExtras.CONFIG.leafQuality.usesSolidMaterial(world, pos)) {
+        if (ArgentumExtras.CONFIG.leafQuality.usesSolidMaterial(world, pos, this.argentumExtras$cursor)) {
             return buffers.getRenderPassConfiguration().getMaterialForRenderType(BlockLayer.SOLID);
         }
         return original;
