@@ -18,9 +18,11 @@ import org.taumc.celeritas.api.options.structure.OptionImpl;
 import org.taumc.celeritas.api.options.structure.OptionPage;
 import org.taumc.celeritas.api.options.structure.OptionStorage;
 import org.taumc.celeritas.api.options.structure.StandardOptions;
+
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.config.ArgentumConfig;
 import dev.rdh.argentum.impl.config.JsonOptionStorage;
+import dev.rdh.argentum.impl.render.terrain.fog.ArgentumFogService.FogShape;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -68,6 +70,7 @@ public final class ArgentumOptionPages {
         private static final OptionIdentifier<Void> SAFE_CHUNK_EDGES = OptionIdentifier.create(Argentum.ID, "safe_chunk_edges");
         private static final OptionIdentifier<Void> CHECK_GL_ERRORS = OptionIdentifier.create(Argentum.ID, "check_gl_errors");
         private static final OptionIdentifier<Void> GREEDY_RENDER_THREAD = OptionIdentifier.create(Argentum.ID, "greedy_render_thread");
+        private static final OptionIdentifier<Void> FOG_SHAPE = OptionIdentifier.create(Argentum.ID, "fog_shape");
     }
 
     private ArgentumOptionPages() {
@@ -190,6 +193,15 @@ public final class ArgentumOptionPages {
                         .setBinding((options, value) -> options.ambientOcclusion = value,
                                 options -> options.ambientOcclusion)
                         .setImpact(OptionImpact.LOW)
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build())
+                .add(option(FogShape.class, CONFIG_STORAGE, Option.FOG_SHAPE)
+                        .setControl(option -> new CyclingControl<>(option, FogShape.class,
+								new TextComponent[]{
+										text("value.spherical"),
+										text("value.cylindrical")
+								}))
+                        .setBinding((config, value) -> config.fogShape = value, config -> config.fogShape)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
                 .add(option(int.class, CONFIG_STORAGE, StandardOptions.Option.BIOME_BLEND)

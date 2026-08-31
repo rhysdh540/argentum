@@ -6,3 +6,11 @@ inject-interface net/minecraft/client/render/texture/TextureAtlas dev/rdh/argent
 inject-interface net/minecraft/client/render/texture/TextureAtlasSprite dev/rdh/argentum/impl/ext/TextureAtlasSpriteExtension
 inject-interface net/minecraft/client/render/world/WorldRenderer dev/rdh/argentum/impl/ext/WorldRendererExtension
 inject-interface net/minecraft/client/render/texture/AbstractTexture dev/rdh/argentum/impl/ext/TextureGenerationExtension
+
+transitive-accessible class net/minecraft/client/render/platform/GlStateManager$Fog
+transitive-accessible class net/minecraft/client/render/platform/GlStateManager$GlState
+transitive-accessible field net/minecraft/client/render/platform/GlStateManager FOG Lnet/minecraft/client/render/platform/GlStateManager$Fog;
+transitive-accessible field net/minecraft/client/render/platform/GlStateManager$GlState enabled Z
+accessible field net/minecraft/client/render/GameRenderer fogRed F
+accessible field net/minecraft/client/render/GameRenderer fogGreen F
+accessible field net/minecraft/client/render/GameRenderer fogBlue F
