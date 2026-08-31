@@ -11,6 +11,8 @@ import net.minecraft.client.render.texture.TextureAtlas;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.resource.manager.ResourceManager;
 import net.minecraft.resource.Identifier;
+
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
+import java.util.Set;
 
 @Mixin(TextureAtlas.class)
 public class TextureAtlasMixin implements CeraTextureAtlasExtension {
@@ -35,6 +38,8 @@ public class TextureAtlasMixin implements CeraTextureAtlasExtension {
     private final NaturalTextures cera$naturalTextures = new NaturalTextures();
     @Unique
     private final CustomColormaps cera$customColormaps = new CustomColormaps();
+    @Unique
+    private final Set<String> cera$registeredSprites = new ObjectOpenHashSet<>();
 
     @Override
     public BetterGrass cera$getBetterGrass() {
@@ -59,11 +64,18 @@ public class TextureAtlasMixin implements CeraTextureAtlasExtension {
     @Inject(method = "loadAndStitch", at = @At("HEAD"))
     private void cera$loadTextureModules(ResourceManager resources, CallbackInfo ci) {
         if ("textures".equals(this.path)) {
+            this.cera$registeredSprites.forEach(this.sourcedSprites::remove);
+            this.cera$registeredSprites.clear();
+            var known = new ObjectOpenHashSet<>(this.sourcedSprites.keySet());
+
             var oslResources = net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager.client();
             TextureAtlas thiz = (TextureAtlas) (Object) this;
             this.cera$betterGrass.reload(oslResources, thiz, this.sourcedSprites);
             this.cera$connectedTextures.reload(oslResources, thiz, this.sourcedSprites);
             Minecraft.getInstance().getTextureManager().cera$getEmissiveTextures().reload(oslResources, thiz, this.sourcedSprites);
+
+            this.cera$registeredSprites.addAll(this.sourcedSprites.keySet());
+            this.cera$registeredSprites.removeAll(known);
         }
     }
 
