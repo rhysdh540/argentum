@@ -54,18 +54,9 @@ loom {
         jvmArguments.add("--enable-native-access=ALL-UNNAMED")
         jvmArguments.add("--sun-misc-unsafe-memory-access=allow")
 
-        rootProject.extra.properties.forEach{ (key, value) ->
-            if (key.startsWith("run.")) {
-                systemProperties.put(
-                    key.removePrefix("run."),
-                    value as? String ?: error("run property ${key} is not a string")
-                )
-            }
-        }
+        systemProperties.putAll(rootProject.providers.gradlePropertiesPrefixedBy("run."))
 
-        if (project != rootProject) {
-            runDirectory = rootProject.layout.projectDirectory.dir("run")
-        }
+        runDirectory = rootProject.layout.projectDirectory.dir("run")
     }
 }
 
@@ -73,19 +64,17 @@ ploceus {
     setIntermediaryGeneration(2)
 }
 
-if (project != rootProject) {
-    tasks.remapJar {
-        destinationDirectory = rootProject.layout.buildDirectory.dir("libs")
-    }
+tasks.remapJar {
+    destinationDirectory = rootProject.layout.buildDirectory.dir("libs")
 }
 
-fun v(n: String) = rootProject.property("${n}_version") as? String ?: error("no property ${n}_version")
+fun v(n: String) = rootProject.providers.gradleProperty("${n}_version").orNull ?: error("no property ${n}_version")
 
 dependencies {
     minecraft("com.mojang:minecraft:${v("minecraft")}")
     mappings(loom.layered {
         mappings(ploceus.featherMappings(v("feather")))
-        mappings(rootProject.file("mappings/feather-overrides.tiny"))
+        mappings(rootProject.file("gradle/feather-overrides.tiny"))
     })
 
     modImplementation("net.fabricmc:fabric-loader:${v("fabric")}")
