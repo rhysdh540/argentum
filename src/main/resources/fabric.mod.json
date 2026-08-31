@@ -5,7 +5,10 @@
   "version": "${version}",
   "environment": "client",
   "description": "An open-source client performance mod for Minecraft",
-  "icon": "assets/argentum/textures/gui/icon.png",
+  "icon": {
+    "64": "assets/argentum/textures/gui/64.png",
+    "512": "assets/argentum/textures/gui/512.png"
+  },
   "authors": ["rdh"],
   "contributors": ["embeddedt", "JellySquid", "IMS212"],
   "entrypoints": {
