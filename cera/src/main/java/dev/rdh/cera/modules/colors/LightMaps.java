@@ -9,6 +9,7 @@ import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
 import org.embeddedt.embeddium.api.util.ColorARGB;
+import org.embeddedt.embeddium.api.util.ColorU8;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -123,9 +124,9 @@ public final class LightMaps implements ResourceReloadListener {
             int pLow = map.pixels[offset + y * width + low];
             int pHigh = low == high ? pLow : map.pixels[offset + y * width + high];
             float weightLow = low == high ? 1.0F : dLow, weightHigh = low == high ? 0.0F : dHigh;
-            out[y][0] = ColorARGB.unpackRed(pLow) * weightLow / 255.0F + ColorARGB.unpackRed(pHigh) * weightHigh / 255.0F;
-            out[y][1] = ColorARGB.unpackGreen(pLow) * weightLow / 255.0F + ColorARGB.unpackGreen(pHigh) * weightHigh / 255.0F;
-            out[y][2] = ColorARGB.unpackBlue(pLow) * weightLow / 255.0F + ColorARGB.unpackBlue(pHigh) * weightHigh / 255.0F;
+            out[y][0] = ColorU8.byteToNormalizedFloat(ColorARGB.unpackRed(pLow)) * weightLow + ColorU8.byteToNormalizedFloat(ColorARGB.unpackRed(pHigh)) * weightHigh;
+            out[y][1] = ColorU8.byteToNormalizedFloat(ColorARGB.unpackGreen(pLow)) * weightLow + ColorU8.byteToNormalizedFloat(ColorARGB.unpackGreen(pHigh)) * weightHigh;
+            out[y][2] = ColorU8.byteToNormalizedFloat(ColorARGB.unpackBlue(pLow)) * weightLow + ColorU8.byteToNormalizedFloat(ColorARGB.unpackBlue(pHigh)) * weightHigh;
         }
     }
 
@@ -136,7 +137,7 @@ public final class LightMaps implements ResourceReloadListener {
             bright = 1.0F - bright * bright * bright * bright;
             value = gamma * bright + (1.0F - gamma) * value;
         }
-        return (int) (value * 255.0F);
+        return ColorU8.normalizedFloatToByte(value);
     }
 
     private static Int2ObjectMap<Pack> load(ResourceManager resources) {

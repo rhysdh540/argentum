@@ -18,6 +18,7 @@ import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
 import org.embeddedt.embeddium.api.util.ColorARGB;
+import org.embeddedt.embeddium.api.util.ColorU8;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -380,7 +381,11 @@ public final class CustomColors implements ResourceReloadListener {
             Integer ordinal = DYE_ORDINALS.get(name);
             int color = props.getColor(key).orElse(-1);
             if (ordinal != null && color >= 0) {
-                out[ordinal] = new float[]{ColorARGB.unpackRed(color) / 255.0F, ColorARGB.unpackGreen(color) / 255.0F, ColorARGB.unpackBlue(color) / 255.0F};
+                out[ordinal] = new float[]{
+                        ColorU8.byteToNormalizedFloat(ColorARGB.unpackRed(color)),
+                        ColorU8.byteToNormalizedFloat(ColorARGB.unpackGreen(color)),
+                        ColorU8.byteToNormalizedFloat(ColorARGB.unpackBlue(color))
+                };
             } else {
                 Cera.LOGGER.warn("[CustomColors] Invalid dye entry: {}", key);
             }

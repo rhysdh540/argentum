@@ -8,6 +8,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
 import org.embeddedt.embeddium.api.util.ColorARGB;
 import org.embeddedt.embeddium.api.util.ColorMixer;
+import org.embeddedt.embeddium.api.util.ColorU8;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -42,6 +43,10 @@ public class LiquidDripParticleMixin extends Particle {
         } else {
             return;
         }
-        this.setColor(ColorARGB.unpackRed(color) / 255.0F, ColorARGB.unpackGreen(color) / 255.0F, ColorARGB.unpackBlue(color) / 255.0F);
+        this.setColor(
+                ColorU8.byteToNormalizedFloat(ColorARGB.unpackRed(color)),
+                ColorU8.byteToNormalizedFloat(ColorARGB.unpackGreen(color)),
+                ColorU8.byteToNormalizedFloat(ColorARGB.unpackBlue(color))
+        );
     }
 }
