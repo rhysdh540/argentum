@@ -1,11 +1,13 @@
 package dev.rdh.cera.modules;
 
 import dev.rdh.cera.Cera;
+import dev.rdh.cera.modules.random.RandomConditions;
 import dev.rdh.cera.props.NumberList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import dev.rdh.cera.props.Patterns;
 import dev.rdh.cera.props.Props;
 import dev.rdh.cera.props.Result;
-
 import net.minecraft.block.entity.BeaconBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
@@ -41,7 +43,6 @@ import net.ornithemc.osl.core.api.util.NamespacedIdentifier;
 import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -54,6 +55,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+
+import static dev.rdh.cera.props.Props.normalize;
 
 public final class CustomGuis implements ResourceReloadListener {
     private volatile List<Rule> rules = List.of();
@@ -268,59 +271,25 @@ public final class CustomGuis implements ResourceReloadListener {
         }
     }
 
-    private record Profession(int profession, Set<Integer> careers) {
+    private record Profession(int profession, IntList careers) {
         private static Profession parse(String value) {
-            String[] parts = value.toLowerCase(Locale.ROOT).split(":", -1);
+            String[] parts = value.split(":", -1);
             if (parts.length > 2) throw new IllegalArgumentException("Invalid profession: " + value);
-            int profession = profession(parts[0]);
+            int profession = RandomConditions.profession(parts[0]);
             if (profession < 0) throw new IllegalArgumentException("Invalid profession: " + value);
             if (parts.length == 1) return new Profession(profession, null);
-            Set<Integer> careers = new HashSet<>();
+
+            IntList careers = new IntArrayList();
             for (String career : parts[1].split(",")) {
-                int parsed = career(profession, career);
-                if (parsed < 0) throw new IllegalArgumentException("Invalid career: " + value);
-                careers.add(parsed);
+                if (!RandomConditions.career(profession, career, careers)) {
+                    throw new IllegalArgumentException("Invalid career: " + value);
+                }
             }
-            return new Profession(profession, Set.copyOf(careers));
+            return new Profession(profession, careers);
         }
 
         private boolean matches(int profession, int career) {
             return this.profession == profession && (careers == null || careers.contains(career));
-        }
-
-        private static int profession(String value) {
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException ignored) {
-                return switch (value) {
-                    case "farmer" -> 0;
-                    case "librarian" -> 1;
-                    case "priest" -> 2;
-                    case "blacksmith" -> 3;
-                    case "butcher" -> 4;
-                    case "nitwit" -> 5;
-                    default -> -1;
-                };
-            }
-        }
-
-        private static int career(int profession, String value) {
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException ignored) {
-                return switch (profession + ":" + value) {
-                    case "0:farmer" -> 1;
-                    case "0:fisherman" -> 2;
-                    case "0:shepherd" -> 3;
-                    case "0:fletcher" -> 4;
-                    case "1:librarian", "2:cleric", "4:butcher", "5:nitwit" -> 1;
-                    case "1:cartographer", "4:leather" -> 2;
-                    case "3:armor" -> 1;
-                    case "3:weapon" -> 2;
-                    case "3:tool" -> 3;
-                    default -> -1;
-                };
-            }
         }
     }
 
@@ -395,7 +364,4 @@ public final class CustomGuis implements ResourceReloadListener {
         return date.getMonthValue() == 12 && date.getDayOfMonth() >= 24 && date.getDayOfMonth() <= 26;
     }
 
-    private static String normalize(String value) {
-        return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
-    }
 }

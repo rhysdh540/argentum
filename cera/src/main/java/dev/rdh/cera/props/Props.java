@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -28,6 +29,37 @@ public record Props(NamespacedIdentifier id, Properties properties) {
 			p.load(stream);
 		}
 		return p;
+	}
+
+	/**
+	 * Any accepted spelling of a biome mapped to its normalized 1.8.9 name: modern names, OptiFine's older
+	 * ones, and the names this version actually uses. 1.8.9 has no "sky" biome -- The End is named "The End".
+	 */
+	private static final Map<String, String> BIOME_ALIASES = Map.of(
+			"nether", "hell",
+			"netherwastes", "hell",
+			"end", "theend",
+			"sky", "theend",
+			"swamp", "swampland"
+	);
+
+	/**
+	 * Folds a biome name to the normalized 1.8.9 form, dropping any namespace. Apply to both the pack value
+	 * and {@link net.minecraft.world.biome.Biome#name} so the two compare in one space.
+	 */
+	public static String biome(String value) {
+		String name = normalize(value.substring(value.lastIndexOf(':') + 1));
+		return BIOME_ALIASES.getOrDefault(name, name);
+	}
+
+	/** Folds an OptiFine identifier to its comparable form: lowercase, letters and digits only. */
+	public static String normalize(String value) {
+		StringBuilder normalized = new StringBuilder(value.length());
+		for (int i = 0; i < value.length(); i++) {
+			char c = value.charAt(i);
+			if (Character.isLetterOrDigit(c)) normalized.append(Character.toLowerCase(c));
+		}
+		return normalized.toString();
 	}
 
 	public boolean contains(String key) {

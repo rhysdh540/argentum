@@ -6,7 +6,6 @@ import dev.rdh.cera.props.NumberList;
 import dev.rdh.cera.props.Patterns;
 import dev.rdh.cera.props.Props;
 import dev.rdh.cera.props.Result;
-
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -19,7 +18,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.item.DyeColor;
 import net.minecraft.world.biome.Biome;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -28,11 +26,13 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-final class RandomConditions {
+import static dev.rdh.cera.props.Props.normalize;
+
+public final class RandomConditions {
     private static final Object2IntMap<String> PROFESSION_IDS = new Object2IntOpenHashMap<>();
     private static final Int2ObjectMap<Object2IntMap<String>> CAREER_IDS = new Int2ObjectOpenHashMap<>();
+    private static final int MAX_CAREER = 64;
     private static final Map<String, DyeColor> DYE_COLORS = new Object2ObjectOpenHashMap<>();
-    private static final Map<String, String> BIOME_ALIASES = new Object2ObjectOpenHashMap<>();
 
     static {
         PROFESSION_IDS.defaultReturnValue(-1);
@@ -45,10 +45,6 @@ final class RandomConditions {
         for (DyeColor color : DyeColor.values()) {
             DYE_COLORS.put(normalize(color.name()), color);
         }
-        BIOME_ALIASES.put("nether", "hell");
-        BIOME_ALIASES.put("end", "sky");
-        BIOME_ALIASES.put("theend", "sky");
-        BIOME_ALIASES.put("swamp", "swampland");
     }
 
     private RandomConditions() {
@@ -57,19 +53,11 @@ final class RandomConditions {
     private static void putProfession(int id, String name, String... careers) {
         PROFESSION_IDS.put(name, id);
         Object2IntMap<String> table = new Object2IntOpenHashMap<>();
+        table.defaultReturnValue(-1);
         for (int i = 0; i < careers.length; i++) {
-            table.put(normalize(careers[i]), i);
+            table.put(normalize(careers[i]), i + 1);
         }
         CAREER_IDS.put(id, table);
-    }
-
-    static String normalize(String value) {
-        StringBuilder normalized = new StringBuilder(value.length());
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (Character.isLetterOrDigit(c)) normalized.append(Character.toLowerCase(c));
-        }
-        return normalized.toString();
     }
 
     static Function<Integer, Predicate<Subject>> reader(Props props) {
@@ -117,16 +105,13 @@ final class RandomConditions {
         if (value == null) return null;
         Set<String> names = new ObjectOpenHashSet<>();
         for (String token : value.split("\\s+")) {
-            String normalized = normalize(token);
-            if (normalized.isEmpty()) continue;
-            names.add(normalized);
-            String alias = BIOME_ALIASES.get(normalized);
-            if (alias != null) names.add(alias);
+            String name = Props.biome(token);
+            if (!name.isEmpty()) names.add(name);
         }
         if (names.isEmpty()) return null;
         return subject -> {
             Biome biome = subject.spawnBiome();
-            return biome != null && names.contains(normalize(biome.name));
+            return biome != null && names.contains(Props.biome(biome.name));
         };
     }
 
@@ -217,39 +202,45 @@ final class RandomConditions {
     private record Entry(int profession, IntList careers) {
     }
 
-    private static int profession(String value) {
+    /** @return the profession id for a number or name, or -1 if unrecognised. */
+    public static int profession(String value) {
         try {
-            return Integer.parseInt(value);
+            return Integer.parseInt(value.trim());
         } catch (NumberFormatException _) {
             return PROFESSION_IDS.getInt(normalize(value));
         }
     }
 
+    public static boolean career(int profession, String token, IntList out) {
+        String trimmed = token.trim();
+        if (trimmed.isEmpty()) return true;
+
+        Result<NumberList> parsed = NumberList.parse(trimmed);
+        if (parsed.isSuccess()) {
+            NumberList list = parsed.value();
+            for (int i = 0; i < list.rangeCount(); i++) {
+                long range = list.range(i);
+                int end = Math.min(NumberList.end(range), MAX_CAREER);
+                for (int career = NumberList.start(range); career <= end; career++) {
+                    out.add(career);
+                }
+            }
+            return true;
+        }
+
+        Object2IntMap<String> table = CAREER_IDS.get(profession);
+        int id = table == null ? -1 : table.getInt(normalize(trimmed));
+        if (id == -1) return false;
+        out.add(id);
+        return true;
+    }
+
     private static IntList careers(int profession, String value, int n) {
         if (value == null || value.isBlank()) return null;
-        var table = CAREER_IDS.get(profession);
         IntList careers = new IntArrayList();
         for (String token : value.split(",")) {
-            String normalized = normalize(token);
-            if (normalized.isEmpty()) continue;
-            try {
-                if (normalized.indexOf('-') > 0) {
-                    Result<NumberList> range = NumberList.parse(normalized);
-                    if (!range.isSuccess()) throw new NumberFormatException();
-                    for (int i = 0; i < range.value().rangeCount(); i++) {
-                        long r = range.value().range(i);
-                        for (int c = (int) (r >> 32); c <= (int) r; c++) careers.add(c);
-                    }
-                } else {
-                    careers.add(Integer.parseInt(normalized));
-                }
-            } catch (NumberFormatException _) {
-                Integer id = table == null ? null : table.get(normalized);
-                if (id == null) {
-                    Cera.LOGGER.warn("[RandomEntities] professions.{}: unknown career {}", n, token);
-                } else {
-                    careers.add(id.intValue());
-                }
+            if (!career(profession, token, careers)) {
+                Cera.LOGGER.warn("[RandomEntities] professions.{}: unknown career {}", n, token);
             }
         }
         return careers.isEmpty() ? null : careers;

@@ -15,7 +15,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.resource.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
-
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -25,16 +24,15 @@ import net.ornithemc.osl.resource.loader.api.resource.Resource;
 import net.ornithemc.osl.resource.loader.api.resource.manager.ResourceManager;
 import net.ornithemc.osl.resource.loader.api.resource.reload.ResourceReloadListener;
 import org.lwjgl.opengl.GL11;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 
 public final class CustomSky implements ResourceReloadListener {
     private static final Pattern WORLD = Pattern.compile("(?:optifine|mcpatcher)/sky/world(-?\\d+)/sky(\\d+)\\.properties");
@@ -204,17 +202,6 @@ public final class CustomSky implements ResourceReloadListener {
         return Math.floorMod(hour - 6, 24) * 1000 + minute * 1000 / 60;
     }
 
-    private static String biome(String value) {
-        String name = value.substring(value.lastIndexOf(':') + 1)
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]", "");
-        return switch (name) {
-            case "hell" -> "netherwastes";
-            case "sky" -> "theend";
-            default -> name;
-        };
-    }
-
     private float position(LayerState state, ClientWorld world, int elapsed) {
         Layer layer = state.layer;
         if (layer.biomes().isEmpty() && layer.heights() == null) return 1.0F;
@@ -223,7 +210,7 @@ public final class CustomSky implements ResourceReloadListener {
         if (camera != null) {
             BlockPos pos = new BlockPos(camera);
             Biome biome = world.getBiome(pos);
-            if ((layer.biomes().isEmpty() || layer.biomes().contains(biome(biome.name)) != layer.excludeBiomes())
+            if ((layer.biomes().isEmpty() || layer.biomes().contains(Props.biome(biome.name)) != layer.excludeBiomes())
                     && (layer.heights() == null || layer.heights().contains(pos.getY()))) {
                 target = 1.0F;
             }
@@ -321,7 +308,7 @@ public final class CustomSky implements ResourceReloadListener {
             boolean excludeBiomes = biomeList != null && biomeList.trim().startsWith("!");
             if (excludeBiomes) biomeList = biomeList.trim().substring(1);
             Set<String> biomes = new ObjectOpenHashSet<>();
-            if (biomeList != null) for (String value : biomeList.split("[ ,]+")) if (!value.isEmpty()) biomes.add(biome(value));
+            if (biomeList != null) for (String value : biomeList.split("[ ,]+")) if (!value.isEmpty()) biomes.add(Props.biome(value));
             float transition = props.getFloat("transition", 1.0F).value();
             if (transition < 0.0F) throw new IllegalArgumentException("Invalid transition");
             return new Layer(source,
