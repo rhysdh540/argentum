@@ -26,6 +26,7 @@ public class EntityOcclusionCuller {
     private final ArgentumWorldRenderer renderer;
     private final Map<Entity, Query> queries = new Reference2ReferenceOpenHashMap<>();
     private long frame;
+    private int queryMode = 0;
 
     public EntityOcclusionCuller(ArgentumWorldRenderer renderer) {
         this.renderer = renderer;
@@ -39,6 +40,9 @@ public class EntityOcclusionCuller {
 
         long now = System.nanoTime() / 1_000_000L;
         this.frame++;
+        if (this.queryMode == 0) {
+            this.queryMode = GL.getCapabilities().OpenGL33 ? GL33C.GL_ANY_SAMPLES_PASSED : GL15C.GL_SAMPLES_PASSED;
+        }
 
         boolean queryPass = false;
         try {
@@ -108,15 +112,14 @@ public class EntityOcclusionCuller {
             query.id = GL15C.glGenQueries();
         }
 
-        int mode = GL.getCapabilities().OpenGL33 ? GL33C.GL_ANY_SAMPLES_PASSED : GL15C.GL_SAMPLES_PASSED;
-        GL15C.glBeginQuery(mode, query.id);
+        GL15C.glBeginQuery(this.queryMode, query.id);
 
         BufferBuilder buffer = Tesselator.getInstance().getBuffer();
         buffer.begin(GL11.GL_QUAD_STRIP, DefaultVertexFormat.POSITION);
         addBox(buffer, box, cameraX, cameraY, cameraZ);
         Tesselator.getInstance().end();
 
-        GL15C.glEndQuery(mode);
+        GL15C.glEndQuery(this.queryMode);
         query.pending = true;
     }
 
