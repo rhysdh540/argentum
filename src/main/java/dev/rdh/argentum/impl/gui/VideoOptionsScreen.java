@@ -6,7 +6,6 @@ import org.embeddedt.embeddium.impl.gui.CeleritasVideoOptionsController;
 import org.lwjgl.input.Mouse;
 import org.taumc.celeritas.api.options.structure.OptionFlag;
 
-import java.util.List;
 import java.util.Set;
 
 public final class VideoOptionsScreen extends Screen {
@@ -18,7 +17,7 @@ public final class VideoOptionsScreen extends Screen {
 
     public VideoOptionsScreen(Screen parent) {
         this.parent = parent;
-        this.controller = new CeleritasVideoOptionsController(() -> this.minecraft.openScreen(this.parent), List.of(), this.context) {
+        this.controller = new CeleritasVideoOptionsController(() -> this.minecraft.openScreen(this.parent), ArgentumOptionPages.create(), this.context) {
             @Override
             protected void applyFlagSideEffects(Set<OptionFlag> flags) {
                 super.applyFlagSideEffects(flags);

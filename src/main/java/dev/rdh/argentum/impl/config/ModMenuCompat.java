@@ -3,7 +3,6 @@ package dev.rdh.argentum.impl.config;
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 
-import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.gui.VideoOptionsScreen;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -33,7 +32,7 @@ public class ModMenuCompat implements ModMenuApi {
 
 	@Override
 	public ConfigScreenFactory<?> getModConfigScreenFactory() {
-		return getProvidedConfigScreenFactories().get(Argentum.ID);
+		return create(TextComponent.literal("argentum.options.pages.general"));
 	}
 
 	@Override
@@ -42,11 +41,15 @@ public class ModMenuCompat implements ModMenuApi {
 		OptionGUIConstructionEvent.BUS.post(new OptionGUIConstructionEvent(pages));
 		Map<String, ConfigScreenFactory<?>> ids = new Object2ObjectOpenHashMap<>();
 		for (OptionPage page : pages) {
-			ids.computeIfAbsent(page.getId().getModId(), _ -> parent -> {
-				SELECTED_TAB.set(page.getName());
-				return new VideoOptionsScreen(parent);
-			});
+			ids.computeIfAbsent(page.getId().getModId(), _ -> create(page.getName()));
 		}
 		return Map.copyOf(ids);
+	}
+
+	private ConfigScreenFactory<VideoOptionsScreen> create(TextComponent t) {
+		return parent -> {
+			SELECTED_TAB.set(t);
+			return new VideoOptionsScreen(parent);
+		};
 	}
 }

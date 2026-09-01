@@ -6,11 +6,9 @@ import org.embeddedt.embeddium.impl.gl.device.GLRenderDevice;
 import org.lwjgl.opengl.GL15C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.taumc.celeritas.api.OptionGUIConstructionEvent;
 
 import dev.rdh.argentum.impl.config.ArgentumConfig;
 import dev.rdh.argentum.impl.config.JsonOptionStorage;
-import dev.rdh.argentum.impl.gui.ArgentumOptionPages;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -32,7 +30,6 @@ public class Argentum implements ClientModInitializer {
         VERSION = loader.getModContainer(ID).orElseThrow().getMetadata().getVersion().toString();
         CONFIG_STORAGE = JsonOptionStorage.load(getConfigPath(loader.getConfigDir()), ArgentumConfig.class, ArgentumConfig::new, ArgentumConfig::validate);
         CONFIG = CONFIG_STORAGE.getData();
-        OptionGUIConstructionEvent.BUS.addListener(event -> event.getPages().addAll(ArgentumOptionPages.create()));
 
         LOGGER.info("Argentum v{}", VERSION);
     }
