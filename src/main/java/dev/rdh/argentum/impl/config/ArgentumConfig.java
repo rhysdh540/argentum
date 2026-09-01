@@ -4,9 +4,6 @@ import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
 
 import dev.rdh.argentum.impl.render.terrain.fog.ArgentumFogService.FogShape;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class ArgentumConfig {
     public int chunkBuilderThreads = 0;
     public boolean deferChunkUpdates = true;
@@ -24,7 +21,6 @@ public class ArgentumConfig {
     public boolean fasterClouds = true;
     public int cpuRenderAheadLimit = 3;
     public int biomeBlendRadius = 3;
-    public Set<String> renderPassDowngradeDenylist = new HashSet<>();
     public boolean safeChunkEdges = true;
     public boolean compactVertexFormat = false;
     public boolean checkGlErrors = false;
@@ -39,9 +35,6 @@ public class ArgentumConfig {
         this.biomeBlendRadius = Math.clamp(this.biomeBlendRadius, 0, 14);
         if (this.asyncOcclusion == null) {
             this.asyncOcclusion = AsyncOcclusionMode.EVERYTHING;
-        }
-        if (this.renderPassDowngradeDenylist == null) {
-            this.renderPassDowngradeDenylist = new HashSet<>();
         }
         if (this.fogShape == null) {
             this.fogShape = FogShape.SPHERICAL;

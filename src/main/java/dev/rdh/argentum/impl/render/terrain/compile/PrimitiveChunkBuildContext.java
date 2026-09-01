@@ -154,8 +154,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     }
 
     public Material selectMaterial(Material material, TextureAtlasSprite sprite) {
-        if (sprite == null || sprite.getClass() != TextureAtlasSprite.class || sprite.isAnimated()
-                || Argentum.CONFIG.renderPassDowngradeDenylist.contains(sprite.getName())) {
+        if (sprite == null || sprite.getClass() != TextureAtlasSprite.class || sprite.isAnimated()) {
             return material;
         }
 
