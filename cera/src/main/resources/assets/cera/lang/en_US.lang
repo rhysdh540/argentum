@@ -34,3 +34,5 @@ cera.options.random_entities.name=Random Entities
 cera.options.random_entities.tooltip=Randomizes entity and block entity textures from resource pack rules.
 cera.options.emissive_textures.name=Emissive Textures
 cera.options.emissive_textures.tooltip=Parses and renders emissive overlay textures that glow.
+cera.options.custom_block_layers.name=Custom Block Layers
+cera.options.custom_block_layers.tooltip=Lets resource packs move blocks onto a different render layer.

@@ -18,6 +18,7 @@ public class CeraConfig {
     public boolean customItems = true;
     public boolean optifineCosmetics = true;
     public boolean emissiveTextures = true;
+    public boolean customBlockLayers = true;
 
     public void validate() {
         if (this.betterGrass == null) this.betterGrass = BetterGrass.Mode.OFF;

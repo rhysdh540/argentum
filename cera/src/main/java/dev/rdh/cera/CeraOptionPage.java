@@ -92,6 +92,12 @@ final class CeraOptionPage {
                         .setBinding((config, value) -> config.emissiveTextures = value, config -> config.emissiveTextures)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
+                .add(OptionImpl.createBuilder(boolean.class, Cera.CONFIG_STORAGE)
+                        .setId(id("custom_block_layers"))
+                        .setControl(TickBoxControl::new)
+                        .setBinding((config, value) -> config.customBlockLayers = value, config -> config.customBlockLayers)
+                        .setFlags(OptionFlag.REQUIRES_ASSET_RELOAD, OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build())
                 .add(OptionImpl.createBuilder(int.class, Cera.CONFIG_STORAGE)
                         .setId(id("connected_textures"))
                         .setControl(option -> new SliderControl(option, 0, ConnectedTextures.Mode.values().length - 1, 1,

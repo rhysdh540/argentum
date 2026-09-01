@@ -4,6 +4,7 @@
   "package": "dev.rdh.cera.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "BlockMixin",
     "ClientWorldMixin",
     "ChunkRenderContextMixin",
     "ClientPlayerInteractionManagerMixin",
