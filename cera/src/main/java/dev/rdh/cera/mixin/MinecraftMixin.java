@@ -3,6 +3,7 @@ package dev.rdh.cera.mixin;
 import dev.rdh.cera.ext.CeraMinecraftExtension;
 import dev.rdh.cera.modules.CustomBlockLayers;
 import dev.rdh.cera.modules.CustomLoadingScreens;
+import dev.rdh.cera.modules.CustomPanorama;
 import dev.rdh.cera.modules.colors.CustomColors;
 import dev.rdh.cera.modules.colors.LightMaps;
 import dev.rdh.cera.modules.DynamicLights;
@@ -32,6 +33,8 @@ public class MinecraftMixin implements CeraMinecraftExtension {
     private final CustomBlockLayers cera$customBlockLayers = new CustomBlockLayers();
     @Unique
     private final CustomLoadingScreens cera$customLoadingScreens = new CustomLoadingScreens();
+    @Unique
+    private final CustomPanorama cera$customPanorama = new CustomPanorama();
 
     @Override
     public DynamicLights.Rules cera$getDynamicLightRules() {
@@ -46,6 +49,11 @@ public class MinecraftMixin implements CeraMinecraftExtension {
     @Override
     public CustomLoadingScreens cera$getCustomLoadingScreens() {
         return this.cera$customLoadingScreens;
+    }
+
+    @Override
+    public CustomPanorama cera$getCustomPanorama() {
+        return this.cera$customPanorama;
     }
 
     @Override

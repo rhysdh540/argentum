@@ -39,6 +39,7 @@ public class Cera implements ClientModInitializer {
             resources.addReloader(minecraft.cera$getLightMaps());
             resources.addReloader(minecraft.cera$getCustomBlockLayers());
             resources.addReloader(minecraft.cera$getCustomLoadingScreens());
+            resources.addReloader(minecraft.cera$getCustomPanorama());
         });
     }
 

@@ -2,6 +2,7 @@ package dev.rdh.cera.ext;
 
 import dev.rdh.cera.modules.CustomBlockLayers;
 import dev.rdh.cera.modules.CustomLoadingScreens;
+import dev.rdh.cera.modules.CustomPanorama;
 import dev.rdh.cera.modules.colors.CustomColors;
 import dev.rdh.cera.modules.DynamicLights;
 import dev.rdh.cera.modules.OptifineCosmetics;
@@ -18,6 +19,10 @@ public interface CeraMinecraftExtension {
     }
 
     default CustomLoadingScreens cera$getCustomLoadingScreens() {
+        throw new UnsupportedOperationException();
+    }
+
+    default CustomPanorama cera$getCustomPanorama() {
         throw new UnsupportedOperationException();
     }
 
