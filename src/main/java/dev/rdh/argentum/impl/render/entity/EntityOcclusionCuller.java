@@ -47,19 +47,33 @@ public class EntityOcclusionCuller {
         boolean queryPass = false;
         try {
             for (Entity entity : entities) {
-                Query query = this.queries.computeIfAbsent(entity, ignored -> new Query());
-                query.lastSeenFrame = this.frame;
-                this.poll(query);
+                Query query = this.queries.get(entity);
 
-                if (!query.pending && now - query.lastQueryTime >= Argentum.CONFIG.entityOcclusionIntervalMs
-                        && this.shouldQuery(entity, camera, cameraX, cameraY, cameraZ)) {
-                    if (!queryPass) {
-                        beginQueryPass();
-                        queryPass = true;
+                if (query != null) {
+                    query.lastSeenFrame = this.frame;
+                    this.poll(query);
+
+                    if (query.pending || now - query.lastQueryTime < Argentum.CONFIG.entityOcclusionIntervalMs) {
+                        continue;
                     }
-                    this.issue(query, entity.getShape(), cameraX, cameraY, cameraZ);
-                    query.lastQueryTime = now;
                 }
+
+                if (!this.shouldQuery(entity, camera, cameraX, cameraY, cameraZ)) {
+                    continue;
+                }
+
+                if (query == null) {
+                    query = new Query();
+                    query.lastSeenFrame = this.frame;
+                    this.queries.put(entity, query);
+                }
+
+                if (!queryPass) {
+                    beginQueryPass();
+                    queryPass = true;
+                }
+                this.issue(query, entity.getShape(), cameraX, cameraY, cameraZ);
+                query.lastQueryTime = now;
             }
         } finally {
             if (queryPass) {
