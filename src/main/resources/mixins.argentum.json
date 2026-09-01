@@ -17,8 +17,7 @@
     "features.model.instancing.PolygonAccessor", "features.options.OptionPageFrameMixin",
     "features.options.OptionsScreenMixin", "features.particle.ParticleManagerMixin", "features.particle.ParticleMixin",
     "features.profiling.BufferUploaderMixin", "features.profiling.VertexBufferMixin", "features.terrain.BakedQuadMixin",
-    "features.terrain.BiomeColorsMixin", "features.terrain.ChunkRenderListMixin",
-    "features.terrain.RenderListManagerMixin", "features.terrain.VisibleChunkCollectorMixin",
+    "features.terrain.BiomeColorsMixin",
     "features.texture.TextureAtlasMixin", "features.texture.TextureAtlasSpriteMixin",
     "features.texture.TextureManagerMixin"
   ],
