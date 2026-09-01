@@ -9,7 +9,8 @@ import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.client.render.texture.TextureManager;
 import net.minecraft.client.render.vertex.BufferBuilder;
 import net.minecraft.client.render.vertex.DefaultVertexFormat;
-import net.minecraft.client.render.vertex.Tesselator;
+import net.minecraft.client.render.vertex.VertexBuffer;
+import net.minecraft.client.render.vertex.VertexFormat;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.resource.Identifier;
@@ -208,7 +209,9 @@ public final class CustomSky implements ResourceReloadListener {
         Entity camera = Minecraft.getInstance().getCamera();
         float target = 0.0F;
         if (camera != null) {
-            BlockPos pos = new BlockPos(camera);
+            // OptiFine samples getCommandSourceBlockPos() (y + 0.5), not the entity's own block, so
+            // heights bands flip at the same point it does. Only y matters here; biomes are 2D.
+            BlockPos pos = camera.getCommandSourceBlockPos();
             Biome biome = world.getBiome(pos);
             if ((layer.biomes().isEmpty() || layer.biomes().contains(Props.biome(biome.name)) != layer.excludeBiomes())
                     && (layer.heights() == null || layer.heights().contains(pos.getY()))) {
@@ -251,6 +254,9 @@ public final class CustomSky implements ResourceReloadListener {
             return new Asset(source, props.getBlendMethod("blend", BlendMethod.ADD).value());
         }
     }
+
+    private static final VertexFormat FORMAT = DefaultVertexFormat.POSITION_TEX;
+    private static VertexBuffer geometry;
 
     private record Layer(
             Identifier source,
@@ -362,11 +368,25 @@ public final class CustomSky implements ResourceReloadListener {
         }
 
         private static void draw() {
+            if (geometry == null) geometry = build();
+            geometry.bind();
+            GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+            GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+            int stride = FORMAT.getVertexSize();
+            GL11.glVertexPointer(3, GL11.GL_FLOAT, stride, FORMAT.getOffset(0));
+            GL11.glTexCoordPointer(2, GL11.GL_FLOAT, stride, FORMAT.getUvOffset(0));
+            geometry.draw(GL11.GL_QUADS);
+            GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+            GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+            geometry.unbind();
+        }
+
+        private static VertexBuffer build() {
             double size = 100.0;
             float third = 1.0F / 3.0F;
             float twoThirds = 2.0F / 3.0F;
-            BufferBuilder buffer = Tesselator.getInstance().getBuffer();
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
+            BufferBuilder buffer = new BufferBuilder(24 * FORMAT.getVertexSize() / Integer.BYTES);
+            buffer.begin(GL11.GL_QUADS, FORMAT);
 
             buffer.vertex(-size, -size, size).texture(0.0F, 0.0F).nextVertex();
             buffer.vertex(size, -size, size).texture(0.0F, 0.5F).nextVertex();
@@ -398,7 +418,10 @@ public final class CustomSky implements ResourceReloadListener {
             buffer.vertex(size, -size, -size).texture(1.0F, 1.0F).nextVertex();
             buffer.vertex(size, size, -size).texture(1.0F, 0.5F).nextVertex();
 
-            Tesselator.getInstance().end();
+            buffer.end();
+            VertexBuffer uploaded = new VertexBuffer(FORMAT);
+            uploaded.upload(buffer.getBuffer());
+            return uploaded;
         }
     }
 }
