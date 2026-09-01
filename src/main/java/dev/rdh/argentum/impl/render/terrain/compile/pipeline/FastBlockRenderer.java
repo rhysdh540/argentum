@@ -9,6 +9,7 @@ import net.minecraft.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.block.BlockLayer;
+import net.minecraft.client.render.block.BlockRenderDispatcher;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.client.render.texture.TextureUtil;
 import net.minecraft.client.resource.model.BakedQuad;
@@ -56,6 +57,8 @@ public final class FastBlockRenderer {
     private final BakedQuadGroupAnalyzer analyzer = new BakedQuadGroupAnalyzer();
     private final BlockPos.Mutable neighborPos = new BlockPos.Mutable();
     private final BlockPos.Mutable colorPos = new BlockPos.Mutable();
+    private BlockRenderDispatcher blockRenderDispatcher;
+    private boolean ambientOcclusion;
     private float offsetX;
     private float offsetY;
     private float offsetZ;
@@ -68,6 +71,8 @@ public final class FastBlockRenderer {
 
     public void beginSection() {
         this.lighters.reset();
+        this.blockRenderDispatcher = Minecraft.getInstance().getBlockRenderDispatcher();
+        this.ambientOcclusion = Minecraft.isAmbientOcclusionEnabled();
     }
 
     public void render(BlockState state, BlockPos pos, ChunkRenderContext world, BlockLayer layer,
@@ -76,9 +81,9 @@ public final class FastBlockRenderer {
         this.analyzer.setDefaultRenderingFlags(BakedQuadGroupAnalyzer.USE_REORIENTING);
 
         Block block = state.getBlock();
-        BakedModel model = Minecraft.getInstance().getBlockRenderDispatcher().getModel(state, world, pos);
+        BakedModel model = this.blockRenderDispatcher.getModel(state, world, pos);
         Material material = buffers.getRenderPassConfiguration().getMaterialForRenderType(layer);
-        boolean smooth = Minecraft.isAmbientOcclusionEnabled() && block.getLight() == 0 && model.useAmbientOcclusion();
+        boolean smooth = this.ambientOcclusion && block.getLight() == 0 && model.useAmbientOcclusion();
         LightPipeline lighter = this.lighters.getLighter(smooth ? LightMode.SMOOTH : LightMode.FLAT);
         BiomeColorCache.BiomeColorSource colorType = getBiomeColorType(state, world, pos);
         this.setOffset(block, pos);
