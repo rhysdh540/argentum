@@ -23,7 +23,7 @@ final class ClonedChunkSection {
     private final char[] blockStates;
     private final byte[] blockLight;
     private final byte[] skyLight;
-    private final ChunkNibbleStorage emptySectionSkyLight;
+    private final byte[] emptySectionSkyLight;
     private final Short2ObjectMap<BlockEntity> blockEntities = new Short2ObjectOpenHashMap<>();
     private final byte[] biomes;
     private final boolean hasSky;
@@ -60,45 +60,45 @@ final class ClonedChunkSection {
         return Arrays.copyOf(source.getData(), source.getData().length);
     }
 
-    private static ChunkNibbleStorage createEmptySectionSkyLight(WorldChunk chunk, int sectionY, boolean hasSky) {
+    private static byte[] createEmptySectionSkyLight(WorldChunk chunk, int sectionY, boolean hasSky) {
         if (!hasSky || sectionY < 0 || sectionY >= 16) {
             return null;
         }
 
-        ChunkNibbleStorage light = new ChunkNibbleStorage();
+        byte[] minLitY = new byte[256];
         int minY = sectionY << 4;
         int[] heightMap = chunk.getHeightMap();
 
-        for (int z = 0; z < 16; z++) {
-            for (int x = 0; x < 16; x++) {
-                int height = heightMap[z << 4 | x];
-                for (int y = Math.max(0, height - minY); y < 16; y++) {
-                    light.set(x, y, z, LightType.SKY.defaultValue);
-                }
-            }
+        for (int i = 0; i < 256; i++) {
+            minLitY[i] = (byte) Math.clamp(heightMap[i] - minY, 0, 17);
         }
 
-        return light;
+        return minLitY;
     }
 
     private void copyBlockEntities(WorldChunk chunk, int sectionY) {
-        int minY = sectionY << 4;
-        int maxY = minY + 15;
+        if (this.blockStates == null) {
+            return;
+        }
 
         int chunkBaseX = this.position.x() << 4;
         int chunkBaseZ = this.position.z() << 4;
 
-        for (int y = minY; y <= maxY; y++) {
+        for (int y = 0; y < 16; y++) {
             for (int z = 0; z < 16; z++) {
                 for (int x = 0; x < 16; x++) {
+					if (!getBlockState(x, y, z).getBlock().hasBlockEntity()) {
+                        continue;
+                    }
+
                     // we can't reuse the same BlockPos in the loop, since `chunk.getBlockEntity` and `be.setPos` both don't clone it
-                    BlockPos pos = new BlockPos(chunkBaseX + x, y, chunkBaseZ + z);
+                    BlockPos pos = new BlockPos(chunkBaseX + x, sectionY << 4 | y, chunkBaseZ + z);
 
                     BlockEntity be = chunk.getBlockEntity(pos, WorldChunk.BlockEntityCreationType.IMMEDIATE);
 
                     if (be != null) {
                         be.setPos(pos);
-                        this.blockEntities.put(packLocal(x, y & 15, z), be);
+                        this.blockEntities.put(packLocal(x, y, z), be);
                     }
                 }
             }
@@ -133,7 +133,10 @@ final class ClonedChunkSection {
         if (this.position.y() < 0 || this.position.y() >= 16) {
             return LightType.SKY.defaultValue;
         }
-        return this.emptySectionSkyLight == null ? 0 : this.emptySectionSkyLight.get(x, y, z);
+        if (this.emptySectionSkyLight == null) {
+            return 0;
+        }
+        return y >= this.emptySectionSkyLight[z << 4 | x] ? LightType.SKY.defaultValue : 0;
     }
 
     Biome getBiome(int x, int z) {

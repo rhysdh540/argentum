@@ -6,7 +6,7 @@ import org.embeddedt.embeddium.impl.util.PositionUtil;
 import net.minecraft.world.World;
 
 public final class ClonedChunkSectionCache {
-    private static final int MAX_SIZE = 512;
+    private static final int MAX_SIZE = 2048;
 
     private final World world;
     private final Long2ReferenceLinkedOpenHashMap<ClonedChunkSection> sections = new Long2ReferenceLinkedOpenHashMap<>();
