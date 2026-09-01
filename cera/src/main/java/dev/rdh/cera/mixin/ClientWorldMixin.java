@@ -39,7 +39,6 @@ public class ClientWorldMixin implements CeraClientWorldExtension {
         return this.cera$spawnSnapshots;
     }
 
-    /** The loading screen draws before there is a renderable world, so remember what we are loading into. */
     @Inject(method = "<init>", at = @At("RETURN"))
     private void cera$recordDimension(ClientPlayNetworkHandler networkHandler, WorldSettings settings, int dimension,
             Difficulty difficulty, Profiler profiler, CallbackInfo ci) {

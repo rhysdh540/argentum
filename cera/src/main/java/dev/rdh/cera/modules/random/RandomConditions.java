@@ -202,7 +202,6 @@ public final class RandomConditions {
     private record Entry(int profession, IntList careers) {
     }
 
-    /** @return the profession id for a number or name, or -1 if unrecognised. */
     public static int profession(String value) {
         try {
             return Integer.parseInt(value.trim());

@@ -147,34 +147,28 @@ public final class CustomColormaps implements ResourceReloadListener {
         return null;
     }
 
-    /** Redstone colormap sample for a wire power level (for reddust particles), or {@code -1} if not loaded. */
     public int redstoneColor(int level) {
         if (!Cera.CONFIG.customColors) return -1;
         Colormap redstone = this.state.redstone;
         return redstone != null ? redstone.getColorByIndex(level) : -1;
     }
 
-    /** Biome water-colormap sample (for particle tinting), or {@code -1} if no water colormap is loaded. */
     public int waterColor(Biome biome, BlockPos pos) {
         return sampleWorld(this.state.water, biome, pos);
     }
 
-    /** Overworld sky-colormap sample ({@code sky0.png}), or {@code -1}. */
     public int skyColor(Biome biome, BlockPos pos) {
         return sampleWorld(this.state.sky, biome, pos);
     }
 
-    /** Overworld fog-colormap sample ({@code fog0.png}), or {@code -1}. */
     public int fogColor(Biome biome, BlockPos pos) {
         return sampleWorld(this.state.fog, biome, pos);
     }
 
-    /** Underwater tint sample ({@code underwater.png}), or {@code -1}. */
     public int underwaterColor(Biome biome, BlockPos pos) {
         return sampleWorld(this.state.underwater, biome, pos);
     }
 
-    /** Under-lava tint sample ({@code underlava.png}), or {@code -1}. */
     public int underlavaColor(Biome biome, BlockPos pos) {
         return sampleWorld(this.state.underlava, biome, pos);
     }
