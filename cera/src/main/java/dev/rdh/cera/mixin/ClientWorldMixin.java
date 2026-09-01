@@ -5,9 +5,13 @@ import dev.rdh.cera.ext.CeraClientWorldExtension;
 import dev.rdh.cera.modules.DynamicLights;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.network.handler.ClientPlayNetworkHandler;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.profiler.Profiler;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.WorldSettings;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -33,6 +37,13 @@ public class ClientWorldMixin implements CeraClientWorldExtension {
     @Override
     public Map<UUID, SpawnSnapshot> cera$getSpawnSnapshots() {
         return this.cera$spawnSnapshots;
+    }
+
+    /** The loading screen draws before there is a renderable world, so remember what we are loading into. */
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void cera$recordDimension(ClientPlayNetworkHandler networkHandler, WorldSettings settings, int dimension,
+            Difficulty difficulty, Profiler profiler, CallbackInfo ci) {
+        Minecraft.getInstance().cera$getCustomLoadingScreens().setDimension(dimension);
     }
 
     @Inject(method = "addEntity", at = @At("TAIL"))

@@ -36,3 +36,5 @@ cera.options.emissive_textures.name=Emissive Textures
 cera.options.emissive_textures.tooltip=Parses and renders emissive overlay textures that glow.
 cera.options.custom_block_layers.name=Custom Block Layers
 cera.options.custom_block_layers.tooltip=Lets resource packs move blocks onto a different render layer.
+cera.options.custom_loading_screens.name=Custom Loading Screens
+cera.options.custom_loading_screens.tooltip=Uses per-dimension backgrounds for the world loading screen.

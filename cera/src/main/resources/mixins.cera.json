@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "BlockMixin",
+    "ProgressRendererMixin",
     "ClientWorldMixin",
     "ChunkRenderContextMixin",
     "ClientPlayerInteractionManagerMixin",
