@@ -1,6 +1,8 @@
 package dev.rdh.argentum.extras;
 
 import org.embeddedt.embeddium.impl.gui.framework.TextComponent;
+import org.lwjgl.sdl.SDLHints;
+import org.lwjgl.system.Platform;
 import org.taumc.celeritas.api.options.OptionIdentifier;
 import org.taumc.celeritas.api.options.control.ControlValueFormatter;
 import org.taumc.celeritas.api.options.control.SliderControl;
@@ -9,6 +11,7 @@ import org.taumc.celeritas.api.options.structure.OptionFlag;
 import org.taumc.celeritas.api.options.structure.OptionGroup;
 import org.taumc.celeritas.api.options.structure.OptionImpl;
 import org.taumc.celeritas.api.options.structure.OptionPage;
+import pl.tomgirl.lenis.window.DisplaySdl;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -124,6 +127,11 @@ final class ArgentumExtrasOptionPage {
                 .setId(id("misc"))
                 .add(toggle("disable_realms", (c, v) -> c.disableRealms = v, c -> c.disableRealms))
                 .add(toggle("disable_text_shadows", (c, v) -> c.disableTextShadows = v, c -> c.disableTextShadows))
+                .add(toggle("high_dpi_screen", (c, v) -> c.highDpiScreen = v, c -> c.highDpiScreen, OptionFlag.REQUIRES_GAME_RESTART))
+                .addConditionally(
+                        Platform.get() == Platform.MACOSX,
+                        () -> toggle("macos_smooth_scrolling", (c, v) -> c.macosSmoothScrolling = v, c -> c.macosSmoothScrolling, OptionFlag.REQUIRES_GAME_RESTART)
+                )
                 .build();
 
         OptionGroup entities = OptionGroup.createBuilder()

@@ -97,6 +97,11 @@ argentum-extras.options.weather_density.name=Weather Density
 argentum-extras.options.weather_density.tooltip=Controls the opacity and particle density of rain and snow.
 argentum-extras.options.leaf_quality.name=Leaf Quality
 argentum-extras.options.leaf_quality.tooltip=Balances leaf detail against rendering performance.
+argentum-extras.options.high_dpi_screen.name=High-DPI Screen
+argentum-extras.options.high_dpi_screen.tooltip=Enables usage of a high pixel density buffer if possible, enhancing the visual quality on high-DPI displays, but possibly reducing framerate.
+argentum-extras.options.macos_smooth_scrolling.name=Smooth Scrolling
+argentum-extras.options.macos_smooth_scrolling.tooltip=Enables scrolling momentum.
+
 argentum-extras.options.value.leaf_quality.fast=Fast
 argentum-extras.options.value.leaf_quality.hollow=Hollow
 argentum-extras.options.value.leaf_quality.enclosed=Enclosed
