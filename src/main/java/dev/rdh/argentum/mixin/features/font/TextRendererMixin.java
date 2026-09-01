@@ -454,7 +454,7 @@ public abstract class TextRendererMixin implements TextRendererExtension {
 
         for (int i = 0; i < text.length(); i++) {
             char character = text.charAt(i);
-            if (character == '\u00a7' && i + 1 < text.length()) {
+            if (character == '§' && i + 1 < text.length()) {
                 char formatting = Character.toLowerCase(text.charAt(++i));
                 if (formatting == 'k' || formatting == 'm' || formatting == 'n') {
                     return false;
@@ -474,9 +474,11 @@ public abstract class TextRendererMixin implements TextRendererExtension {
         GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
         GL11.glEnableClientState(GL11.GL_COLOR_ARRAY);
-        GL11.glVertexPointer(3, GL11.GL_FLOAT, 24, 0L);
-        GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 24, 12L);
-        GL11.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, 24, 20L);
+        VertexFormat format = DefaultVertexFormat.POSITION_TEX_COLOR;
+        int stride = format.getVertexSize();
+        GL11.glVertexPointer(3, GL11.GL_FLOAT, stride, format.getOffset(0));
+        GL11.glTexCoordPointer(2, GL11.GL_FLOAT, stride, format.getUvOffset(0));
+        GL11.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, stride, format.getColorOffset());
         RenderMetrics.recordFontBatch();
         buffer.draw(GL11.GL_QUADS);
         GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
