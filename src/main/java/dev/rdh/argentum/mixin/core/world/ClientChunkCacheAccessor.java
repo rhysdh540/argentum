@@ -5,6 +5,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 import net.minecraft.client.world.chunk.ClientChunkCache;
+import net.minecraft.util.Long2ObjectHashMap;
 import net.minecraft.world.chunk.WorldChunk;
 
 import java.util.List;
@@ -13,4 +14,7 @@ import java.util.List;
 public interface ClientChunkCacheAccessor {
     @Accessor("chunks")
     List<WorldChunk> getAllChunks();
+
+    @Accessor("chunksByPos")
+    Long2ObjectHashMap<WorldChunk> getChunksByPos();
 }

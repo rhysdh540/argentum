@@ -4,11 +4,11 @@ package dev.rdh.argentum.impl.render.entity;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import dev.rdh.argentum.mixin.core.world.ClientChunkCacheAccessor;
-import dev.rdh.argentum.mixin.core.world.WorldChunkAccessor;
 
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.TypeInstanceMultiMap;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.WorldChunk;
 
 import java.util.List;
@@ -25,19 +25,26 @@ public class EntityGatherer {
         this.entityList.clear();
     }
 
-    public List<Entity> getLoadedEntityList(ClientWorld world) {
+    public List<Entity> getLoadedEntityList(ClientWorld world, int centerChunkX, int centerChunkZ, int radius) {
         Consumer<Entity> addEntity = this.entityList::add;
         // Iterate directly over chunk entity lists where possible - mods may create multipart entities that are not
         // added to the main loadedEntityList.
         if (world.getChunkSource() instanceof ClientChunkCacheAccessor provider) {
-            var loadedChunks = provider.getAllChunks();
-            for (WorldChunk chunk : loadedChunks) {
-                if (!((WorldChunkAccessor)chunk).getHasEntities()) {
-                    continue;
+            var chunksByPos = provider.getChunksByPos();
+            int diameter = radius * 2 + 1;
+
+            if (diameter * diameter < chunksByPos.size()) {
+                for (int chunkX = centerChunkX - radius; chunkX <= centerChunkX + radius; chunkX++) {
+                    for (int chunkZ = centerChunkZ - radius; chunkZ <= centerChunkZ + radius; chunkZ++) {
+                        WorldChunk chunk = chunksByPos.get(ChunkPos.toLong(chunkX, chunkZ));
+                        if (chunk != null) {
+                            collect(chunk, addEntity);
+                        }
+                    }
                 }
-                TypeInstanceMultiMap<Entity>[] entityMaps = chunk.getEntities();
-                for (TypeInstanceMultiMap<Entity> map : entityMaps) {
-                    map.forEach(addEntity);
+            } else {
+                for (WorldChunk chunk : provider.getAllChunks()) {
+                    collect(chunk, addEntity);
                 }
             }
         } else {
@@ -45,5 +52,15 @@ public class EntityGatherer {
             world.entities.forEach(addEntity);
         }
         return this.entityList;
+    }
+
+    private static void collect(WorldChunk chunk, Consumer<Entity> addEntity) {
+        if (!chunk.argentum$hasEntities()) {
+            return;
+        }
+
+        for (TypeInstanceMultiMap<Entity> map : chunk.getEntities()) {
+            map.forEach(addEntity);
+        }
     }
 }

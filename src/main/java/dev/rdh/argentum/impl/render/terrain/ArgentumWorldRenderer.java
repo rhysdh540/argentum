@@ -181,7 +181,8 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
         var dispatcher = minecraft.getEntityRenderDispatcher();
         boolean batching = this.entityInstancing.isBatchActive();
         this.entityGatherer.clear();
-        List<Entity> entities = this.entityGatherer.getLoadedEntityList((ClientWorld)this.world);
+        List<Entity> entities = this.entityGatherer.getLoadedEntityList((ClientWorld)this.world,
+                MathHelper.floor(cameraX) >> 4, MathHelper.floor(cameraZ) >> 4, this.getEffectiveRenderDistance() + 1);
         this.entityOcclusionCuller.prepare(entities, camera, cameraX, cameraY, cameraZ);
 
         int rendered = 0;
