@@ -27,6 +27,7 @@ final class ClonedChunkSection {
     private final byte[] blockLight;
     private final byte[] skyLight;
     private final byte[] emptySectionSkyLight;
+    private final boolean hasLightData;
     private final Short2ObjectMap<BlockEntity> blockEntities = new Short2ObjectOpenHashMap<>();
     private final byte[] biomes;
     private final boolean hasSky;
@@ -38,15 +39,21 @@ final class ClonedChunkSection {
         WorldChunkSection source = getSection(chunk, sectionY);
         this.hasSky = !world.dimension.hasNoSky();
 
-        if (source == null) {
+        if (source == null || source.isEmpty()) {
             this.blockStates = null;
             this.nonAirRows = null;
+        } else {
+            this.blockStates = Arrays.copyOf(source.getBlockStates(), source.getBlockStates().length);
+            this.nonAirRows = computeNonAirRows(this.blockStates);
+        }
+
+        if (source == null) {
+            this.hasLightData = false;
             this.blockLight = null;
             this.skyLight = null;
             this.emptySectionSkyLight = createEmptySectionSkyLight(chunk, sectionY, this.hasSky);
         } else {
-            this.blockStates = Arrays.copyOf(source.getBlockStates(), source.getBlockStates().length);
-            this.nonAirRows = computeNonAirRows(this.blockStates);
+            this.hasLightData = true;
             this.blockLight = copy(source.getBlockLightStorage());
             this.skyLight = this.hasSky && source.getSkyLightStorage() != null ? copy(source.getSkyLightStorage()) : null;
             this.emptySectionSkyLight = null;
@@ -140,7 +147,7 @@ final class ClonedChunkSection {
     }
 
     int getLight(LightType type, int x, int y, int z) {
-        if (this.blockStates != null) {
+        if (this.hasLightData) {
             byte[] light = type == LightType.SKY ? this.skyLight : this.blockLight;
             if (light == null) {
                 return 0;
