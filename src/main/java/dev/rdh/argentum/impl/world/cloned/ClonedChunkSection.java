@@ -19,8 +19,11 @@ import net.minecraft.world.chunk.WorldChunkSection;
 import java.util.Arrays;
 
 final class ClonedChunkSection {
+    private static final char AIR_STATE_ID = (char)Block.STATE_REGISTRY.getId(Blocks.AIR.defaultState());
+
     private final SectionPos position;
     private final char[] blockStates;
+    private final short[] nonAirRows;
     private final byte[] blockLight;
     private final byte[] skyLight;
     private final byte[] emptySectionSkyLight;
@@ -37,11 +40,13 @@ final class ClonedChunkSection {
 
         if (source == null) {
             this.blockStates = null;
+            this.nonAirRows = null;
             this.blockLight = null;
             this.skyLight = null;
             this.emptySectionSkyLight = createEmptySectionSkyLight(chunk, sectionY, this.hasSky);
         } else {
             this.blockStates = Arrays.copyOf(source.getBlockStates(), source.getBlockStates().length);
+            this.nonAirRows = computeNonAirRows(this.blockStates);
             this.blockLight = copy(source.getBlockLightStorage());
             this.skyLight = this.hasSky && source.getSkyLightStorage() != null ? copy(source.getSkyLightStorage()) : null;
             this.emptySectionSkyLight = null;
@@ -54,6 +59,19 @@ final class ClonedChunkSection {
     private static WorldChunkSection getSection(WorldChunk chunk, int sectionY) {
         WorldChunkSection[] sections = chunk.getSections();
         return sectionY >= 0 && sectionY < sections.length ? sections[sectionY] : null;
+    }
+
+    private static short[] computeNonAirRows(char[] blockStates) {
+        short[] rows = new short[256];
+
+        for (int i = 0; i < blockStates.length; i++) {
+            if (blockStates[i] != AIR_STATE_ID) {
+                // i >> 4 is the row and i & 15 is x
+                rows[i >> 4] |= (short)(1 << (i & 15));
+            }
+        }
+
+        return rows;
     }
 
     private static byte[] copy(ChunkNibbleStorage source) {
@@ -111,6 +129,10 @@ final class ClonedChunkSection {
         }
         BlockState state = Block.STATE_REGISTRY.get(this.blockStates[y << 8 | z << 4 | x]);
         return state == null ? Blocks.AIR.defaultState() : state;
+    }
+
+    int getNonAirRow(int y, int z) {
+        return this.nonAirRows == null ? 0 : this.nonAirRows[y << 4 | z] & 0xFFFF;
     }
 
     BlockEntity getBlockEntity(int x, int y, int z) {

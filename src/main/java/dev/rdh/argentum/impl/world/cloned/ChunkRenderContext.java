@@ -26,6 +26,7 @@ public final class ChunkRenderContext implements WorldView {
 
     private final SectionPos origin;
     private final ClonedChunkSection[] sections;
+    private final ClonedChunkSection originSection;
     private final WorldGeneratorType generatorType;
     private final boolean hasSky;
     private short[] lightCache;
@@ -34,6 +35,7 @@ public final class ChunkRenderContext implements WorldView {
     private ChunkRenderContext(World world, SectionPos origin, ClonedChunkSection[] sections) {
         this.origin = origin;
         this.sections = sections;
+        this.originSection = sections[getSectionIndex(1, 1, 1)];
         this.generatorType = world.getGeneratorType();
         this.hasSky = !world.dimension.hasNoSky();
     }
@@ -73,6 +75,21 @@ public final class ChunkRenderContext implements WorldView {
 
     public SectionPos origin() {
         return this.origin;
+    }
+
+    /**
+     * {@return a bitmask over x of the blocks in the origin section's row (y, z) that are not air}
+     *
+     * Coordinates are local to the origin section. The mask is conservative, so callers must still check the state
+     * they read for air.
+     */
+    public int originNonAirRow(int y, int z) {
+        return this.originSection.getNonAirRow(y, z);
+    }
+
+    /** {@return the state at the given coordinates, which must be local to the origin section} */
+    public BlockState getOriginBlockState(int x, int y, int z) {
+        return this.originSection.getBlockState(x, y, z);
     }
 
     @Override

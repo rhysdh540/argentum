@@ -58,10 +58,6 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
         int minY = this.render.getOriginY();
         int minZ = this.render.getOriginZ();
 
-        int maxX = minX + 16;
-        int maxY = minY + 16;
-        int maxZ = minZ + 16;
-
         // Initialise with minX/minY/minZ so initial getBlockState crash context is correct
 
         var blockPos = new BlockPos.Mutable(minX, minY, minZ);
@@ -71,16 +67,20 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
         SectionVisibilityBuilder occluder = new SectionVisibilityBuilder();
 
         try {
-            for (int y = minY; y < maxY; y++) {
+            for (int y = 0; y < 16; y++) {
                 if (cancellationToken.isCancelled()) {
                     return null;
                 }
 
-                for (int z = minZ; z < maxZ; z++) {
-                    for (int x = minX; x < maxX; x++) {
-                        blockPos.set(x, y, z);
+                for (int z = 0; z < 16; z++) {
+                    // Walking a per-row bitmask instead of every position skips the long runs of air that dominate
+                    // sections in sky-island worlds
+                    for (int row = this.renderContext.originNonAirRow(y, z); row != 0; row &= row - 1) {
+                        int x = Integer.numberOfTrailingZeros(row);
 
-                        var blockState = this.renderContext.getBlockState(blockPos);
+                        blockPos.set(minX + x, minY + y, minZ + z);
+
+                        var blockState = this.renderContext.getOriginBlockState(x, y, z);
                         var block = blockState.getBlock();
 
                         if (block == net.minecraft.block.Blocks.AIR) {
