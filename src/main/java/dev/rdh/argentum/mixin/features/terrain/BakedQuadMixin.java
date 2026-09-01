@@ -12,7 +12,7 @@ import org.embeddedt.embeddium.impl.util.ModelQuadUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveModelUtil;
+import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(BakedQuad.class)
 public abstract class BakedQuadMixin implements BakedQuadView {
@@ -23,9 +23,13 @@ public abstract class BakedQuadMixin implements BakedQuadView {
     @Shadow @Final
     protected Direction face;
 
+    @Unique
     private int celeritas$flags;
+    @Unique
     private int celeritas$normal;
+    @Unique
     private ModelQuadFacing celeritas$normalFace;
+    @Unique
     private TextureAtlasSprite celeritas$sprite;
 
     @Override
@@ -101,6 +105,7 @@ public abstract class BakedQuadMixin implements BakedQuadView {
         return this.celeritas$sprite;
     }
 
+    @Unique
     private boolean isInside(TextureAtlasSprite sprite) {
         for (int i = 0; i < 4; i++) {
             float u = this.getTexU(i);
@@ -114,7 +119,7 @@ public abstract class BakedQuadMixin implements BakedQuadView {
 
     @Override
     public ModelQuadFacing getLightFace() {
-        return PrimitiveModelUtil.fromDirection(this.face);
+        return this.face.celeritas$toFacing();
     }
 
     @Override

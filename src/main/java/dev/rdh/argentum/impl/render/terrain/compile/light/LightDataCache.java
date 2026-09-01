@@ -3,7 +3,7 @@ package dev.rdh.argentum.impl.render.terrain.compile.light;
 import org.embeddedt.embeddium.impl.model.light.data.LightDataAccess;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 
-public final class PrimitiveLightDataCache extends LightDataAccess {
+public final class LightDataCache extends LightDataAccess {
     private ChunkRenderContext world;
 
     public void reset(ChunkRenderContext world, int x, int y, int z) {

@@ -15,7 +15,7 @@ import dev.rdh.argentum.impl.render.entity.EntityGatherer;
 import dev.rdh.argentum.impl.render.entity.EntityShadowBatch;
 import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancing;
 import dev.rdh.argentum.impl.render.entity.instancing.ModelInstancer;
-import dev.rdh.argentum.impl.render.terrain.matrix.PrimitiveChunkMatrixGetter;
+import dev.rdh.argentum.impl.render.terrain.matrix.ArgentumChunkMatrixGetter;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
@@ -37,7 +37,7 @@ import java.util.Objects;
 /**
  * Provides an extension to vanilla's world renderer.
  */
-public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveRenderSectionManager, BlockLayer, BlockEntity, Float> {
+public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRenderSectionManager, BlockLayer, BlockEntity, Float> {
     private final EntityGatherer entityGatherer = new EntityGatherer();
     private final EntityOcclusionCuller entityOcclusionCuller = new EntityOcclusionCuller(this);
     private final EntityShadowBatch entityShadowBatch = new EntityShadowBatch();
@@ -146,14 +146,14 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, PrimitiveR
 
     @Override
     protected ChunkRenderMatrices createChunkRenderMatrices() {
-        return PrimitiveChunkMatrixGetter.getMatrices();
+        return ArgentumChunkMatrixGetter.getMatrices();
     }
 
     @Override
-    protected PrimitiveRenderSectionManager createRenderSectionManager(CommandList commandList) {
+    protected ArgentumRenderSectionManager createRenderSectionManager(CommandList commandList) {
         ChunkTrackerHolder.get(this.world).setRequiredNeighborRadius(Argentum.CONFIG.safeChunkEdges ? 1 : 0);
         ChunkVertexType vertexType = Argentum.CONFIG.compactVertexFormat ? ChunkMeshFormats.COMPACT : ChunkMeshFormats.VANILLA_LIKE;
-        return PrimitiveRenderSectionManager.create(vertexType, this.world, this.renderDistance, commandList);
+        return ArgentumRenderSectionManager.create(vertexType, this.world, this.renderDistance, commandList);
     }
 
     public boolean isEntityVisible(Entity entity) {

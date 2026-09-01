@@ -36,9 +36,8 @@ import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexEncode
 import org.embeddedt.embeddium.impl.util.ModelQuadUtil;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
-import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveChunkBuildContext;
-import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveModelUtil;
-import dev.rdh.argentum.impl.render.terrain.compile.light.PrimitiveLightDataCache;
+import dev.rdh.argentum.impl.render.terrain.compile.ArgentumChunkBuildContext;
+import dev.rdh.argentum.impl.render.terrain.compile.light.LightDataCache;
 import dev.rdh.argentum.impl.world.biome.BiomeColorCache;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 
@@ -48,7 +47,7 @@ import java.util.List;
 public final class FastBlockRenderer {
     private static final Direction[] DIRECTIONS = Direction.values();
 
-    private final PrimitiveChunkBuildContext context;
+    private final ArgentumChunkBuildContext context;
     private final LightPipelineProvider lighters;
     private final QuadLightData quadLight = new QuadLightData();
     private final int[] colors = new int[4];
@@ -63,7 +62,7 @@ public final class FastBlockRenderer {
     private float offsetY;
     private float offsetZ;
 
-    public FastBlockRenderer(PrimitiveChunkBuildContext context, PrimitiveLightDataCache lightCache) {
+    public FastBlockRenderer(ArgentumChunkBuildContext context, LightDataCache lightCache) {
         this.context = context;
         this.lighters = new LightPipelineProvider(lightCache, DiffuseProvider.NONE, true);
         this.analyzer.setDefaultRenderingFlags(BakedQuadGroupAnalyzer.USE_REORIENTING);
@@ -95,7 +94,7 @@ public final class FastBlockRenderer {
             this.neighborPos.set(pos.getX() + direction.getOffsetX(), pos.getY() + direction.getOffsetY(), pos.getZ() + direction.getOffsetZ());
             if (!block.shouldRenderFace(world, this.neighborPos, direction)) continue;
 
-            int flags = this.analyzer.getFlagsForRendering(PrimitiveModelUtil.fromDirection(direction), BakedQuadView.ofList(quads));
+            int flags = this.analyzer.getFlagsForRendering(direction.celeritas$toFacing(), BakedQuadView.ofList(quads));
             this.renderQuads(quads, pos, state, world, lighter, direction, flags, colorType, material, buffers, renderData);
         }
 
@@ -110,7 +109,7 @@ public final class FastBlockRenderer {
                              LightPipeline lighter, Direction cullFace, int flags, BiomeColorCache.BiomeColorSource colorType,
                              Material material,
                              ChunkBuildBuffers buffers, PrimitiveBuiltRenderSectionData renderData) {
-        ModelQuadFacing cull = cullFace == null ? ModelQuadFacing.UNASSIGNED : PrimitiveModelUtil.fromDirection(cullFace);
+        ModelQuadFacing cull = cullFace == null ? ModelQuadFacing.UNASSIGNED : cullFace.celeritas$toFacing();
         for (int i = 0; i < quads.size(); i++) {
             BakedQuad quad = quads.get(i);
             BakedQuadView view = BakedQuadView.of(quad);

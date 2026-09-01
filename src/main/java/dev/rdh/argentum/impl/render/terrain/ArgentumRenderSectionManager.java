@@ -21,7 +21,7 @@ import org.embeddedt.embeddium.impl.util.position.SectionPos;
 import org.jetbrains.annotations.Nullable;
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
-import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveChunkBuildContext;
+import dev.rdh.argentum.impl.render.terrain.compile.ArgentumChunkBuildContext;
 import dev.rdh.argentum.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 import dev.rdh.argentum.impl.world.cloned.ClonedChunkSectionCache;
@@ -30,19 +30,19 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.client.render.texture.TextureAtlasSprite;
 import net.minecraft.world.World;
 
-public class PrimitiveRenderSectionManager extends RenderSectionManager {
+public class ArgentumRenderSectionManager extends RenderSectionManager {
     private final World world;
     private final ClonedChunkSectionCache sectionCache;
 
-    public PrimitiveRenderSectionManager(RenderPassConfiguration<?> configuration, World world, int renderDistance, CommandList commandList, int minSection, int maxSection, int requestedThreads) {
-        super(configuration, () -> new PrimitiveChunkBuildContext(configuration), ChunkRenderer::new, renderDistance, commandList, minSection, maxSection, requestedThreads, false);
+    public ArgentumRenderSectionManager(RenderPassConfiguration<?> configuration, World world, int renderDistance, CommandList commandList, int minSection, int maxSection, int requestedThreads) {
+        super(configuration, () -> new ArgentumChunkBuildContext(configuration), ChunkRenderer::new, renderDistance, commandList, minSection, maxSection, requestedThreads, false);
         this.world = world;
         this.sectionCache = new ClonedChunkSectionCache(world);
     }
 
-    public static PrimitiveRenderSectionManager create(ChunkVertexType vertexType, World world, int renderDistance, CommandList commandList) {
+    public static ArgentumRenderSectionManager create(ChunkVertexType vertexType, World world, int renderDistance, CommandList commandList) {
         int maxSection = world.getHeight() / 16;
-        return new PrimitiveRenderSectionManager(PrimitiveRenderPassConfigurationBuilder.build(vertexType,
+        return new ArgentumRenderSectionManager(RenderPassConfigurationBuilder.build(vertexType,
                 Argentum.CONFIG.translucencySorting, Argentum.CONFIG.chunkFadeInDuration), world, renderDistance, commandList,
                 0, maxSection,
                 Argentum.CONFIG.chunkBuilderThreads

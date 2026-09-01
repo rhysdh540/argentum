@@ -19,19 +19,19 @@ import net.minecraft.client.render.vertex.DefaultVertexFormat;
 
 import java.nio.IntBuffer;
 import dev.rdh.argentum.impl.Argentum;
-import dev.rdh.argentum.impl.render.terrain.compile.light.PrimitiveLightDataCache;
+import dev.rdh.argentum.impl.render.terrain.compile.light.LightDataCache;
 import dev.rdh.argentum.impl.render.terrain.compile.pipeline.FastBlockRenderer;
 import dev.rdh.argentum.impl.world.biome.BiomeColorCache;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 
-public class PrimitiveChunkBuildContext extends ChunkBuildContext {
+public class ArgentumChunkBuildContext extends ChunkBuildContext {
     private static final BlockLayer[] LAYERS = BlockLayer.values();
 
     private final BufferBuilder[] layerBuffers = new BufferBuilder[LAYERS.length];
     private final boolean[] usedLayerBuffers = new boolean[LAYERS.length];
     private final TextureAtlas textureAtlas;
     private final RenderPassConfiguration<?> renderPassConfiguration;
-    private final PrimitiveLightDataCache lightCache = new PrimitiveLightDataCache();
+    private final LightDataCache lightCache = new LightDataCache();
     private final short[] renderLightCache = new short[20 * 20 * 20];
     private final BiomeColorCache biomeColorCache = new BiomeColorCache(Argentum.CONFIG.biomeBlendRadius);
     private final FastBlockRenderer blockRenderer = new FastBlockRenderer(this, this.lightCache);
@@ -39,7 +39,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
     private int originY;
     private int originZ;
 
-    public PrimitiveChunkBuildContext(RenderPassConfiguration renderPassConfiguration) {
+    public ArgentumChunkBuildContext(RenderPassConfiguration renderPassConfiguration) {
         super(renderPassConfiguration);
         this.renderPassConfiguration = renderPassConfiguration;
         this.textureAtlas = Minecraft.getInstance().getBlocksAtlas();
@@ -158,7 +158,7 @@ public class PrimitiveChunkBuildContext extends ChunkBuildContext {
             return material;
         }
 
-        SpriteTransparencyLevel transparency = ((SpriteTransparencyLevel.Holder)sprite).embeddium$getTransparencyLevel();
+        SpriteTransparencyLevel transparency = sprite.embeddium$getTransparencyLevel();
         if (material == this.renderPassConfiguration.defaultTranslucentMaterial()
                 && transparency != SpriteTransparencyLevel.TRANSLUCENT) {
             return this.renderPassConfiguration.defaultCutoutMippedMaterial();

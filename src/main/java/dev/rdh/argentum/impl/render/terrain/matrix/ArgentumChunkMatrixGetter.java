@@ -5,7 +5,7 @@ import org.joml.Matrix4f;
 
 import java.util.Objects;
 
-public class PrimitiveChunkMatrixGetter {
+public class ArgentumChunkMatrixGetter {
     private static ChunkRenderMatrices matrices;
 
     public static void update(float[] projection, float[] modelView) {

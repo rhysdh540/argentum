@@ -13,7 +13,7 @@ import org.embeddedt.embeddium.impl.util.task.CancellationToken;
 import org.joml.Vector3d;
 import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
-import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveChunkBuildContext;
+import dev.rdh.argentum.impl.render.terrain.compile.ArgentumChunkBuildContext;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
 
 import net.minecraft.block.entity.BlockEntity;
@@ -48,7 +48,7 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
     }
 
     private ChunkBuildOutput executeTimed(ChunkBuildContext context, CancellationToken cancellationToken) {
-        PrimitiveChunkBuildContext buildContext = (PrimitiveChunkBuildContext)context;
+        ArgentumChunkBuildContext buildContext = (ArgentumChunkBuildContext)context;
         var renderData = new PrimitiveBuiltRenderSectionData();
 
         ChunkBuildBuffers buffers = buildContext.buffers;

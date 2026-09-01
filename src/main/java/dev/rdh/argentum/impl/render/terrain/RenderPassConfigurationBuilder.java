@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class PrimitiveRenderPassConfigurationBuilder {
+public class RenderPassConfigurationBuilder {
     private record PrimitivePipelineState(int pass, boolean disableBlend) implements TerrainRenderPass.PipelineState {
         @Override
         public void setup() {
