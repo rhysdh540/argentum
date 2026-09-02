@@ -11,7 +11,6 @@ import org.embeddedt.embeddium.impl.render.chunk.occlusion.SectionVisibilityBuil
 import org.embeddedt.embeddium.impl.render.chunk.terrain.TerrainRenderPass;
 import org.embeddedt.embeddium.impl.util.task.CancellationToken;
 import org.joml.Vector3d;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.terrain.compile.PrimitiveBuiltRenderSectionData;
 import dev.rdh.argentum.impl.render.terrain.compile.ArgentumChunkBuildContext;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
@@ -39,15 +38,6 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
 
     @Override
     public ChunkBuildOutput execute(ChunkBuildContext context, CancellationToken cancellationToken) {
-        long started = System.nanoTime();
-        try {
-            return this.executeTimed(context, cancellationToken);
-        } finally {
-            RenderMetrics.recordChunkBuild(System.nanoTime() - started);
-        }
-    }
-
-    private ChunkBuildOutput executeTimed(ChunkBuildContext context, CancellationToken cancellationToken) {
         ArgentumChunkBuildContext buildContext = (ArgentumChunkBuildContext)context;
         var renderData = new PrimitiveBuiltRenderSectionData();
 

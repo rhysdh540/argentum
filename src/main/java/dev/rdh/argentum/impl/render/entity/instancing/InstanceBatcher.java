@@ -15,7 +15,6 @@ import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector4fc;
 import org.lwjgl.opengl.GL11;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
 
 import java.util.EnumMap;
 
@@ -239,7 +238,6 @@ final class InstanceBatcher {
                         entry.getValue().sortBackToFront();
                     }
                     entry.getKey().render(commandList, entry.getValue());
-                    RenderMetrics.recordDraw();
                     draws++;
                 }
             }

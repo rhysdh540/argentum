@@ -11,7 +11,6 @@ import org.embeddedt.embeddium.impl.render.chunk.compile.tasks.ChunkBuilderTask;
 import org.embeddedt.embeddium.impl.render.chunk.multidraw.DirectMultiDrawEmitter;
 import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
 import org.embeddedt.embeddium.impl.render.chunk.lists.SectionTicker;
-import org.embeddedt.embeddium.impl.render.chunk.multidraw.MultiDrawEmitter;
 import org.embeddedt.embeddium.impl.render.chunk.sprite.GenericSectionSpriteTicker;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderInterface;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderTextureSlot;
@@ -20,7 +19,6 @@ import org.embeddedt.embeddium.impl.render.viewport.Viewport;
 import org.embeddedt.embeddium.impl.util.position.SectionPos;
 import org.jetbrains.annotations.Nullable;
 import dev.rdh.argentum.impl.Argentum;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.terrain.compile.ArgentumChunkBuildContext;
 import dev.rdh.argentum.impl.render.terrain.compile.task.ChunkBuilderMeshingTask;
 import dev.rdh.argentum.impl.world.cloned.ChunkRenderContext;
@@ -103,7 +101,7 @@ public class ArgentumRenderSectionManager extends RenderSectionManager {
     private static class ChunkRenderer extends DefaultChunkRenderer {
 
         public ChunkRenderer(RenderDevice device, RenderPassConfiguration<?> renderPassConfiguration) {
-            super(device, renderPassConfiguration, counting(new DirectMultiDrawEmitter()));
+            super(device, renderPassConfiguration, new DirectMultiDrawEmitter());
         }
 
         @Override
@@ -116,12 +114,5 @@ public class ArgentumRenderSectionManager extends RenderSectionManager {
             shader.setTextureSlot(ChunkShaderTextureSlot.BLOCK, 0);
             shader.setTextureSlot(ChunkShaderTextureSlot.LIGHT, 1);
         }
-    }
-
-    private static MultiDrawEmitter counting(MultiDrawEmitter delegate) {
-        return (commandList, tessellation, primitiveType, batch) -> {
-            RenderMetrics.recordTerrainDraw();
-            delegate.executeBatch(commandList, tessellation, primitiveType, batch);
-        };
     }
 }

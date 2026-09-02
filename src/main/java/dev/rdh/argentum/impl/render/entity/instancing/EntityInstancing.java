@@ -1,7 +1,6 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
 import dev.rdh.argentum.impl.Argentum;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 import net.minecraft.client.render.model.Model;
 import net.minecraft.client.resource.model.BakedModel;
@@ -109,13 +108,7 @@ public final class EntityInstancing {
     }
 
     public void flush(CommandList commandList) {
-        RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
-        ModelInstancer.BatchStats stats;
-        try {
-            stats = this.backend.flush(commandList);
-        } finally {
-            RenderMetrics.setCategory(previous);
-        }
+        ModelInstancer.BatchStats stats = this.backend.flush(commandList);
         this.debugString = "Entity instancing: %d entities (%d players) | %d parts | %d draws | %d textures".formatted(
                 this.entityCount, this.playerCount, stats.instances(), stats.draws(), stats.textures()
         );

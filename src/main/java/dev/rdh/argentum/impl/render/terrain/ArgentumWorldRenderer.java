@@ -9,7 +9,6 @@ import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexType;
 import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTrackerHolder;
 import org.embeddedt.embeddium.impl.render.terrain.SimpleWorldRenderer;
 import dev.rdh.argentum.impl.Argentum;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.entity.EntityOcclusionCuller;
 import dev.rdh.argentum.impl.render.entity.EntityGatherer;
 import dev.rdh.argentum.impl.render.entity.EntityShadowBatch;
@@ -192,7 +191,6 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRe
             for (Entity entity : entities) {
                 boolean visible = dispatcher.shouldRender(entity, culler, cameraX, cameraY, cameraZ);
                 if (visible && !this.isEntityVisible(entity)) {
-                    RenderMetrics.recordCulledEntity();
                     visible = false;
                 }
 
@@ -215,13 +213,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRe
                 }
 
                 rendered++;
-                RenderMetrics.recordRenderedEntity();
-                RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
-                try {
-                    dispatcher.render(entity, tickDelta);
-                } finally {
-                    RenderMetrics.setCategory(previous);
-                }
+                dispatcher.render(entity, tickDelta);
             }
         } catch (RuntimeException | Error exception) {
             this.entityInstancing.discardBatch();
@@ -258,22 +250,16 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRe
     @Override
     protected void renderBlockEntityList(List<BlockEntity> list, Float partialTicksBoxed) {
         float partialTicks = partialTicksBoxed;
-        RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.BLOCK_ENTITY);
-        try {
-            for (var blockEntity : list) {
-                try {
-                    RenderMetrics.recordRenderedBlockEntity();
-                    BlockEntityRenderDispatcher.INSTANCE.render(blockEntity, partialTicks, -1);
-                } catch(RuntimeException e) {
-                    if(blockEntity.isRemoved()) {
-                        Argentum.LOGGER.warn("Suppressing crash from invalid tile entity");
-                    } else {
-                        throw e;
-                    }
+        for (var blockEntity : list) {
+            try {
+                BlockEntityRenderDispatcher.INSTANCE.render(blockEntity, partialTicks, -1);
+            } catch(RuntimeException e) {
+                if(blockEntity.isRemoved()) {
+                    Argentum.LOGGER.warn("Suppressing crash from invalid tile entity");
+                } else {
+                    throw e;
                 }
             }
-        } finally {
-            RenderMetrics.setCategory(previous);
         }
     }
 }

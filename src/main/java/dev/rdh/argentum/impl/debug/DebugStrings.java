@@ -25,7 +25,6 @@ public class DebugStrings {
         var renderer = ArgentumWorldRenderer.instanceNullable();
 
         if (renderer != null) {
-            RenderMetrics.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, Formatting.RESET)));
             stringsToRender.add(Pair.of(renderer.getEntityInstancing().getDebugString(), Formatting.RESET));
             stringsToRender.add(Pair.of("", Formatting.RESET));
             renderer.getDebugStrings().forEach(str -> stringsToRender.add(Pair.of(str, Formatting.RESET)));
