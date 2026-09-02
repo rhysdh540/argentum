@@ -6,7 +6,8 @@ import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat3v;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformInt;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderComponent;
-import dev.rdh.argentum.impl.render.terrain.matrix.ArgentumChunkMatrixGetter;
+
+import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -67,7 +68,8 @@ final class InstanceShader {
     }
 
     private void setLightDirection(GlUniformFloat3v uniform, Vector3fc direction) {
-        ArgentumChunkMatrixGetter.getMatrices().modelView().transformDirection(direction, this.lightDirection).normalize();
+        ArgentumWorldRenderer.instance().createChunkRenderMatrices().modelView()
+                .transformDirection(direction, this.lightDirection).normalize();
         uniform.set(this.lightDirection.x, this.lightDirection.y, this.lightDirection.z);
     }
 

@@ -8,13 +8,14 @@ import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkMeshFormats;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexType;
 import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTrackerHolder;
 import org.embeddedt.embeddium.impl.render.terrain.SimpleWorldRenderer;
+import org.joml.Matrix4f;
+
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.render.entity.EntityOcclusionCuller;
 import dev.rdh.argentum.impl.render.entity.EntityGatherer;
 import dev.rdh.argentum.impl.render.entity.EntityShadowBatch;
 import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancing;
 import dev.rdh.argentum.impl.render.entity.instancing.ModelInstancer;
-import dev.rdh.argentum.impl.render.terrain.matrix.ArgentumChunkMatrixGetter;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
@@ -42,6 +43,8 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRe
     private final EntityShadowBatch entityShadowBatch = new EntityShadowBatch();
     private final ModelInstancer modelInstancer = new ModelInstancer();
     private final EntityInstancing entityInstancing = new EntityInstancing(this.modelInstancer);
+
+    private ChunkRenderMatrices matrices = null;
 
     /**
      * @return The ArgentumWorldRenderer based on the current dimension
@@ -144,8 +147,8 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRe
     }
 
     @Override
-    protected ChunkRenderMatrices createChunkRenderMatrices() {
-        return ArgentumChunkMatrixGetter.getMatrices();
+    public ChunkRenderMatrices createChunkRenderMatrices() {
+        return Objects.requireNonNull(this.matrices, "Render matrices have not been captured");
     }
 
     @Override
@@ -153,6 +156,10 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRe
         ChunkTrackerHolder.get(this.world).setRequiredNeighborRadius(Argentum.CONFIG.safeChunkEdges ? 1 : 0);
         ChunkVertexType vertexType = Argentum.CONFIG.compactVertexFormat ? ChunkMeshFormats.COMPACT : ChunkMeshFormats.VANILLA_LIKE;
         return ArgentumRenderSectionManager.create(vertexType, this.world, this.renderDistance, commandList);
+    }
+
+    public void captureMatrices(float[] projection, float[] modelView) {
+        matrices = new ChunkRenderMatrices(new Matrix4f().set(projection), new Matrix4f().set(modelView));
     }
 
     public boolean isEntityVisible(Entity entity) {
