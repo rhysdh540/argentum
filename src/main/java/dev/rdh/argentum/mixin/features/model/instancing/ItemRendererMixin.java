@@ -1,5 +1,7 @@
 package dev.rdh.argentum.mixin.features.model.instancing;
 
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.minecraft.client.render.entity.ItemRenderer;
 import net.minecraft.client.resource.model.BakedModel;
 import net.minecraft.item.ItemStack;
@@ -16,10 +18,26 @@ public abstract class ItemRendererMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void celeritas$instanceHeldItem(BakedModel model, int color, ItemStack item, CallbackInfo ci) {
+    private void argentum$instanceHeldItem(BakedModel model, int color, ItemStack item, CallbackInfo ci) {
         EntityCapture capture = EntityCapture.current();
         if (capture != null && capture.recordItem(model, item, color)) {
             ci.cancel();
+        }
+    }
+
+    @WrapMethod(method = "renderEnchantmentGlint")
+    private void argentum$captureGlint(BakedModel model, Operation<Void> original) {
+        EntityCapture capture = EntityCapture.current();
+        if (capture == null) {
+            original.call(model);
+            return;
+        }
+
+        capture.beginGlint();
+        try {
+            original.call(model);
+        } finally {
+            capture.endGlint();
         }
     }
 }

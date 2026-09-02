@@ -43,6 +43,7 @@ public final class EntityCapture implements AutoCloseable {
     private int matrixMode;
     private int packedLight;
     private int itemGlintPass;
+    private boolean glintActive;
     private final Vector4f color = new Vector4f();
     private float effectTime;
     private final Vector4f overlayColor = new Vector4f();
@@ -102,6 +103,7 @@ public final class EntityCapture implements AutoCloseable {
         this.modelActive = false;
         this.armorLayer = false;
         this.itemGlintPass = 0;
+        this.glintActive = false;
         this.color.set(1);
         this.currentOverlayColor.set(this.overlayColor);
     }
@@ -172,7 +174,7 @@ public final class EntityCapture implements AutoCloseable {
         if (item != null && color == -1) {
             this.pass = InstanceRenderPass.ITEM;
             geometry = this.owner.backend().item(model, item);
-        } else if (item == null && color == -8372020 && this.itemGlintPass < 2) {
+        } else if (item == null && this.glintActive && this.itemGlintPass < 2) {
             this.pass = this.itemGlintPass++ == 0
                     ? InstanceRenderPass.ITEM_GLINT_0 : InstanceRenderPass.ITEM_GLINT_1;
             geometry = this.owner.backend().fixedItem(model, color);
@@ -188,6 +190,15 @@ public final class EntityCapture implements AutoCloseable {
             this.pass = previousPass;
         }
         return true;
+    }
+
+    public void beginGlint() {
+        this.glintActive = true;
+        this.itemGlintPass = 0;
+    }
+
+    public void endGlint() {
+        this.glintActive = false;
     }
 
     public boolean recordBlock(BakedModel model, float brightness, float red, float green, float blue) {
