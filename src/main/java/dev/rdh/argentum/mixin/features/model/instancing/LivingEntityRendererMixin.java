@@ -15,9 +15,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import dev.rdh.argentum.impl.render.entity.instancing.EntityCapture;
 import dev.rdh.argentum.impl.render.entity.instancing.EntityInstancing;
 
+import java.nio.FloatBuffer;
 import java.util.List;
 
 @Mixin(LivingEntityRenderer.class)
@@ -32,7 +34,7 @@ public abstract class LivingEntityRendererMixin {
     protected boolean solidRender;
 
     @Shadow
-    protected abstract int getOverlayColor(LivingEntity entity, float brightness, float tickDelta);
+    protected FloatBuffer tintBuffer;
 
     @WrapMethod(method = "render(Lnet/minecraft/entity/living/LivingEntity;DDDFF)V")
     private void celeritas$captureEntity(LivingEntity entity, double x, double y, double z, float yaw,
@@ -43,28 +45,28 @@ public abstract class LivingEntityRendererMixin {
                 && !this.solidRender
                 && !entity.isInvisible()
                 && !entity.shouldRenderOnFire();
-        float overlayRed = 0.0F;
-        float overlayGreen = 0.0F;
-        float overlayBlue = 0.0F;
-        float overlayAlpha = 0.0F;
-        if (entity.damagedTimer > 0 || entity.deathTicks > 0) {
-            overlayRed = 1.0F;
-            overlayAlpha = 0.3F;
-        } else {
-            int overlay = this.getOverlayColor(entity, entity.getBrightness(tickDelta), tickDelta);
-            if ((overlay >>> 24) != 0) {
-                overlayRed = (overlay >>> 16 & 0xFF) / 255.0F;
-                overlayGreen = (overlay >>> 8 & 0xFF) / 255.0F;
-                overlayBlue = (overlay & 0xFF) / 255.0F;
-                overlayAlpha = 1.0F - (overlay >>> 24) / 255.0F;
-            }
-        }
         Identifier texture = eligible ? ((EntityRendererAccessor)this).celeritas$getTextureLocation(entity) : null;
         try (EntityCapture capture = eligible ? instancing.beginEntity(
                 this.model, texture, player, player || !this.layers.isEmpty(),
                 EntityInstancing.packedLight(entity, tickDelta), entity.ticks + tickDelta,
-                overlayRed, overlayGreen, overlayBlue, overlayAlpha) : null) {
+                0.0F, 0.0F, 0.0F, 0.0F) : null) {
             original.call(entity, x, y, z, yaw, tickDelta);
+        }
+    }
+
+    // not TAIL: the "no overlay at all" branch is compiled to the last return in the method, so TAIL would bind to
+    // the one path that leaves tintBuffer holding the previous entity's colour
+    @Inject(method = "setupOverlayColor(Lnet/minecraft/entity/living/LivingEntity;FZ)Z", at = @At("RETURN"))
+    private void celeritas$captureOverlayColor(LivingEntity entity, float tickDelta, boolean alwaysRender,
+            CallbackInfoReturnable<Boolean> cir) {
+        if (!cir.getReturnValueZ()) {
+            // either the entity has no tint, or this layer does not take it; beginEntity and beginLayer cover both
+            return;
+        }
+        EntityCapture capture = EntityCapture.current();
+        if (capture != null) {
+            capture.setOverlayColor(this.tintBuffer.get(0), this.tintBuffer.get(1),
+                    this.tintBuffer.get(2), this.tintBuffer.get(3));
         }
     }
 

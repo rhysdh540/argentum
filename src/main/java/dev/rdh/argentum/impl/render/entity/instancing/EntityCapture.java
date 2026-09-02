@@ -108,6 +108,11 @@ public final class EntityCapture implements AutoCloseable {
         this.currentOverlayColor.set(this.overlayColor);
     }
 
+    public void setOverlayColor(float red, float green, float blue, float alpha) {
+        this.overlayColor.set(red, green, blue, alpha);
+        this.currentOverlayColor.set(this.overlayColor);
+    }
+
     public void beginModel() {
         if (this.finished || this.model == null) {
             return;
