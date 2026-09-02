@@ -236,6 +236,7 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRe
         } finally {
             RenderDevice.exitManagedCode();
         }
+        this.entityInstancing.renderNameTags();
         return rendered;
     }
 

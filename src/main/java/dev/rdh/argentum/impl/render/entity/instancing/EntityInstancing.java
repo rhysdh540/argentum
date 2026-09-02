@@ -119,6 +119,9 @@ public final class EntityInstancing {
         this.debugString = "Entity instancing: %d entities (%d players) | %d parts | %d draws | %d textures".formatted(
                 this.entityCount, this.playerCount, stats.instances(), stats.draws(), stats.textures()
         );
+    }
+
+    public void renderNameTags() {
         this.nameTags.render();
     }
 
