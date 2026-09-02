@@ -206,6 +206,8 @@ public final class FastBlockRenderer {
         int localY = pos.getY() & 15;
         int localZ = pos.getZ() & 15;
         int normal = quad.getComputedFaceNormal();
+        // the light face, not the normal face: a cross-model quad's normal face is UNASSIGNED, which packs to zero
+        int vanillaNormal = quad.getLightFace().getPackedNormal();
 
         for (int destination = 0; destination < 4; destination++) {
             int source = orientation.getVertexIndex(destination);
@@ -217,7 +219,7 @@ public final class FastBlockRenderer {
             vertex.u = quad.getTexU(source);
             vertex.v = quad.getTexV(source);
             vertex.light = this.quadLight.lm[source];
-            vertex.vanillaNormal = quad.getNormalFace().getPackedNormal();
+            vertex.vanillaNormal = vanillaNormal;
             vertex.trueNormal = normal;
         }
 
