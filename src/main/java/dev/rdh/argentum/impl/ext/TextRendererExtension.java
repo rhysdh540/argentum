@@ -1,6 +1,12 @@
 package dev.rdh.argentum.impl.ext;
 
+import dev.rdh.argentum.impl.render.text.TextBatcher;
+
 public interface TextRendererExtension {
+    default TextBatcher argentum$getBatcher() {
+        throw new UnsupportedOperationException();
+    }
+
     default void argentum$beginBatch(Runnable beforeImmediateText) {
         throw new UnsupportedOperationException();
     }
