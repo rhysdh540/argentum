@@ -71,7 +71,8 @@ public abstract class BakedQuadMixin implements BakedQuadView {
     public int getFlags() {
         int flags = this.celeritas$flags;
         if ((flags & ModelQuadFlags.IS_POPULATED) == 0) {
-            this.celeritas$flags = flags = ModelQuadFlags.getQuadFlags(this, this.getLightFace(), flags);
+            this.celeritas$getSprite();
+            this.celeritas$flags = flags = ModelQuadFlags.getQuadFlags(this, this.getLightFace(), this.celeritas$flags);
         }
         return flags;
     }

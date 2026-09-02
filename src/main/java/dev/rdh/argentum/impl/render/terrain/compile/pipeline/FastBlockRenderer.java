@@ -65,7 +65,7 @@ public final class FastBlockRenderer {
     public FastBlockRenderer(ArgentumChunkBuildContext context, LightDataCache lightCache) {
         this.context = context;
         this.lighters = new LightPipelineProvider(lightCache, DiffuseProvider.NONE, true);
-        this.analyzer.setDefaultRenderingFlags(BakedQuadGroupAnalyzer.USE_REORIENTING);
+        this.analyzer.setDefaultRenderingFlags(BakedQuadGroupAnalyzer.USE_REORIENTING | BakedQuadGroupAnalyzer.USE_RENDER_PASS_OPTIMIZATION);
     }
 
     public void beginSection() {
@@ -77,7 +77,7 @@ public final class FastBlockRenderer {
     public void render(BlockState state, BlockPos pos, ChunkRenderContext world, BlockLayer layer,
                        ChunkBuildBuffers buffers, PrimitiveBuiltRenderSectionData renderData) {
         Arrays.fill(this.orientations, null);
-        this.analyzer.setDefaultRenderingFlags(BakedQuadGroupAnalyzer.USE_REORIENTING);
+        this.analyzer.setDefaultRenderingFlags(BakedQuadGroupAnalyzer.USE_REORIENTING | BakedQuadGroupAnalyzer.USE_RENDER_PASS_OPTIMIZATION);
 
         Block block = state.getBlock();
         BakedModel model = this.blockRenderDispatcher.getModel(state, world, pos);
@@ -146,7 +146,10 @@ public final class FastBlockRenderer {
                 }
             }
 
-            Material selected = (view.getFlags() & ModelQuadFlags.IS_TRUSTED_SPRITE) != 0
+            // only repass a quad when its whole group agrees; a stack that goes translucent-then-opaque
+            // would otherwise get its layers split across passes and drawn in the wrong order
+            Material selected = (flags & BakedQuadGroupAnalyzer.USE_RENDER_PASS_OPTIMIZATION) != 0
+                    && (view.getFlags() & ModelQuadFlags.IS_PASS_OPTIMIZABLE) != 0
                     ? this.context.selectMaterial(material, sprite) : material;
             if (sprite != null && sprite.isAnimated()) renderData.animatedSprites.add(sprite);
             this.writeQuad(view, pos, selected, orientation, buffers);
