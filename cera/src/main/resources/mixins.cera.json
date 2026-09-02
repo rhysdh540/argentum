@@ -52,11 +52,14 @@
     "colors.GameRendererMixin",
     "WorldRendererMixin"
   ],
-  "injectors": {
-    "defaultRequire": 1
-  },
   "mixins": [
     "NamespacedIdentifiersMixin",
     "VillagerEntityAccessor"
-  ]
+  ],
+  "mixinextras": {
+    "minVersion": "0.5.1"
+  },
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

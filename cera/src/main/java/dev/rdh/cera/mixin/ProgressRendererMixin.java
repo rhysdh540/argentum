@@ -15,11 +15,7 @@ public class ProgressRendererMixin {
     @Shadow
     private Minecraft minecraft;
 
-    @WrapWithCondition(
-            method = "progressStagePercentage",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/Tesselator;end()V",
-                    ordinal = 0)
-    )
+    @WrapWithCondition(method = "progressStagePercentage", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/vertex/Tesselator;end()V", ordinal = 0))
     private boolean cera$drawCustomBackground(Tesselator tesselator, @Local(ordinal = 1) int width, @Local(ordinal = 2) int height) {
         LoadingScreen screen = this.minecraft.cera$getCustomLoadingScreens().active();
         if (screen != null) {
