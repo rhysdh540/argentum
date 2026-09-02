@@ -15,6 +15,7 @@ public class ArgentumConfig {
     public boolean particleCulling = true;
     public boolean blockFaceCulling = true;
     public boolean translucencySorting = true;
+    public boolean renderPassOptimization = true;
     public boolean animateOnlyVisibleTextures = true;
     public int chunkFadeInDuration = 0;
     public FogShape fogShape = FogShape.SPHERICAL;

@@ -34,6 +34,7 @@ public class ArgentumChunkBuildContext extends ChunkBuildContext {
     private final LightDataCache lightCache = new LightDataCache();
     private final short[] renderLightCache = new short[20 * 20 * 20];
     private final BiomeColorCache biomeColorCache = new BiomeColorCache(Argentum.CONFIG.biomeBlendRadius);
+    private final boolean renderPassOptimization = Argentum.CONFIG.renderPassOptimization;
     private final FastBlockRenderer blockRenderer = new FastBlockRenderer(this, this.lightCache);
     private int originX;
     private int originY;
@@ -154,7 +155,7 @@ public class ArgentumChunkBuildContext extends ChunkBuildContext {
     }
 
     public Material selectMaterial(Material material, TextureAtlasSprite sprite) {
-        if (sprite == null || sprite.getClass() != TextureAtlasSprite.class || sprite.isAnimated()) {
+        if (!this.renderPassOptimization || sprite == null || sprite.getClass() != TextureAtlasSprite.class || sprite.isAnimated()) {
             return material;
         }
 

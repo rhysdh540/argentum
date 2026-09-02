@@ -54,6 +54,7 @@ public final class FastBlockRenderer {
     private final ChunkVertexEncoder.Vertex[] vertices = ChunkVertexEncoder.Vertex.uninitializedQuad();
     private final ModelQuadOrientation[] orientations = new ModelQuadOrientation[DIRECTIONS.length];
     private final BakedQuadGroupAnalyzer analyzer = new BakedQuadGroupAnalyzer();
+    private final int defaultRenderingFlags;
     private final BlockPos.Mutable neighborPos = new BlockPos.Mutable();
     private final BlockPos.Mutable colorPos = new BlockPos.Mutable();
     private BlockRenderDispatcher blockRenderDispatcher;
@@ -65,7 +66,12 @@ public final class FastBlockRenderer {
     public FastBlockRenderer(ArgentumChunkBuildContext context, LightDataCache lightCache) {
         this.context = context;
         this.lighters = new LightPipelineProvider(lightCache, DiffuseProvider.NONE, true);
-        this.analyzer.setDefaultRenderingFlags(BakedQuadGroupAnalyzer.USE_REORIENTING | BakedQuadGroupAnalyzer.USE_RENDER_PASS_OPTIMIZATION);
+        int flags = BakedQuadGroupAnalyzer.USE_ALL_THINGS;
+        if (!Argentum.CONFIG.renderPassOptimization) {
+            flags &= ~BakedQuadGroupAnalyzer.USE_RENDER_PASS_OPTIMIZATION;
+        }
+        this.defaultRenderingFlags = flags;
+        this.analyzer.setDefaultRenderingFlags(flags);
     }
 
     public void beginSection() {
@@ -77,7 +83,7 @@ public final class FastBlockRenderer {
     public void render(BlockState state, BlockPos pos, ChunkRenderContext world, BlockLayer layer,
                        ChunkBuildBuffers buffers, PrimitiveBuiltRenderSectionData renderData) {
         Arrays.fill(this.orientations, null);
-        this.analyzer.setDefaultRenderingFlags(BakedQuadGroupAnalyzer.USE_REORIENTING | BakedQuadGroupAnalyzer.USE_RENDER_PASS_OPTIMIZATION);
+        this.analyzer.setDefaultRenderingFlags(this.defaultRenderingFlags);
 
         Block block = state.getBlock();
         BakedModel model = this.blockRenderDispatcher.getModel(state, world, pos);
