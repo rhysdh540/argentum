@@ -56,7 +56,9 @@ public class TextureAtlasMixin implements TextureAtlasExtension {
 
     @Override
     public TextureAtlasSprite argentum$findFromUV(float u, float v) {
-        return this.celeritas$quadTree.find(Math.round(u * this.celeritas$width), Math.round(v * this.celeritas$height));
+        QuadTree<TextureAtlasSprite> quadTree = this.celeritas$quadTree;
+        return quadTree == null ? null
+                : quadTree.find(Math.round(u * this.celeritas$width), Math.round(v * this.celeritas$height));
     }
 
     private static int nextPowerOfTwo(int value) {
