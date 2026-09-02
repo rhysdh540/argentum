@@ -40,3 +40,5 @@ cera.options.custom_loading_screens.name=Custom Loading Screens
 cera.options.custom_loading_screens.tooltip=Uses per-dimension backgrounds for the world loading screen.
 cera.options.custom_panorama.name=Custom Panorama
 cera.options.custom_panorama.tooltip=Picks a random alternative main menu panorama from the resource pack.
+cera.options.hd_fonts.name=HD Fonts
+cera.options.hd_fonts.tooltip=Uses high resolution fonts and per-character widths from the resource pack.

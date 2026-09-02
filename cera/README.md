@@ -17,11 +17,9 @@ Cera is a companion mod for Argentum that reimplements MCPatcher/OptiFine resour
 - Custom block layers
 - Custom loading screens
 - Custom panorama
+- HD fonts
 - Full configurability through Argentum's video settings menu
 
-Along with that, some other features are planned:
-
-- Custom entity models
-- HD fonts
+The only thing missing but planned is custom entity models, which is being deferred at the moment due to its complexity.
 
 Shaders will be their own mod.

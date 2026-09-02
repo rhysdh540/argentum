@@ -9,6 +9,8 @@ import org.taumc.celeritas.api.options.structure.OptionGroup;
 import org.taumc.celeritas.api.options.structure.OptionImpl;
 import org.taumc.celeritas.api.options.structure.OptionPage;
 
+import dev.rdh.argentum.impl.Argentum;
+
 import dev.rdh.cera.modules.BetterGrass;
 import dev.rdh.cera.modules.ctm.ConnectedTextures;
 import dev.rdh.cera.modules.DynamicLights;
@@ -91,6 +93,15 @@ final class CeraOptionPage {
                         .setControl(TickBoxControl::new)
                         .setBinding((config, value) -> config.emissiveTextures = value, config -> config.emissiveTextures)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build())
+                .add(OptionImpl.createBuilder(boolean.class, Cera.CONFIG_STORAGE)
+                        .setId(id("hd_fonts"))
+                        .setControl(TickBoxControl::new)
+                        .setBinding((config, value) -> {
+                            config.hdFonts = value;
+                            if (value) Argentum.CONFIG.fontBatching = true;
+                        }, config -> config.hdFonts)
+                        .setFlags(OptionFlag.REQUIRES_ASSET_RELOAD)
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, Cera.CONFIG_STORAGE)
                         .setId(id("custom_panorama"))

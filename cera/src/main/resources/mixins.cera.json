@@ -4,7 +4,9 @@
   "package": "dev.rdh.cera.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "ArgentumOptionPagesMixin",
     "BlockMixin",
+    "TextRendererMixin",
     "ProgressRendererMixin",
     "TitleScreenMixin",
     "ClientWorldMixin",
