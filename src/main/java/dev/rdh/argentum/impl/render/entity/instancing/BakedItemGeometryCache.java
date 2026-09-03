@@ -29,7 +29,20 @@ final class BakedItemGeometryCache {
     private final Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> fixedGeometries = new Reference2ReferenceOpenHashMap<>();
     private final Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> blockGeometries = new Reference2ReferenceOpenHashMap<>();
 
+    private final Reference2ReferenceOpenHashMap<BakedModel, Boolean> layeredItems = new Reference2ReferenceOpenHashMap<>();
+
     private final IntArrayList tintKey = new IntArrayList();
+
+    /** {@return whether the model has layers past the first} Those are the ones a mod may want to draw separately. */
+    boolean isLayered(BakedModel model) {
+        return this.layeredItems.computeIfAbsent(model, ignored -> {
+            int highest = -1;
+            for (Direction direction : Direction.values()) {
+                highest = highestTintIndex(model.getQuads(direction), highest);
+            }
+            return highestTintIndex(model.getQuads(), highest) > 0;
+        });
+    }
 
     InstanceGeometry getItem(BakedModel model, ItemStack item) {
         if (model.isCustomRenderer()) {
@@ -74,6 +87,7 @@ final class BakedItemGeometryCache {
         delete(this.itemGeometries, commandList);
         delete(this.fixedGeometries, commandList);
         delete(this.blockGeometries, commandList);
+        this.layeredItems.clear();
     }
 
     private static void delete(Map<BakedModel, ? extends Map<?, InstanceGeometry>> geometries,

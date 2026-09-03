@@ -1,8 +1,6 @@
 tiny	2	0	intermediary	named
 c	net/minecraft/unmapped/C_74425583	net/minecraft/entity/living/LivingEntity
 	f	F	f_12506421	jumpMovementFactor
-c	net/minecraft/unmapped/C_40996800	net/minecraft/entity/living/player/PlayerEntity
-	f	F	f_76552083	speedInAir
 c	net/minecraft/unmapped/C_63022874	net/minecraft/client/render/texture/HttpTexture
 	f	Ljava/io/File;	f_34993787	file
 c	net/minecraft/unmapped/C_76792751	net/minecraft/client/options/GameOptions

@@ -25,6 +25,15 @@ public abstract class ItemRendererMixin {
         }
     }
 
+    @WrapMethod(method = "renderItem(Lnet/minecraft/item/ItemStack;Lnet/minecraft/client/resource/model/BakedModel;)V")
+    private void argentum$captureItemRender(ItemStack item, BakedModel model, Operation<Void> original) {
+        EntityCapture capture = EntityCapture.current();
+        if (capture != null) {
+            capture.beginItemRender();
+        }
+        original.call(item, model);
+    }
+
     @WrapMethod(method = "renderEnchantmentGlint")
     private void argentum$captureGlint(BakedModel model, Operation<Void> original) {
         EntityCapture capture = EntityCapture.current();

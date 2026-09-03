@@ -71,6 +71,10 @@ public final class ModelInstancer {
         return this.batcher.model(model);
     }
 
+    public boolean isLayeredItem(BakedModel model) {
+        return this.itemGeometry.isLayered(model);
+    }
+
     public void captureItemGlintMatrix(int pass) {
         this.batcher.captureItemGlintMatrix(pass);
     }
