@@ -50,9 +50,9 @@ public class ArgentumFogService implements FogService {
     }
 
     public enum FogShape {
-        SPHERICAL(0),
-        CYLINDICAL(1),
-        //PLANAR(2),
+        SPHERICAL(FOG_SHAPE_SPHERICAL),
+        CYLINDICAL(FOG_SHAPE_CYLINDRICAL),
+        PLANAR(FOG_SHAPE_PLANAR),
         ;
 
         public final int index;

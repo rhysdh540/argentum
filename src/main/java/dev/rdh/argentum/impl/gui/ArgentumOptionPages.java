@@ -199,7 +199,8 @@ public final class ArgentumOptionPages {
                         .setControl(option -> new CyclingControl<>(option, FogShape.class,
 								new TextComponent[]{
 										text("value.spherical"),
-										text("value.cylindrical")
+										text("value.cylindrical"),
+                                        text("value.planar")
 								}))
                         .setBinding((config, value) -> config.fogShape = value, config -> config.fogShape)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)

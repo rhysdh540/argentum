@@ -9,6 +9,12 @@ jobs:
       -   name: checkout
           uses: actions/checkout@v7
 
+      -   run: |
+            git clone https://git.taumc.org/rdh/celeritas.git ../celeritas
+            cd ../celeritas
+            git checkout raster
+            cd ../argentum
+
       -   name: setup java
           uses: actions/setup-java@v5
           with:
