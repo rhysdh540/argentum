@@ -71,6 +71,10 @@ public final class ModelInstancer {
         return this.batcher.model(model);
     }
 
+    public void captureItemGlintMatrix(int pass) {
+        this.batcher.captureItemGlintMatrix(pass);
+    }
+
     public boolean supportsItem(BakedModel model, ItemStack item) {
         return this.itemGeometry.supportsItem(model, item);
     }

@@ -195,8 +195,9 @@ public final class EntityCapture implements AutoCloseable {
             // was: a vanilla-drawn item and an instanced glint do not produce bit-identical depth
             this.itemInstanced = geometry != null;
         } else if (item == null && this.glintActive && this.itemInstanced && this.itemGlintPass < 2) {
-            this.pass = this.itemGlintPass++ == 0
-                    ? InstanceRenderPass.ITEM_GLINT_0 : InstanceRenderPass.ITEM_GLINT_1;
+            int glintPass = this.itemGlintPass++;
+            this.pass = glintPass == 0 ? InstanceRenderPass.ITEM_GLINT_0 : InstanceRenderPass.ITEM_GLINT_1;
+            this.owner.backend().captureItemGlintMatrix(glintPass);
             geometry = this.owner.backend().fixedItem(model, color);
         } else {
             return false;

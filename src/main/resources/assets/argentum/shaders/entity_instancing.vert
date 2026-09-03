@@ -17,7 +17,7 @@ in vec4 aOverlay;
 uniform int uGlintPass;
 uniform int uChargePass;
 uniform int uItemGlintPass;
-uniform float uItemGlintOffset;
+uniform mat4 uItemGlintMatrix;
 uniform vec3 uLightDirection0;
 uniform vec3 uLightDirection1;
 
@@ -46,10 +46,7 @@ void main() {
         vTexCoord = vec2(cos(angle) * uv.x - sin(angle) * uv.y,
                 sin(angle) * uv.x + cos(angle) * uv.y) / 3.0;
     } else if (uItemGlintPass >= 0) {
-        float angle = radians(uItemGlintPass == 0 ? -50.0 : 10.0);
-        vec2 uv = vec2(cos(angle) * aTexCoord.x - sin(angle) * aTexCoord.y,
-                sin(angle) * aTexCoord.x + cos(angle) * aTexCoord.y);
-        vTexCoord = (uv + vec2(uItemGlintOffset, 0.0)) * 8.0;
+        vTexCoord = (uItemGlintMatrix * vec4(aTexCoord, 0.0, 1.0)).xy;
     } else if (uChargePass == 1) {
         vTexCoord = aTexCoord + vec2(aEffectTime * 0.01);
     } else if (uChargePass == 2) {
