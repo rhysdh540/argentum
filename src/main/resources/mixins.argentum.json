@@ -17,6 +17,7 @@
     "features.model.instancing.PolygonAccessor", "features.options.OptionPageFrameMixin",
     "features.options.OptionsScreenMixin", "features.particle.ParticleManagerMixin", "features.particle.ParticleMixin",
     "features.terrain.BakedQuadMixin",
+    "features.text.SignRendererMixin",
     "features.terrain.FaceBakeryMixin",
     "features.terrain.BiomeColorsMixin",
     "features.texture.TextureAtlasMixin", "features.texture.TextureAtlasSpriteMixin",
@@ -24,7 +25,8 @@
   ],
   "mixins": [
     "core.DirectionMixin", "core.collections.TypeInstanceMultimapMixin", "core.world.ChunkCacheMixin",
-    "core.world.WorldChunkMixin", "core.world.WorldMixin"
+    "core.world.WorldChunkMixin", "core.world.WorldMixin",
+    "features.text.SignBlockEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1
