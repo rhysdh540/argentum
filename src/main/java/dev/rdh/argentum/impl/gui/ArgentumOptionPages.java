@@ -267,6 +267,10 @@ public final class ArgentumOptionPages {
                         OptionImpact.MEDIUM,
                         (config, value) -> config.blockFaceCulling = value, config -> config.blockFaceCulling,
                         OptionFlag.REQUIRES_RENDERER_RELOAD))
+                .add(toggle(StandardOptions.Option.RASTER_OCCLUSION_CULLING,
+                        OptionImpact.VARIES,
+                        (config, value) -> config.rasterOcclusionCulling = value, config -> config.rasterOcclusionCulling,
+                        OptionFlag.REQUIRES_RENDERER_RELOAD))
                 .add(toggle(StandardOptions.Option.FOG_OCCLUSION,
                         OptionImpact.MEDIUM,
                         (config, value) -> config.fogCulling = value, config -> config.fogCulling,

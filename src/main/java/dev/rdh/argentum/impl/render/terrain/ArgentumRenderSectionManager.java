@@ -63,7 +63,7 @@ public class ArgentumRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected boolean useRasterOcclusionCulling() {
-        return false;
+        return Argentum.CONFIG.rasterOcclusionCulling;
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ArgentumRenderSectionManager extends RenderSectionManager {
             return null;
         }
 
-        return new ChunkBuilderMeshingTask(render, context, frame, this.cameraPosition);
+        return new ChunkBuilderMeshingTask(render, context, frame, this.cameraPosition, this.useRasterOcclusionCulling());
     }
 
     @Override

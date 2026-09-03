@@ -3,6 +3,7 @@ package dev.rdh.argentum.mixin.core.render;
 import org.embeddedt.embeddium.impl.render.viewport.Viewport;
 import org.embeddedt.embeddium.impl.render.viewport.ViewportProvider;
 import org.joml.Matrix4f;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,7 +31,13 @@ public class FrustumCullerMixin implements ViewportProvider {
         modelMatrix.invert();
         Vector3f offset = new Vector3f();
         modelMatrix.transformPosition(offset);
-		return new Viewport(this::celeritas$isVisible, new org.joml.Vector3d(this.offsetX + offset.x, this.offsetY + offset.y, this.offsetZ + offset.z));
+		return new Viewport(this::celeritas$isVisible, new Vector3d(this.offsetX + offset.x, this.offsetY + offset.y, this.offsetZ + offset.z), this.argentum$viewProjection());
+    }
+
+    @Unique
+    private Matrix4f argentum$viewProjection() {
+        return new Matrix4f().set(this.frustum.projectionMatrix)
+                .mul(new Matrix4f().set(this.frustum.modelMatrix).setTranslation(0.0F, 0.0F, 0.0F));
     }
 
     @Unique
