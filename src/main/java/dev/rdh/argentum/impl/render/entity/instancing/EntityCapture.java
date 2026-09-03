@@ -40,6 +40,7 @@ public final class EntityCapture implements AutoCloseable {
     private boolean armorLayer;
     private boolean finished;
     private boolean modelPassSeen;
+    private boolean itemPassSeen;
     private boolean itemInstanced;
     private boolean released;
     private int matrixMode;
@@ -105,6 +106,7 @@ public final class EntityCapture implements AutoCloseable {
         this.modelActive = false;
         this.armorLayer = false;
         this.modelPassSeen = false;
+        this.itemPassSeen = false;
         this.itemInstanced = false;
         this.itemGlintPass = 0;
         this.glintActive = false;
@@ -189,6 +191,16 @@ public final class EntityCapture implements AutoCloseable {
         InstanceRenderPass previousPass = this.pass;
         InstanceGeometry geometry;
         if (item != null && color == -1) {
+            if (this.itemPassSeen) {
+                // a mod is drawing the item again with a different subset of its layers (old animations keeps the
+                // glint on the base layer that way). our geometry is the whole model, so both passes draw everything
+                EntityInstancing.noteItemLayerPass();
+            }
+            this.itemPassSeen = true;
+            if (EntityInstancing.itemLayerPassDetected() && this.owner.backend().isLayeredItem(model)) {
+                this.itemInstanced = false;
+                return false;
+            }
             this.pass = InstanceRenderPass.ITEM;
             geometry = this.owner.backend().item(model, item);
             // the glint is depth-tested against the item with GL_EQUAL, so it can only be instanced if the item
@@ -211,6 +223,10 @@ public final class EntityCapture implements AutoCloseable {
             this.pass = previousPass;
         }
         return true;
+    }
+
+    public void beginItemRender() {
+        this.itemPassSeen = false;
     }
 
     public void beginGlint() {

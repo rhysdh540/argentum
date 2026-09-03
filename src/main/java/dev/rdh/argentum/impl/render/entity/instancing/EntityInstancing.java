@@ -41,6 +41,17 @@ public final class EntityInstancing {
         overlayPassDetected = true;
     }
 
+    private static boolean itemLayerPassDetected;
+
+    /** Whether some mod splits an item's layers across separate draws, learned the first time we see it happen. */
+    public static boolean itemLayerPassDetected() {
+        return itemLayerPassDetected;
+    }
+
+    public static void noteItemLayerPass() {
+        itemLayerPassDetected = true;
+    }
+
     public static EntityInstancing current() {
         ArgentumWorldRenderer renderer = ArgentumWorldRenderer.instanceNullable();
         return renderer == null ? null : renderer.getEntityInstancing();
