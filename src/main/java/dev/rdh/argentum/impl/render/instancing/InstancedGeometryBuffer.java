@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 public final class InstancedGeometryBuffer {
     private FloatBuffer vertices;
@@ -50,9 +51,9 @@ public final class InstancedGeometryBuffer {
         }
     }
 
-    public void draw(CommandList commandList, FloatBuffer instances, int vertexCount, int instanceCount) {
+    public void draw(CommandList commandList, IntBuffer instances, int vertexCount, int instanceCount) {
         this.initialize(commandList);
-        commandList.uploadData(this.instanceBuffer, MemoryUtil.memAddress(instances), (long)instances.remaining() * Float.BYTES, GlBufferUsage.STREAM_DRAW);
+        commandList.uploadData(this.instanceBuffer, MemoryUtil.memAddress(instances), (long)instances.remaining() * Integer.BYTES, GlBufferUsage.STREAM_DRAW);
         this.tessellation.bind(commandList);
         try {
             ARBDrawInstanced.glDrawArraysInstancedARB(GL11.GL_QUADS, 0, vertexCount, instanceCount);

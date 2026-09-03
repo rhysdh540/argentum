@@ -11,15 +11,15 @@ public final class InstancedVertexFormats {
             .addElement("aNormal", 5 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 3, false, false)
             .addElement("aVertexColor", 8 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 4, false, false)
             .build();
-    public static final GlVertexFormat ENTITY_INSTANCE = GlVertexFormat.builder(28 * Float.BYTES)
-            .addElement("aModel0", 0, GlVertexAttributeFormat.FLOAT, 4, false, false)
-            .addElement("aModel1", 4 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 4, false, false)
-            .addElement("aModel2", 8 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 4, false, false)
-            .addElement("aModel3", 12 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 4, false, false)
-            .addElement("aLightCoord", 16 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 3, false, false)
-            .addElement("aColor", 19 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 4, false, false)
-            .addElement("aEffectTime", 23 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 1, false, false)
-            .addElement("aOverlay", 24 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 4, false, false)
+    public static final GlVertexFormat ENTITY_INSTANCE = GlVertexFormat.builder(16 * Integer.BYTES)
+            .addElement("aModel0", 0, GlVertexAttributeFormat.FLOAT, 3, false, false)
+            .addElement("aModel1", 3 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 3, false, false)
+            .addElement("aModel2", 6 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 3, false, false)
+            .addElement("aModel3", 9 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 3, false, false)
+            .addElement("aEffectTime", 12 * Float.BYTES, GlVertexAttributeFormat.FLOAT, 1, false, false)
+            .addElement("aLightCoord", 13 * Float.BYTES, GlVertexAttributeFormat.UNSIGNED_BYTE, 3, false, false)
+            .addElement("aColor", 14 * Float.BYTES, GlVertexAttributeFormat.UNSIGNED_BYTE, 4, true, false)
+            .addElement("aOverlay", 15 * Float.BYTES, GlVertexAttributeFormat.UNSIGNED_BYTE, 4, true, false)
             .build();
 
     private InstancedVertexFormats() {

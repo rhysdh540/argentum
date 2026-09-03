@@ -71,43 +71,40 @@ final class PartGeometry extends InstanceGeometry {
 }
 
 final class Instances extends InstanceDataBuffer {
-    private static final int FLOATS = 28;
+    private static final int INTS = 16;
+    private static final int TRANSLATION_OFFSET = 9;
 
     Instances() {
-        super(FLOATS, 12, 64);
+        super(INTS, TRANSLATION_OFFSET, 64);
     }
 
     void add(Matrix4f matrix, float u, float v, int layer, Vector4fc color, float effectTime, Vector4fc overlayColor) {
         int i = this.appendOffset();
-        float[] data = this.data();
-        data[i++] = matrix.m00();
-        data[i++] = matrix.m01();
-        data[i++] = matrix.m02();
-        data[i++] = matrix.m03();
-        data[i++] = matrix.m10();
-        data[i++] = matrix.m11();
-        data[i++] = matrix.m12();
-        data[i++] = matrix.m13();
-        data[i++] = matrix.m20();
-        data[i++] = matrix.m21();
-        data[i++] = matrix.m22();
-        data[i++] = matrix.m23();
-        data[i++] = matrix.m30();
-        data[i++] = matrix.m31();
-        data[i++] = matrix.m32();
-        data[i++] = matrix.m33();
-        data[i++] = u;
-        data[i++] = v;
-        data[i++] = layer;
-        data[i++] = color.x();
-        data[i++] = color.y();
-        data[i++] = color.z();
-        data[i++] = color.w();
-        data[i++] = effectTime;
-        data[i++] = overlayColor.x();
-        data[i++] = overlayColor.y();
-        data[i++] = overlayColor.z();
-        data[i] = overlayColor.w();
+        int[] data = this.data();
+        data[i++] = Float.floatToRawIntBits(matrix.m00());
+        data[i++] = Float.floatToRawIntBits(matrix.m01());
+        data[i++] = Float.floatToRawIntBits(matrix.m02());
+        data[i++] = Float.floatToRawIntBits(matrix.m10());
+        data[i++] = Float.floatToRawIntBits(matrix.m11());
+        data[i++] = Float.floatToRawIntBits(matrix.m12());
+        data[i++] = Float.floatToRawIntBits(matrix.m20());
+        data[i++] = Float.floatToRawIntBits(matrix.m21());
+        data[i++] = Float.floatToRawIntBits(matrix.m22());
+        data[i++] = Float.floatToRawIntBits(matrix.m30());
+        data[i++] = Float.floatToRawIntBits(matrix.m31());
+        data[i++] = Float.floatToRawIntBits(matrix.m32());
+        data[i++] = Float.floatToRawIntBits(effectTime);
+        data[i++] = (int)u & 0xFF | ((int)v & 0xFF) << 8 | (layer & 0xFF) << 16;
+        data[i++] = pack(color);
+        data[i] = pack(overlayColor);
         this.finishInstance();
+    }
+
+    private static int pack(Vector4fc color) {
+        return toByte(color.x()) | toByte(color.y()) << 8 | toByte(color.z()) << 16 | toByte(color.w()) << 24;
+    }
+
+    private static int toByte(float value) {
+        return Math.clamp((int)(value * 255.0F + 0.5F), 0, 255);
     }
 }

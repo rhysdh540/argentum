@@ -5,10 +5,10 @@
 in vec3 aPosition;
 in vec2 aTexCoord;
 in vec3 aNormal;
-in vec4 aModel0;
-in vec4 aModel1;
-in vec4 aModel2;
-in vec4 aModel3;
+in vec3 aModel0;
+in vec3 aModel1;
+in vec3 aModel2;
+in vec3 aModel3;
 in vec3 aLightCoord;
 in vec4 aColor;
 in vec4 aVertexColor;
@@ -33,7 +33,7 @@ out vec4 vColor;
 out vec4 vOverlay;
 
 void main() {
-    mat4 model = mat4(aModel0, aModel1, aModel2, aModel3);
+    mat4 model = mat4(vec4(aModel0, 0.0), vec4(aModel1, 0.0), vec4(aModel2, 0.0), vec4(aModel3, 1.0));
     vec4 eyePosition = gl_ModelViewMatrix * model * vec4(aPosition, 1.0);
     vec3 normal = normalize(gl_NormalMatrix * mat3(model) * aNormal);
     float light0 = max(dot(normal, uLightDirection0), 0.0);
