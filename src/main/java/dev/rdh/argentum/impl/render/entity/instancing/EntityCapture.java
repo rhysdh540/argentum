@@ -40,6 +40,7 @@ public final class EntityCapture implements AutoCloseable {
     private boolean armorLayer;
     private boolean finished;
     private boolean modelPassSeen;
+    private boolean itemInstanced;
     private boolean released;
     private int matrixMode;
     private int packedLight;
@@ -104,6 +105,7 @@ public final class EntityCapture implements AutoCloseable {
         this.modelActive = false;
         this.armorLayer = false;
         this.modelPassSeen = false;
+        this.itemInstanced = false;
         this.itemGlintPass = 0;
         this.glintActive = false;
         this.color.set(1);
@@ -189,7 +191,10 @@ public final class EntityCapture implements AutoCloseable {
         if (item != null && color == -1) {
             this.pass = InstanceRenderPass.ITEM;
             geometry = this.owner.backend().item(model, item);
-        } else if (item == null && this.glintActive && this.itemGlintPass < 2) {
+            // the glint is depth-tested against the item with GL_EQUAL, so it can only be instanced if the item
+            // was: a vanilla-drawn item and an instanced glint do not produce bit-identical depth
+            this.itemInstanced = geometry != null;
+        } else if (item == null && this.glintActive && this.itemInstanced && this.itemGlintPass < 2) {
             this.pass = this.itemGlintPass++ == 0
                     ? InstanceRenderPass.ITEM_GLINT_0 : InstanceRenderPass.ITEM_GLINT_1;
             geometry = this.owner.backend().fixedItem(model, color);
