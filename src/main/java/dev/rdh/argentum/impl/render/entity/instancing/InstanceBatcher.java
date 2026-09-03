@@ -1,6 +1,8 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
 import java.util.Arrays;
+import dev.rdh.argentum.impl.render.instancing.BoxTemplate;
+import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
 import dev.rdh.argentum.impl.render.instancing.TextureArrayManager;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
@@ -198,14 +200,14 @@ final class InstanceBatcher {
             if (texture.count == 0) continue;
             textureManager.bind(texture.texture);
             program.getInterface().setTextureArray(false);
-            draws += texture.render(commandList, pass == InstanceRenderPass.TRANSLUCENT);
+            draws += texture.render(commandList, program, pass == InstanceRenderPass.TRANSLUCENT);
             textureCount++;
         }
         for (var entry : this.arrayTextures.get(pass).reference2ReferenceEntrySet()) {
             if (entry.getValue().count == 0) continue;
             int previous = entry.getKey().bind();
             program.getInterface().setTextureArray(true);
-            draws += entry.getValue().render(commandList, pass == InstanceRenderPass.TRANSLUCENT);
+            draws += entry.getValue().render(commandList, program, pass == InstanceRenderPass.TRANSLUCENT);
             entry.getKey().restore(previous);
             textureCount++;
         }
@@ -230,8 +232,8 @@ final class InstanceBatcher {
         }
 
         void add(InstanceGeometry geometry, Matrix4f matrix, float u, float v, int layer,
-                Vector4fc color, float effectTime, Vector4fc overlayColor) {
-            geometry.instances(this).add(matrix, u, v, layer, color, effectTime, overlayColor);
+                Vector4fc color, float effectTime, Vector4fc overlayColor, BoxTemplate box) {
+            geometry.instances(this).add(matrix, u, v, layer, color, effectTime, overlayColor, box);
             this.count++;
         }
 
@@ -244,13 +246,14 @@ final class InstanceBatcher {
             return instances;
         }
 
-        private int render(CommandList commandList, boolean sort) {
+        private int render(CommandList commandList, GlProgram<InstanceShader> program, boolean sort) {
             int draws = 0;
             for (var entry : this.parts.reference2ObjectEntrySet()) {
                 if (entry.getValue().count() != 0) {
                     if (sort) {
                         entry.getValue().sortBackToFront();
                     }
+                    program.getInterface().setBoxInstancing(entry.getKey().usesBoxInstancing());
                     entry.getKey().render(commandList, entry.getValue());
                     draws++;
                 }

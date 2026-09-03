@@ -3,6 +3,7 @@ package dev.rdh.argentum.impl.render.entity.instancing;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
 import dev.rdh.argentum.impl.render.instancing.InstanceDataBuffer;
+import dev.rdh.argentum.impl.render.instancing.BoxTemplate;
 import dev.rdh.argentum.impl.render.instancing.ModelPartGeometry;
 
 import net.minecraft.client.render.model.ModelPart;
@@ -59,6 +60,7 @@ final class PartGeometry extends InstanceGeometry {
         return this.part;
     }
 
+    @Override
     public void render(CommandList commandList, Instances instances) {
         this.buffers.draw(commandList, instances.upload(), this.vertexCount, instances.count());
     }
@@ -71,14 +73,15 @@ final class PartGeometry extends InstanceGeometry {
 }
 
 final class Instances extends InstanceDataBuffer {
-    private static final int INTS = 16;
+    private static final int INTS = 19;
     private static final int TRANSLATION_OFFSET = 9;
 
     Instances() {
         super(INTS, TRANSLATION_OFFSET, 64);
     }
 
-    void add(Matrix4f matrix, float u, float v, int layer, Vector4fc color, float effectTime, Vector4fc overlayColor) {
+    void add(Matrix4f matrix, float u, float v, int layer, Vector4fc color, float effectTime, Vector4fc overlayColor,
+            BoxTemplate box) {
         int i = this.appendOffset();
         int[] data = this.data();
         data[i++] = Float.floatToRawIntBits(matrix.m00());
@@ -96,7 +99,16 @@ final class Instances extends InstanceDataBuffer {
         data[i++] = Float.floatToRawIntBits(effectTime);
         data[i++] = (int)u & 0xFF | ((int)v & 0xFF) << 8 | (layer & 0xFF) << 16;
         data[i++] = pack(color);
-        data[i] = pack(overlayColor);
+        data[i++] = pack(overlayColor);
+        if (box == null) {
+            data[i++] = 0;
+            data[i++] = 0;
+            data[i] = 0;
+        } else {
+            data[i++] = box.textureU() & 0xFFFF | (box.textureV() & 0xFFFF) << 16;
+            data[i++] = (int)box.textureWidth() & 0xFFFF | ((int)box.textureHeight() & 0xFFFF) << 16;
+            data[i] = box.sizeX() & 0xFF | (box.sizeY() & 0xFF) << 8 | (box.sizeZ() & 0xFF) << 16;
+        }
         this.finishInstance();
     }
 

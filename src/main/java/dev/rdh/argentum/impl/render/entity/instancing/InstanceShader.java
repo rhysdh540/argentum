@@ -25,6 +25,7 @@ final class InstanceShader {
     private final GlUniformInt glintPass;
     private final GlUniformInt chargePass;
     private final GlUniformInt itemGlintPass;
+    private final GlUniformInt boxInstancing;
     private final GlUniformMatrix4f itemGlintMatrix;
     private final GlUniformFloat3v lightDirection0;
     private final GlUniformFloat3v lightDirection1;
@@ -44,6 +45,7 @@ final class InstanceShader {
         this.glintPass = context.bindUniform("uGlintPass", GlUniformInt::new);
         this.chargePass = context.bindUniform("uChargePass", GlUniformInt::new);
         this.itemGlintPass = context.bindUniform("uItemGlintPass", GlUniformInt::new);
+        this.boxInstancing = context.bindUniform("uBoxInstancing", GlUniformInt::new);
         this.itemGlintMatrix = context.bindUniform("uItemGlintMatrix", GlUniformMatrix4f::new);
         this.lightDirection0 = context.bindUniform("uLightDirection0", GlUniformFloat3v::new);
         this.lightDirection1 = context.bindUniform("uLightDirection1", GlUniformFloat3v::new);
@@ -59,6 +61,7 @@ final class InstanceShader {
         this.glintPass.setInt(-1);
         this.chargePass.setInt(0);
         this.itemGlintPass.setInt(-1);
+        this.boxInstancing.setInt(0);
     }
 
     void setUniforms() {
@@ -89,6 +92,10 @@ final class InstanceShader {
 
     void setChargePass(int pass) {
         this.chargePass.setInt(pass);
+    }
+
+    void setBoxInstancing(boolean enabled) {
+        this.boxInstancing.setInt(enabled ? 1 : 0);
     }
 
     void setItemGlintPass(int pass) {

@@ -110,7 +110,7 @@ public final class EntityInstancing {
         }
         this.transformArrow(this.arrowMatrix.identity(), arrow, x, y, z, tickDelta);
         if (!this.backend.submit(this.backend.arrow(), texture, InstanceRenderPass.CULL_BACK, this.arrowMatrix,
-                packedLight, this.arrowColor, arrow.ticks + tickDelta, this.arrowOverlayColor)) {
+                packedLight, this.arrowColor, arrow.ticks + tickDelta, this.arrowOverlayColor, null)) {
             return false;
         }
         this.entityCount++;
