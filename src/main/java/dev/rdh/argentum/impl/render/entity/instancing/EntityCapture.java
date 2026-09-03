@@ -39,6 +39,7 @@ public final class EntityCapture implements AutoCloseable {
     private boolean suppressFixedFunction;
     private boolean armorLayer;
     private boolean finished;
+    private boolean modelPassSeen;
     private boolean released;
     private int matrixMode;
     private int packedLight;
@@ -102,6 +103,7 @@ public final class EntityCapture implements AutoCloseable {
         this.recorded = false;
         this.modelActive = false;
         this.armorLayer = false;
+        this.modelPassSeen = false;
         this.itemGlintPass = 0;
         this.glintActive = false;
         this.color.set(1);
@@ -111,6 +113,14 @@ public final class EntityCapture implements AutoCloseable {
     public void setOverlayColor(float red, float green, float blue, float alpha) {
         this.overlayColor.set(red, green, blue, alpha);
         this.currentOverlayColor.set(this.overlayColor);
+    }
+
+    public boolean firstModelPass() {
+        if (this.modelPassSeen) {
+            return false;
+        }
+        this.modelPassSeen = true;
+        return true;
     }
 
     public void beginModel() {

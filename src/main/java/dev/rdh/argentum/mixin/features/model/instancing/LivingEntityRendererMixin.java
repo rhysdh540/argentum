@@ -11,6 +11,7 @@ import net.minecraft.entity.living.player.PlayerEntity;
 import net.minecraft.resource.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -44,7 +45,8 @@ public abstract class LivingEntityRendererMixin {
         boolean eligible = instancing != null
                 && !this.solidRender
                 && !entity.isInvisible()
-                && !entity.shouldRenderOnFire();
+                && !entity.shouldRenderOnFire()
+                && !(EntityInstancing.overlayPassDetected() && celeritas$isTinted(entity));
         Identifier texture = eligible ? ((EntityRendererAccessor)this).celeritas$getTextureLocation(entity) : null;
         try (EntityCapture capture = eligible ? instancing.beginEntity(
                 this.model, texture, player, player || !this.layers.isEmpty(),
@@ -52,6 +54,11 @@ public abstract class LivingEntityRendererMixin {
                 0.0F, 0.0F, 0.0F, 0.0F) : null) {
             original.call(entity, x, y, z, yaw, tickDelta);
         }
+    }
+
+    @Unique
+    private static boolean celeritas$isTinted(LivingEntity entity) {
+        return entity.damagedTimer > 0 || entity.deathTicks > 0;
     }
 
     // not TAIL: the "no overlay at all" branch is compiled to the last return in the method, so TAIL would bind to
@@ -83,6 +90,11 @@ public abstract class LivingEntityRendererMixin {
             float bob, float yaw, float pitch, float scale, Operation<Void> original) {
         EntityCapture capture = EntityCapture.current();
         if (capture != null) {
+            if (!capture.firstModelPass()) {
+                // something is drawing the model again to tint it over the top (old animations' damage tint).
+                // one instance cannot express two passes, so stop instancing tinted entities from here on
+                EntityInstancing.noteOverlayPass();
+            }
             capture.beginModel();
         }
         try {

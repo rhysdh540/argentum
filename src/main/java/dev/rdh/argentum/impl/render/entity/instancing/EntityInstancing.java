@@ -31,6 +31,16 @@ public final class EntityInstancing {
         this.backend = backend;
     }
 
+    private static boolean overlayPassDetected;
+
+    public static boolean overlayPassDetected() {
+        return overlayPassDetected;
+    }
+
+    public static void noteOverlayPass() {
+        overlayPassDetected = true;
+    }
+
     public static EntityInstancing current() {
         ArgentumWorldRenderer renderer = ArgentumWorldRenderer.instanceNullable();
         return renderer == null ? null : renderer.getEntityInstancing();
