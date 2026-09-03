@@ -28,6 +28,7 @@ public final class TextureArrayManager {
     private int framebuffer;
     private int fallbackTexture;
     private int maxLayers;
+    private int boundArray;
 
     public boolean initialize() {
         var capabilities = GL.getCapabilities();
@@ -43,16 +44,16 @@ public final class TextureArrayManager {
         }
         int activeTexture = GL11.glGetInteger(GL13C.GL_ACTIVE_TEXTURE);
         GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-        int previous = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
+        int previous = this.boundArray;
         try {
             this.fallbackTexture = GL11.glGenTextures();
-            GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.fallbackTexture);
+            this.bindArray(this.fallbackTexture);
             GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
             GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
             GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL12C.GL_TEXTURE_MAX_LEVEL, 0);
             GL12C.glTexImage3D(GL30C.GL_TEXTURE_2D_ARRAY, 0, GL11.GL_RGBA8, 1, 1, 1, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L);
         } finally {
-            GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, previous);
+            this.bindArray(previous);
             GlStateManager.activeTexture(activeTexture);
         }
         this.framebuffer = this.core ? GL30C.glGenFramebuffers() : EXTFramebufferObject.glGenFramebuffersEXT();
@@ -65,16 +66,21 @@ public final class TextureArrayManager {
 
     public int bindFallback() {
         GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-        int previous = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
-        GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.fallbackTexture);
+        int previous = this.boundArray;
+        this.bindArray(this.fallbackTexture);
         GlStateManager.activeTexture(GLX.GL_TEXTURE0);
         return previous;
     }
 
     public void restore(int texture) {
         GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-        GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, texture);
+        this.bindArray(texture);
         GlStateManager.activeTexture(GLX.GL_TEXTURE0);
+    }
+
+    private void bindArray(int texture) {
+        GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, texture);
+        this.boundArray = texture;
     }
 
     public Selection select(Identifier location, int frame) {
@@ -125,6 +131,7 @@ public final class TextureArrayManager {
         }
         this.pools.clear();
         this.textures.clear();
+        this.boundArray = 0;
         if (this.fallbackTexture != 0) {
             GL11.glDeleteTextures(this.fallbackTexture);
             this.fallbackTexture = 0;
@@ -154,10 +161,10 @@ public final class TextureArrayManager {
             this.capacity = capacity;
             int activeTexture = GL11.glGetInteger(GL13C.GL_ACTIVE_TEXTURE);
             GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-            int previous = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
+            int previous = boundArray;
             try {
                 this.texture = GL11.glGenTextures();
-                GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.texture);
+                bindArray(this.texture);
                 GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, key.minFilter);
                 GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, key.magFilter);
                 GL11.glTexParameteri(GL30C.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, key.wrapS);
@@ -167,22 +174,22 @@ public final class TextureArrayManager {
                         key.width, key.height, capacity, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L
                 );
             } finally {
-                GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, previous);
+                bindArray(previous);
                 GlStateManager.activeTexture(activeTexture);
             }
         }
 
         public int bind() {
             GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-            int previous = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
-            GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.texture);
+            int previous = boundArray;
+            bindArray(this.texture);
             GlStateManager.activeTexture(GLX.GL_TEXTURE0);
             return previous;
         }
 
         public void restore(int texture) {
             GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-            GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, texture);
+            bindArray(texture);
             GlStateManager.activeTexture(GLX.GL_TEXTURE0);
         }
 
@@ -224,18 +231,18 @@ public final class TextureArrayManager {
             int previousFramebuffer = GL11.glGetInteger(GL30C.GL_FRAMEBUFFER_BINDING);
             int activeTexture = GL11.glGetInteger(GL13C.GL_ACTIVE_TEXTURE);
             GlStateManager.activeTexture(GLX.GL_TEXTURE2);
-            int previousArray = GL11.glGetInteger(GL30C.GL_TEXTURE_BINDING_2D_ARRAY);
+            int previousArray = boundArray;
             try {
                 bindFramebuffer(framebuffer);
                 attachTexture(sourceTexture);
                 if (!isFramebufferComplete()) {
                     return false;
                 }
-                GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, this.texture);
+                bindArray(this.texture);
                 GL12C.glCopyTexSubImage3D(GL30C.GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, 0, 0, this.key.width, this.key.height);
                 return true;
             } finally {
-                GL11.glBindTexture(GL30C.GL_TEXTURE_2D_ARRAY, previousArray);
+                bindArray(previousArray);
                 GlStateManager.activeTexture(activeTexture);
                 bindFramebuffer(previousFramebuffer);
             }

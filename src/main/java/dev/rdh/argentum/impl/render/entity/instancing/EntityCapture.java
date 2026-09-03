@@ -39,6 +39,8 @@ public final class EntityCapture implements AutoCloseable {
     private boolean suppressFixedFunction;
     private boolean armorLayer;
     private boolean finished;
+    private boolean modelPassSeen;
+    private boolean itemInstanced;
     private boolean released;
     private int matrixMode;
     private int packedLight;
@@ -102,10 +104,25 @@ public final class EntityCapture implements AutoCloseable {
         this.recorded = false;
         this.modelActive = false;
         this.armorLayer = false;
+        this.modelPassSeen = false;
+        this.itemInstanced = false;
         this.itemGlintPass = 0;
         this.glintActive = false;
         this.color.set(1);
         this.currentOverlayColor.set(this.overlayColor);
+    }
+
+    public void setOverlayColor(float red, float green, float blue, float alpha) {
+        this.overlayColor.set(red, green, blue, alpha);
+        this.currentOverlayColor.set(this.overlayColor);
+    }
+
+    public boolean firstModelPass() {
+        if (this.modelPassSeen) {
+            return false;
+        }
+        this.modelPassSeen = true;
+        return true;
     }
 
     public void beginModel() {
@@ -174,9 +191,13 @@ public final class EntityCapture implements AutoCloseable {
         if (item != null && color == -1) {
             this.pass = InstanceRenderPass.ITEM;
             geometry = this.owner.backend().item(model, item);
-        } else if (item == null && this.glintActive && this.itemGlintPass < 2) {
-            this.pass = this.itemGlintPass++ == 0
-                    ? InstanceRenderPass.ITEM_GLINT_0 : InstanceRenderPass.ITEM_GLINT_1;
+            // the glint is depth-tested against the item with GL_EQUAL, so it can only be instanced if the item
+            // was: a vanilla-drawn item and an instanced glint do not produce bit-identical depth
+            this.itemInstanced = geometry != null;
+        } else if (item == null && this.glintActive && this.itemInstanced && this.itemGlintPass < 2) {
+            int glintPass = this.itemGlintPass++;
+            this.pass = glintPass == 0 ? InstanceRenderPass.ITEM_GLINT_0 : InstanceRenderPass.ITEM_GLINT_1;
+            this.owner.backend().captureItemGlintMatrix(glintPass);
             geometry = this.owner.backend().fixedItem(model, color);
         } else {
             return false;

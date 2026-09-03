@@ -1,7 +1,6 @@
 package dev.rdh.argentum.impl.render.text;
 
 import dev.rdh.argentum.impl.Argentum;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
@@ -65,7 +64,6 @@ public final class TextBatcher {
     private float originX;
     private float originY;
 
-    private RenderMetrics.Category previousCategory;
     private int elementBatchDepth;
     private Runnable beforeImmediateText;
 
@@ -217,7 +215,6 @@ public final class TextBatcher {
 
     public float begin(String text, boolean shadow, float x, float y, boolean unicode,
             TextureManager textureManager, Identifier fontLocation) {
-        this.previousCategory = RenderMetrics.setCategory(RenderMetrics.Category.TEXT);
         this.batching = Argentum.CONFIG.fontBatching;
         this.pendingKey = null;
         this.pendingSegments.clear();
@@ -249,7 +246,6 @@ public final class TextBatcher {
                 }
             }
             this.batching = false;
-            RenderMetrics.setCategory(this.previousCategory);
             return geometry.advance();
         }
 
@@ -275,7 +271,6 @@ public final class TextBatcher {
         this.batchable = false;
         this.appendable = false;
         this.batching = false;
-        RenderMetrics.setCategory(this.previousCategory);
     }
 
     public float drawBasicGlyph(int character, boolean italic, float x, float y,
@@ -350,7 +345,6 @@ public final class TextBatcher {
 
         this.buffer.end();
         if (this.pendingKey == null) {
-            RenderMetrics.recordFontBatch();
             this.uploader.end(this.buffer);
         } else {
             if (this.batchable) {
@@ -405,7 +399,6 @@ public final class TextBatcher {
 
         this.decorationBuffer.end();
         GlStateManager.disableTexture();
-        RenderMetrics.recordFontBatch();
         this.uploader.end(this.decorationBuffer);
         GlStateManager.enableTexture();
         this.drawingDecorations = false;
@@ -441,7 +434,6 @@ public final class TextBatcher {
         GL11.glVertexPointer(3, GL11.GL_FLOAT, stride, format.getOffset(0));
         GL11.glTexCoordPointer(2, GL11.GL_FLOAT, stride, format.getUvOffset(0));
         GL11.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, stride, format.getColorOffset());
-        RenderMetrics.recordFontBatch();
         buffer.draw(GL11.GL_QUADS);
         GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
         GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
@@ -462,10 +454,7 @@ public final class TextBatcher {
 
         this.elementBuffer.end();
         textureManager.bind(fontLocation);
-        RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.TEXT);
-        RenderMetrics.recordFontBatch();
         this.uploader.end(this.elementBuffer);
-        RenderMetrics.setCategory(previous);
     }
 
     private static final class GeometryKey {

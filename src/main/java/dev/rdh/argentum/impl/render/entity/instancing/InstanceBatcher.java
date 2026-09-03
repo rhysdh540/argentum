@@ -1,5 +1,6 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
+import java.util.Arrays;
 import dev.rdh.argentum.impl.render.instancing.TextureArrayManager;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
@@ -15,12 +16,14 @@ import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector4fc;
 import org.lwjgl.opengl.GL11;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
 
 import java.util.EnumMap;
 
 final class InstanceBatcher {
     private final Reference2ReferenceOpenHashMap<Model, ModelGeometry> models = new Reference2ReferenceOpenHashMap<>();
+    private final Matrix4f[] itemGlintMatrices = { new Matrix4f(), new Matrix4f() };
+    private final boolean[] itemGlintCaptured = new boolean[2];
+    private final float[] matrixValues = new float[16];
     private final EnumMap<InstanceRenderPass, Object2ObjectLinkedOpenHashMap<Identifier, TextureBatch>> textures =
             new EnumMap<>(InstanceRenderPass.class);
     private final EnumMap<InstanceRenderPass, Reference2ReferenceOpenHashMap<TextureArrayManager.Pool, TextureBatch>> arrayTextures =
@@ -36,6 +39,16 @@ final class InstanceBatcher {
     void clear() {
         this.textures.values().forEach(map -> map.values().forEach(TextureBatch::clear));
         this.arrayTextures.values().forEach(map -> map.values().forEach(TextureBatch::clear));
+        Arrays.fill(this.itemGlintCaptured, false);
+    }
+
+    void captureItemGlintMatrix(int pass) {
+        if (pass < 0 || pass >= this.itemGlintCaptured.length || this.itemGlintCaptured[pass]) {
+            return;
+        }
+        GL11.glGetFloatv(GL11.GL_TEXTURE_MATRIX, this.matrixValues);
+        this.itemGlintMatrices[pass].set(this.matrixValues);
+        this.itemGlintCaptured[pass] = true;
     }
 
     ModelGeometry model(Model model) {
@@ -143,11 +156,11 @@ final class InstanceBatcher {
             draws += glint.draws;
             textureCount += glint.textures;
             program.getInterface().setGlintPass(-1);
-            program.getInterface().setItemGlintPass(0);
+            program.getInterface().setItemGlintPass(0, this.itemGlintMatrices[0]);
             glint = this.renderPass(commandList, program, InstanceRenderPass.ITEM_GLINT_0);
             draws += glint.draws;
             textureCount += glint.textures;
-            program.getInterface().setItemGlintPass(1);
+            program.getInterface().setItemGlintPass(1, this.itemGlintMatrices[1]);
             glint = this.renderPass(commandList, program, InstanceRenderPass.ITEM_GLINT_1);
             draws += glint.draws;
             textureCount += glint.textures;
@@ -239,7 +252,6 @@ final class InstanceBatcher {
                         entry.getValue().sortBackToFront();
                     }
                     entry.getKey().render(commandList, entry.getValue());
-                    RenderMetrics.recordDraw();
                     draws++;
                 }
             }

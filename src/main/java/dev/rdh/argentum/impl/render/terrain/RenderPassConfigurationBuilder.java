@@ -75,6 +75,6 @@ public class RenderPassConfigurationBuilder {
         renderTypeToMaterialMap.put(BlockLayer.CUTOUT_MIPPED, cutoutMippedMaterial);
         renderTypeToMaterialMap.put(BlockLayer.TRANSLUCENT, translucentMaterial);
 
-        return new RenderPassConfiguration<>(renderTypeToMaterialMap, vanillaRenderStages, cutoutMippedMaterial, cutoutMippedMaterial, translucentMaterial);
+        return new RenderPassConfiguration<>(renderTypeToMaterialMap, vanillaRenderStages, solidMaterial, cutoutMippedMaterial, translucentMaterial);
     }
 }

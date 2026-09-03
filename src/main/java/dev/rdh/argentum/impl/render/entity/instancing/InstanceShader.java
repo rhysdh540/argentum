@@ -1,12 +1,13 @@
 package dev.rdh.argentum.impl.render.entity.instancing;
 
-import net.minecraft.client.Minecraft;
 import org.embeddedt.embeddium.impl.gl.shader.ShaderBindingContext;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat3v;
-import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformInt;
+import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformMatrix4f;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderComponent;
-import dev.rdh.argentum.impl.render.terrain.matrix.ArgentumChunkMatrixGetter;
+
+import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -24,7 +25,7 @@ final class InstanceShader {
     private final GlUniformInt glintPass;
     private final GlUniformInt chargePass;
     private final GlUniformInt itemGlintPass;
-    private final GlUniformFloat itemGlintOffset;
+    private final GlUniformMatrix4f itemGlintMatrix;
     private final GlUniformFloat3v lightDirection0;
     private final GlUniformFloat3v lightDirection1;
     private final ChunkShaderComponent fog;
@@ -43,7 +44,7 @@ final class InstanceShader {
         this.glintPass = context.bindUniform("uGlintPass", GlUniformInt::new);
         this.chargePass = context.bindUniform("uChargePass", GlUniformInt::new);
         this.itemGlintPass = context.bindUniform("uItemGlintPass", GlUniformInt::new);
-        this.itemGlintOffset = context.bindUniform("uItemGlintOffset", GlUniformFloat::new);
+        this.itemGlintMatrix = context.bindUniform("uItemGlintMatrix", GlUniformMatrix4f::new);
         this.lightDirection0 = context.bindUniform("uLightDirection0", GlUniformFloat3v::new);
         this.lightDirection1 = context.bindUniform("uLightDirection1", GlUniformFloat3v::new);
         this.fog = fogFactory.create(context);
@@ -67,7 +68,8 @@ final class InstanceShader {
     }
 
     private void setLightDirection(GlUniformFloat3v uniform, Vector3fc direction) {
-        ArgentumChunkMatrixGetter.getMatrices().modelView().transformDirection(direction, this.lightDirection).normalize();
+        ArgentumWorldRenderer.instance().createChunkRenderMatrices().modelView()
+                .transformDirection(direction, this.lightDirection).normalize();
         uniform.set(this.lightDirection.x, this.lightDirection.y, this.lightDirection.z);
     }
 
@@ -91,10 +93,10 @@ final class InstanceShader {
 
     void setItemGlintPass(int pass) {
         this.itemGlintPass.setInt(pass);
-        if (pass >= 0) {
-            long period = pass == 0 ? 3000L : 4873L;
-            float direction = pass == 0 ? 1.0F : -1.0F;
-            this.itemGlintOffset.setFloat(direction * (Minecraft.getTime() % period) / period / 8.0F);
-        }
+    }
+
+    void setItemGlintPass(int pass, Matrix4fc matrix) {
+        this.itemGlintPass.setInt(pass);
+        this.itemGlintMatrix.set(matrix);
     }
 }

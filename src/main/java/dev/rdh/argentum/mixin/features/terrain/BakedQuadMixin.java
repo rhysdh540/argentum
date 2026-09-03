@@ -9,13 +9,14 @@ import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFacing;
 import org.embeddedt.embeddium.impl.model.quad.properties.ModelQuadFlags;
 import org.embeddedt.embeddium.impl.render.chunk.sprite.SpriteTransparencyLevel;
 import org.embeddedt.embeddium.impl.util.ModelQuadUtil;
+import dev.rdh.argentum.impl.ext.BakedQuadExtension;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(BakedQuad.class)
-public abstract class BakedQuadMixin implements BakedQuadView {
+public abstract class BakedQuadMixin implements BakedQuadView, BakedQuadExtension {
     @Shadow @Final
     protected int[] vertices;
     @Shadow @Final
@@ -87,6 +88,12 @@ public abstract class BakedQuadMixin implements BakedQuadView {
     }
 
     @Override
+    public void argentum$setSprite(TextureAtlasSprite sprite) {
+        this.celeritas$sprite = sprite;
+        this.argentum$trustSprite(sprite);
+    }
+
+    @Override
     public Object celeritas$getSprite() {
         if (this.celeritas$sprite == null) {
             float u = 0.0F;
@@ -98,11 +105,19 @@ public abstract class BakedQuadMixin implements BakedQuadView {
             TextureAtlasSprite sprite = Minecraft.getInstance().getBlocksAtlas()
                     .argentum$findFromUV(u * 0.25F, v * 0.25F);
             this.celeritas$sprite = sprite;
-            if (sprite != null && this.isInside(sprite)) {
-                this.celeritas$flags |= ModelQuadFlags.IS_TRUSTED_SPRITE;
-            }
+            this.argentum$trustSprite(sprite);
         }
         return this.celeritas$sprite;
+    }
+
+    @Unique
+    private void argentum$trustSprite(TextureAtlasSprite sprite) {
+        if (sprite == null || !this.isInside(sprite)) {
+            return;
+        }
+        // clear IS_POPULATED so IS_PASS_OPTIMIZABLE gets derived: a hand-built quad (cera's ctm, emissive) resolves
+        // its sprite lazily, and may have had its flags computed before this bit was known
+        this.celeritas$flags = (this.celeritas$flags | ModelQuadFlags.IS_TRUSTED_SPRITE) & ~ModelQuadFlags.IS_POPULATED;
     }
 
     @Unique

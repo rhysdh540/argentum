@@ -30,7 +30,6 @@ import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderFogComponent;
 import org.embeddedt.embeddium.impl.render.shader.ShaderLoader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL;
-import dev.rdh.argentum.impl.debug.RenderMetrics;
 import dev.rdh.argentum.impl.render.instancing.InstancedGeometryBuffer;
 import dev.rdh.argentum.impl.render.instancing.InstanceDataBuffer;
 
@@ -130,15 +129,12 @@ public final class EntityShadowBatch {
         program.bind();
         program.getInterface().fog().setup();
 
-        RenderMetrics.Category previous = RenderMetrics.setCategory(RenderMetrics.Category.ENTITY);
         try {
             geometry.draw(commandList, instances.upload(), 4, instances.count());
-            RenderMetrics.recordDraw();
         } catch (RuntimeException exception) {
             supported = false;
             LOGGER.error("Instanced entity shadows disabled after a draw failure", exception);
         } finally {
-            RenderMetrics.setCategory(previous);
             program.unbind();
             GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
             GlStateManager.disableBlend();

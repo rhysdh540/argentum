@@ -5,7 +5,7 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "core.GameOptionsMixin", "core.MinecraftMixin", "core.render.BufferBuilderMixin", "core.render.DebugOverlayMixin",
-    "core.render.FrustumCullerMixin", "core.render.GameRendererMixin", "core.render.WorldRendererMixin",
+    "core.render.FrustumCullerMixin", "core.render.WorldRendererMixin",
     "core.world.ClientChunkCacheAccessor", "core.world.MultiplayerChunkCacheMixin", "features.cloud.WorldRendererMixin",
     "features.entity.shadow.EntityRendererMixin", "features.font.TextRendererMixin", "features.hud.ChatGuiMixin",
     "features.hud.GameGuiMixin", "features.hud.PlayerTabOverlayMixin", "features.model.BufferBuilderAccessor",
@@ -16,7 +16,8 @@
     "features.model.instancing.ItemRendererMixin", "features.model.instancing.LivingEntityRendererMixin",
     "features.model.instancing.PolygonAccessor", "features.options.OptionPageFrameMixin",
     "features.options.OptionsScreenMixin", "features.particle.ParticleManagerMixin", "features.particle.ParticleMixin",
-    "features.profiling.BufferUploaderMixin", "features.profiling.VertexBufferMixin", "features.terrain.BakedQuadMixin",
+    "features.terrain.BakedQuadMixin",
+    "features.terrain.FaceBakeryMixin",
     "features.terrain.BiomeColorsMixin",
     "features.texture.TextureAtlasMixin", "features.texture.TextureAtlasSpriteMixin",
     "features.texture.TextureManagerMixin"

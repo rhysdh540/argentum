@@ -301,6 +301,10 @@ public final class ArgentumOptionPages {
                         OptionImpact.LOW,
                         (config, value) -> config.fasterClouds = value, config -> config.fasterClouds))
                 .add(toggle(Option.SAFE_CHUNK_EDGES, OptionImpact.LOW, (config1, value1) -> config1.safeChunkEdges = value1, config2 -> config2.safeChunkEdges, OptionFlag.REQUIRES_RENDERER_RELOAD))
+                .add(toggle(StandardOptions.Option.RENDER_PASS_OPTIMIZATION,
+                        OptionImpact.LOW,
+                        (config, value) -> config.renderPassOptimization = value,
+                        config -> config.renderPassOptimization, OptionFlag.REQUIRES_RENDERER_RELOAD))
                 .add(toggle(StandardOptions.Option.COMPACT_VERTEX_FORMAT,
                         OptionImpact.MEDIUM,
                         (config, value) -> config.compactVertexFormat = value, config -> config.compactVertexFormat,

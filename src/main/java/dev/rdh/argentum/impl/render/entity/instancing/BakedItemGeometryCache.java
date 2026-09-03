@@ -9,31 +9,42 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3i;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.model.quad.BakedQuadView;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
+import java.util.Map;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 final class BakedItemGeometryCache {
-    private static final int MULTIPLE_TINTS = Integer.MIN_VALUE;
+    private static final int[] NO_TINTS = new int[0];
 
-    private final Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> itemGeometries = new Reference2ReferenceOpenHashMap<>();
+    // keyed by the colour of every tint index the model uses: a generated item model gives each layer its own tint
+    // index, so a potion's bottle and its liquid overlay do not share one
+    private final Reference2ReferenceOpenHashMap<BakedModel, Object2ReferenceOpenHashMap<IntArrayList, InstanceGeometry>> itemGeometries = new Reference2ReferenceOpenHashMap<>();
     private final Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> fixedGeometries = new Reference2ReferenceOpenHashMap<>();
     private final Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> blockGeometries = new Reference2ReferenceOpenHashMap<>();
+
+    private final IntArrayList tintKey = new IntArrayList();
 
     InstanceGeometry getItem(BakedModel model, ItemStack item) {
         if (model.isCustomRenderer()) {
             return null;
         }
-        int tint = getTint(model, item);
-        if (tint == MULTIPLE_TINTS) {
-            return null;
+        var byTint = this.itemGeometries.computeIfAbsent(model, ignored -> new Object2ReferenceOpenHashMap<>());
+        IntArrayList key = this.tintKey;
+        fillTints(key, model, item);
+        InstanceGeometry geometry = byTint.get(key);
+        if (geometry == null) {
+            IntArrayList stored = new IntArrayList(key);
+            geometry = new BakedItemGeometry(model, stored.toIntArray());
+            byTint.put(stored, geometry);
         }
-        return this.itemGeometries.computeIfAbsent(model, ignored -> new Int2ObjectOpenHashMap<>())
-                .computeIfAbsent(tint, ignored -> new BakedItemGeometry(model, tint, false));
+        return geometry;
     }
 
     boolean supportsItem(BakedModel model, ItemStack item) {
@@ -65,7 +76,7 @@ final class BakedItemGeometryCache {
         delete(this.blockGeometries, commandList);
     }
 
-    private static void delete(Reference2ReferenceOpenHashMap<BakedModel, Int2ObjectMap<InstanceGeometry>> geometries,
+    private static void delete(Map<BakedModel, ? extends Map<?, InstanceGeometry>> geometries,
             CommandList commandList) {
         geometries.values().forEach(map -> map.values().forEach(geometry -> geometry.delete(commandList)));
         geometries.clear();
@@ -75,27 +86,26 @@ final class BakedItemGeometryCache {
         return Math.clamp((int) (value * 255.0F + 0.5F), 0, 255);
     }
 
-    private static int getTint(BakedModel model, ItemStack item) {
-        int tint = -1;
+    private static void fillTints(IntArrayList output, BakedModel model, ItemStack item) {
+        int highest = -1;
         for (Direction direction : Direction.values()) {
-            for (BakedQuad quad : model.getQuads(direction)) {
-                tint = getTint(quad, item, tint);
-                if (tint == MULTIPLE_TINTS) return tint;
-            }
+            highest = highestTintIndex(model.getQuads(direction), highest);
         }
-        for (BakedQuad quad : model.getQuads()) {
-            tint = getTint(quad, item, tint);
-            if (tint == MULTIPLE_TINTS) return tint;
+        highest = highestTintIndex(model.getQuads(), highest);
+
+        output.clear();
+        for (int index = 0; index <= highest; index++) {
+            output.add(item.getItem().getDisplayColor(item, index) | 0xFF000000);
         }
-        return tint;
     }
 
-    private static int getTint(BakedQuad quad, ItemStack item, int tint) {
-        if (!quad.hasTint()) {
-            return tint;
+    private static int highestTintIndex(Iterable<BakedQuad> quads, int highest) {
+        for (BakedQuad quad : quads) {
+            if (quad.hasTint()) {
+                highest = Math.max(highest, quad.getTintIndex());
+            }
         }
-        int color = item.getItem().getDisplayColor(item, quad.getTintIndex()) | 0xFF000000;
-        return tint == -1 || tint == color ? color : MULTIPLE_TINTS;
+        return highest;
     }
 
     private static final class BakedItemGeometry extends InstanceGeometry {
@@ -103,14 +113,18 @@ final class BakedItemGeometryCache {
         private final int vertexCount;
 
         private BakedItemGeometry(BakedModel model, float brightness, float red, float green, float blue, boolean block) {
-            this(model, brightness, red, green, blue, block, -1, false);
+            this(model, brightness, red, green, blue, block, -1, false, NO_TINTS);
         }
 
         private BakedItemGeometry(BakedModel model, int color, boolean fixed) {
-            this(model, 1.0F, 1.0F, 1.0F, 1.0F, false, color, fixed);
+            this(model, 1.0F, 1.0F, 1.0F, 1.0F, false, color, fixed, NO_TINTS);
         }
 
-        private BakedItemGeometry(BakedModel model, float brightness, float red, float green, float blue, boolean block, int itemColor, boolean fixed) {
+        private BakedItemGeometry(BakedModel model, int[] tints) {
+            this(model, 1.0F, 1.0F, 1.0F, 1.0F, false, -1, false, tints);
+        }
+
+        private BakedItemGeometry(BakedModel model, float brightness, float red, float green, float blue, boolean block, int itemColor, boolean fixed, int[] tints) {
             int quads = model.getQuads().size();
             for (Direction direction : Direction.values()) {
                 quads += model.getQuads(direction).size();
@@ -118,9 +132,9 @@ final class BakedItemGeometryCache {
             this.vertexCount = quads * 4;
             FloatBuffer vertices = BufferUtils.createFloatBuffer(this.vertexCount * 12);
             for (Direction direction : Direction.values()) {
-                putQuads(vertices, model.getQuads(direction), brightness, red, green, blue, block, itemColor, fixed);
+                putQuads(vertices, model.getQuads(direction), brightness, red, green, blue, block, itemColor, fixed, tints);
             }
-            putQuads(vertices, model.getQuads(), brightness, red, green, blue, block, itemColor, fixed);
+            putQuads(vertices, model.getQuads(), brightness, red, green, blue, block, itemColor, fixed, tints);
             vertices.flip();
             this.buffers = new InstancedGeometryBuffer(vertices, InstancedVertexFormats.ENTITY_VERTEX, InstancedVertexFormats.ENTITY_INSTANCE);
         }
@@ -136,11 +150,11 @@ final class BakedItemGeometryCache {
         }
 
         private static void putQuads(FloatBuffer output, Iterable<BakedQuad> quads, float brightness,
-                float red, float green, float blue, boolean block, int itemColor, boolean fixed) {
+                float red, float green, float blue, boolean block, int itemColor, boolean fixed, int[] tints) {
             for (BakedQuad quad : quads) {
                 BakedQuadView view = (BakedQuadView)quad;
                 Vec3i normal = quad.getFace().getNormal();
-                int color = fixed || quad.hasTint() ? itemColor : -1;
+                int color = fixed ? itemColor : tintOf(quad, tints);
                 float quadRed = block ? brightness * (quad.hasTint() ? red : 1.0F) : (color >> 16 & 0xFF) / 255.0F;
                 float quadGreen = block ? brightness * (quad.hasTint() ? green : 1.0F) : (color >> 8 & 0xFF) / 255.0F;
                 float quadBlue = block ? brightness * (quad.hasTint() ? blue : 1.0F) : (color & 0xFF) / 255.0F;
@@ -154,5 +168,12 @@ final class BakedItemGeometryCache {
             }
         }
 
+        private static int tintOf(BakedQuad quad, int[] tints) {
+            if (!quad.hasTint()) {
+                return -1;
+            }
+            int index = quad.getTintIndex();
+            return index >= 0 && index < tints.length ? tints[index] : -1;
+        }
     }
 }
