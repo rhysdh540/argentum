@@ -2,6 +2,13 @@ package dev.rdh.argentum.impl.render.entity.instancing;
 
 import dev.rdh.argentum.impl.Argentum;
 import dev.rdh.argentum.impl.render.terrain.ArgentumWorldRenderer;
+
+import net.minecraft.client.render.block.entity.BannerRenderer;
+import net.minecraft.client.render.block.entity.BlockEntityRenderer;
+import net.minecraft.client.render.block.entity.ChestRenderer;
+import net.minecraft.client.render.block.entity.EnchantingTableRenderer;
+import net.minecraft.client.render.block.entity.EnderChestRenderer;
+import net.minecraft.client.render.block.entity.SkullRenderer;
 import net.minecraft.client.render.model.Model;
 import net.minecraft.client.resource.model.BakedModel;
 import net.minecraft.entity.Entity;
@@ -25,6 +32,9 @@ public final class EntityInstancing {
     private EntityCapture activeCapture;
     private int entityCount;
     private int playerCount;
+    private int instanceCount;
+    private int drawCount;
+    private int textureCount;
     private String debugString = "Entity instancing: waiting";
 
     public EntityInstancing(ModelInstancer backend) {
@@ -62,6 +72,9 @@ public final class EntityInstancing {
         this.nameTags.clear();
         this.entityCount = 0;
         this.playerCount = 0;
+        this.instanceCount = 0;
+        this.drawCount = 0;
+        this.textureCount = 0;
         if (!Argentum.CONFIG.entityInstancing) {
             this.debugString = "Entity instancing: disabled by config";
             return false;
@@ -71,6 +84,13 @@ public final class EntityInstancing {
             return false;
         }
         return true;
+    }
+
+
+    // like beginBatch(), but keeps the frame's name tags and counts
+    public boolean resumeBatch() {
+        this.resetCaptures();
+        return Argentum.CONFIG.entityInstancing && this.backend.beginBatch();
     }
 
     public boolean isBatchActive() {
@@ -87,6 +107,19 @@ public final class EntityInstancing {
         capture.beginEntity(model, texture, player, preserveFixedFunction, packedLight, effectTime,
                 overlayRed, overlayGreen, overlayBlue, overlayAlpha
         );
+        return capture;
+    }
+
+    public InstanceRenderPass passFor(BlockEntityRenderer<?> renderer) {
+        return renderer == null ? null : bePass(renderer);
+    }
+
+    public EntityCapture beginBlockEntity(InstanceRenderPass pass, int packedLight) {
+        if (!this.backend.isBatchActive()) {
+            return null;
+        }
+        EntityCapture capture = this.acquire();
+        capture.beginBlockEntity(pass, packedLight);
         return capture;
     }
 
@@ -130,8 +163,11 @@ public final class EntityInstancing {
 
     public void flush(CommandList commandList) {
         ModelInstancer.BatchStats stats = this.backend.flush(commandList);
+        this.instanceCount += stats.instances();
+        this.drawCount += stats.draws();
+        this.textureCount += stats.textures();
         this.debugString = "Entity instancing: %d entities (%d players) | %d parts | %d draws | %d textures".formatted(
-                this.entityCount, this.playerCount, stats.instances(), stats.draws(), stats.textures()
+                this.entityCount, this.playerCount, this.instanceCount, this.drawCount, this.textureCount
         );
     }
 
@@ -202,5 +238,18 @@ public final class EntityInstancing {
 
     public static int packedLight(Entity entity, float tickDelta) {
         return entity.isOnFire() ? 0xF000F0 : entity.getLightLevel(tickDelta);
+    }
+
+    // a renderer that draws anything other than model parts has its ffp calls swallowed
+    static InstanceRenderPass bePass(BlockEntityRenderer<?> renderer) {
+        if (renderer instanceof SkullRenderer) {
+            // skull outer layers are drawn double sided
+            return InstanceRenderPass.NO_CULL;
+        }
+        return renderer instanceof ChestRenderer
+                || renderer instanceof EnderChestRenderer
+                || renderer instanceof BannerRenderer
+                || renderer instanceof EnchantingTableRenderer
+                ? InstanceRenderPass.NORMAL : null;
     }
 }

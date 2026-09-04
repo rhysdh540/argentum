@@ -2,6 +2,8 @@ package dev.rdh.argentum.impl.render;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 
+import net.minecraft.util.math.BlockPos;
+
 public final class BlockEntityLight {
     private final Long2IntOpenHashMap generations = new Long2IntOpenHashMap();
 
@@ -9,8 +11,8 @@ public final class BlockEntityLight {
         this.generations.defaultReturnValue(0);
     }
 
-    public int generation(int x, int y, int z) {
-        return this.generations.get(key(x >> 4, y >> 4, z >> 4));
+    public int generation(BlockPos pos) {
+        return this.generations.get(key(pos.getX() >> 4, pos.getY() >> 4, pos.getZ() >> 4));
     }
 
     public void invalidate(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {

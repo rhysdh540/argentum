@@ -255,6 +255,27 @@ public class ArgentumWorldRenderer extends SimpleWorldRenderer<World, ArgentumRe
     }
 
     @Override
+    public int renderBlockEntities(Float partialTicks) {
+        boolean batching = this.entityInstancing.resumeBatch();
+        int count;
+        try {
+            count = super.renderBlockEntities(partialTicks);
+        } catch (RuntimeException | Error exception) {
+            this.entityInstancing.discardBatch();
+            throw exception;
+        }
+        if (batching) {
+            RenderDevice.enterManagedCode();
+            try (CommandList commandList = RenderDevice.INSTANCE.createCommandList()) {
+                this.entityInstancing.flush(commandList);
+            } finally {
+                RenderDevice.exitManagedCode();
+            }
+        }
+        return count;
+    }
+
+    @Override
     protected void renderBlockEntityList(List<BlockEntity> list, Float partialTicksBoxed) {
         float partialTicks = partialTicksBoxed;
         for (var blockEntity : list) {

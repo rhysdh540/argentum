@@ -14,6 +14,7 @@ import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.resource.Identifier;
 import dev.rdh.argentum.impl.render.instancing.BoxTemplate;
+import dev.rdh.argentum.mixin.features.model.instancing.ModelPartAccessor;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
@@ -83,6 +84,21 @@ public final class EntityCapture implements AutoCloseable {
         this.effectTime = effectTime;
         this.overlayColor.set(overlayRed, overlayGreen, overlayBlue, overlayAlpha);
         this.resetState();
+    }
+
+    void beginBlockEntity(InstanceRenderPass pass, int packedLight) {
+        this.item = false;
+        this.model = null;
+        this.entityTexture = null;
+        this.boundTexture = null;
+        this.pass = pass;
+        this.player = false;
+        this.suppressFixedFunction = true;
+        this.packedLight = packedLight;
+        this.effectTime = 0.0F;
+        this.overlayColor.set(0);
+        this.resetState();
+        this.modelActive = true;
     }
 
     void beginItem(ItemEntity entity, int packedLight) {
@@ -383,7 +399,7 @@ public final class EntityCapture implements AutoCloseable {
         this.matrices.rotateZ(part.rotationZ).rotateY(part.rotationY).rotateX(part.rotationX);
 
         if (!part.boxes.isEmpty() && !this.submitBoxes(part, scale)) {
-            this.submit(this.model.getGeometry(part, scale), this.matrices);
+            this.submit(this.modelFor(part).getGeometry(part, scale), this.matrices);
         }
         if (part.children != null) {
             for (int i = 0; i < part.children.size(); i++) {
@@ -397,6 +413,11 @@ public final class EntityCapture implements AutoCloseable {
       * Draws each of the part's boxes from the shared unit cube, mapped onto the box by its own matrix.
       * {@return false if any box is not a plain cuboid}, in which case the caller draws the part's own geometry.
       */
+    private ModelGeometry modelFor(ModelPart part) {
+        return this.model != null ? this.model
+                : this.owner.backend().model(((ModelPartAccessor)part).argentum$getModel());
+    }
+
     private boolean submitBoxes(ModelPart part, float scale) {
         BoxTemplate[] templates = this.owner.backend().boxTemplates(part);
         if (templates == null) {

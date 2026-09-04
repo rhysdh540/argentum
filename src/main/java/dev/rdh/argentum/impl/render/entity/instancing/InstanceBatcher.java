@@ -14,22 +14,20 @@ import net.minecraft.resource.Identifier;
 
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
-import org.embeddedt.embeddium.impl.gl.shader.GlProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector4fc;
 import org.lwjgl.opengl.GL11;
 
 import java.util.EnumMap;
+import java.util.Map;
 
 final class InstanceBatcher {
-    private final Reference2ReferenceOpenHashMap<Model, ModelGeometry> models = new Reference2ReferenceOpenHashMap<>();
+    private final Map<Model, ModelGeometry> models = new Reference2ReferenceOpenHashMap<>();
     private final Matrix4f[] itemGlintMatrices = { new Matrix4f(), new Matrix4f() };
     private final boolean[] itemGlintCaptured = new boolean[2];
     private final float[] matrixValues = new float[16];
-    private final EnumMap<InstanceRenderPass, Object2ObjectLinkedOpenHashMap<Identifier, TextureBatch>> textures =
-            new EnumMap<>(InstanceRenderPass.class);
-    private final EnumMap<InstanceRenderPass, Reference2ReferenceOpenHashMap<TextureArrayManager.Pool, TextureBatch>> arrayTextures =
-            new EnumMap<>(InstanceRenderPass.class);
+    private final EnumMap<InstanceRenderPass, Map<Identifier, TextureBatch>> textures = new EnumMap<>(InstanceRenderPass.class);
+    private final EnumMap<InstanceRenderPass, Map<TextureArrayManager.Pool, TextureBatch>> arrayTextures = new EnumMap<>(InstanceRenderPass.class);
 
     InstanceBatcher() {
         for (InstanceRenderPass pass : InstanceRenderPass.values()) {
@@ -60,8 +58,8 @@ final class InstanceBatcher {
     void delete(CommandList commandList) {
         this.models.values().forEach(model -> model.delete(commandList));
         this.models.clear();
-        this.textures.values().forEach(Object2ObjectLinkedOpenHashMap::clear);
-        this.arrayTextures.values().forEach(Reference2ReferenceOpenHashMap::clear);
+        this.textures.values().forEach(Map::clear);
+        this.arrayTextures.values().forEach(Map::clear);
     }
 
     TextureBatch texture(Identifier texture, InstanceRenderPass pass) {
@@ -80,6 +78,13 @@ final class InstanceBatcher {
         Stats normal = this.renderPass(commandList, program, InstanceRenderPass.NORMAL);
         draws += normal.draws;
         textureCount += normal.textures;
+        if (this.has(InstanceRenderPass.NO_CULL)) {
+            GlStateManager.disableCull();
+            Stats unculled = this.renderPass(commandList, program, InstanceRenderPass.NO_CULL);
+            draws += unculled.draws;
+            textureCount += unculled.textures;
+            GlStateManager.enableCull();
+        }
         if (this.has(InstanceRenderPass.CULL_FRONT)) {
             GlStateManager.enableCull();
             GlStateManager.cullFace(GL11.GL_FRONT);
@@ -191,6 +196,7 @@ final class InstanceBatcher {
         program.getInterface().setEmissive(pass != InstanceRenderPass.NORMAL
                 && pass != InstanceRenderPass.CULL_FRONT
                 && pass != InstanceRenderPass.CULL_BACK
+                && pass != InstanceRenderPass.NO_CULL
                 && pass != InstanceRenderPass.ITEM
                 && pass != InstanceRenderPass.TRANSLUCENT
         );
@@ -203,7 +209,7 @@ final class InstanceBatcher {
             draws += texture.render(commandList, program, pass == InstanceRenderPass.TRANSLUCENT);
             textureCount++;
         }
-        for (var entry : this.arrayTextures.get(pass).reference2ReferenceEntrySet()) {
+        for (var entry : this.arrayTextures.get(pass).entrySet()) {
             if (entry.getValue().count == 0) continue;
             int previous = entry.getKey().bind();
             program.getInterface().setTextureArray(true);
