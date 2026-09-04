@@ -54,7 +54,9 @@ loom {
         jvmArguments.add("--enable-native-access=ALL-UNNAMED")
         jvmArguments.add("--sun-misc-unsafe-memory-access=allow")
 
-        systemProperties.putAll(rootProject.providers.gradlePropertiesPrefixedBy("run."))
+        systemProperties.putAll(rootProject.providers.gradlePropertiesPrefixedBy("run.").map {
+            it.mapKeys { it.key.removePrefix("run.") }
+        })
 
         runDirectory = rootProject.layout.projectDirectory.dir("run")
     }
