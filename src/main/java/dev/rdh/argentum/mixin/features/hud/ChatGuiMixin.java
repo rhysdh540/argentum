@@ -5,6 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiElement;
 import net.minecraft.client.gui.chat.ChatGui;
 import net.minecraft.client.render.platform.GlStateManager;
+
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -16,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ChatGui.class)
 public abstract class ChatGuiMixin extends GuiElement {
     @Shadow
+    @Final
     private Minecraft minecraft;
 
     @Unique
