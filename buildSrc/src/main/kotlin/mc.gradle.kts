@@ -48,11 +48,11 @@ loom {
     runs.named("client") {
         jvmArguments.add("-XstartOnFirstThread")
 
-        jvmArguments.add("-XX:+UseZGC")
-        jvmArguments.add("-XX:MaxGCPauseMillis=50")
-        jvmArguments.add("-XX:+UseCompactObjectHeaders")
-        jvmArguments.add("--enable-native-access=ALL-UNNAMED")
-        jvmArguments.add("--sun-misc-unsafe-memory-access=allow")
+        jvmArguments.addAll(
+            "-XX:+UseZGC", "-XX:MaxGCPauseMillis=50", "-XX:+UseCompactObjectHeaders",
+            "--enable-native-access=ALL-UNNAMED", "--sun-misc-unsafe-memory-access=allow",
+            "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"
+        )
 
         systemProperties.putAll(rootProject.providers.gradlePropertiesPrefixedBy("run.").map {
             it.mapKeys { it.key.removePrefix("run.") }
