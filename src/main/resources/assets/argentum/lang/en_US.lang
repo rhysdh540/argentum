@@ -55,6 +55,8 @@ celeritas.entity_culling.name=Use Entity Culling
 celeritas.entity_culling.tooltip=If enabled entities determined not to be in any visible chunks will be skipped during rendering. This can help improve performance by avoiding the rendering of entities located underground or behind walls.
 argentum.entity_occlusion_interval.name=Entity Occlusion Interval
 argentum.entity_occlusion_interval.tooltip=Specifies the minimum delay between visibility checks for each entity. Lower values can cull hidden entities sooner but increase CPU and GPU overhead, while higher values reduce overhead at the cost of entities remaining visible longer after moving behind walls.
+argentum.gui_item_atlas.name=Cache Item Icons
+argentum.gui_item_atlas.tooltip=Renders each inventory and hotbar item icon into a shared texture once per tick and reuses it, instead of rebuilding the item model every frame.
 argentum.particle_culling.name=Particle Culling
 argentum.particle_culling.tooltip=If enabled particles outside the camera frustum or hidden behind terrain will be skipped during rendering. This can improve performance in particle-heavy scenes, but may cause particles to disappear unexpectedly with some mods.
 

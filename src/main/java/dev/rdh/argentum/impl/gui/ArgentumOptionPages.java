@@ -67,6 +67,7 @@ public final class ArgentumOptionPages {
         private static final OptionIdentifier<Void> PARTICLE_CULLING = OptionIdentifier.create(Argentum.ID, "particle_culling");
         private static final OptionIdentifier<Void> ENTITY_INSTANCING = OptionIdentifier.create(Argentum.ID, "entity_instancing");
         private static final OptionIdentifier<Void> FONT_BATCHING = OptionIdentifier.create(Argentum.ID, "font_batching");
+        private static final OptionIdentifier<Void> GUI_ITEM_ATLAS = OptionIdentifier.create(Argentum.ID, "gui_item_atlas");
         private static final OptionIdentifier<Void> SAFE_CHUNK_EDGES = OptionIdentifier.create(Argentum.ID, "safe_chunk_edges");
         private static final OptionIdentifier<Void> CHECK_GL_ERRORS = OptionIdentifier.create(Argentum.ID, "check_gl_errors");
         private static final OptionIdentifier<Void> GREEDY_RENDER_THREAD = OptionIdentifier.create(Argentum.ID, "greedy_render_thread");
@@ -293,6 +294,8 @@ public final class ArgentumOptionPages {
                         (config, value) -> config.animateOnlyVisibleTextures = value,
                         config -> config.animateOnlyVisibleTextures, OptionFlag.REQUIRES_RENDERER_UPDATE))
                 .add(toggle(Option.FONT_BATCHING, OptionImpact.MEDIUM, (config3, value2) -> config3.fontBatching = value2, config4 -> config4.fontBatching))
+                .add(toggle(Option.GUI_ITEM_ATLAS, OptionImpact.MEDIUM,
+                        (config, value) -> config.guiItemAtlas = value, config -> config.guiItemAtlas))
                 .add(toggle(StandardOptions.Option.TRANSLUCENT_FACE_SORTING,
                         OptionImpact.VARIES,
                         (config, value) -> config.translucencySorting = value,

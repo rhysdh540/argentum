@@ -26,6 +26,7 @@ public class ArgentumConfig {
     public boolean compactVertexFormat = false;
     public boolean checkGlErrors = false;
     public boolean fontBatching = true;
+    public boolean guiItemAtlas = true;
     public boolean greedyRenderThread = false;
 
 	public void validate() {
