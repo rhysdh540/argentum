@@ -16,6 +16,7 @@
     "features.model.instancing.ItemRendererMixin", "features.model.instancing.LivingEntityRendererMixin",
     "features.model.instancing.PolygonAccessor", "features.options.OptionPageFrameMixin",
     "features.options.OptionsScreenMixin", "features.particle.ParticleManagerMixin", "features.particle.ParticleMixin",
+    "features.blockentity.BlockEntityRenderDispatcherMixin",
     "features.terrain.BakedQuadMixin",
     "features.text.SignRendererMixin",
     "features.terrain.FaceBakeryMixin",
@@ -26,6 +27,7 @@
   "mixins": [
     "core.DirectionMixin", "core.collections.TypeInstanceMultimapMixin", "core.world.ChunkCacheMixin",
     "core.world.WorldChunkMixin", "core.world.WorldMixin",
+    "features.blockentity.BlockEntityMixin",
     "features.text.SignBlockEntityMixin"
   ],
   "injectors": {
