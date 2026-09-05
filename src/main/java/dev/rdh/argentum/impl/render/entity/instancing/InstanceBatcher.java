@@ -191,6 +191,8 @@ final class InstanceBatcher {
     }
 
     private Stats renderPass(CommandList commandList, GlProgram<InstanceShader> program, InstanceRenderPass pass) {
+        if (!this.has(pass)) return Stats.EMPTY;
+
         int draws = 0;
         int textureCount = 0;
         program.getInterface().setEmissive(pass != InstanceRenderPass.NORMAL
@@ -221,6 +223,7 @@ final class InstanceBatcher {
     }
 
     record Stats(int draws, int textures) {
+        static final Stats EMPTY = new Stats(0, 0);
     }
 
     static final class TextureBatch {
