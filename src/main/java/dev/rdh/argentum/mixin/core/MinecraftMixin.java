@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import dev.rdh.argentum.impl.Argentum;
+import dev.rdh.argentum.impl.render.hud.item.GuiItemIcons;
 
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
@@ -32,6 +33,7 @@ public abstract class MinecraftMixin {
 
     @Inject(method = "runGame", at = @At("RETURN"))
     private void celeritas$endFrame(CallbackInfo ci) {
+        GuiItemIcons.warnIfPending();
         this.celeritas$renderAheadManager.endFrame();
     }
 

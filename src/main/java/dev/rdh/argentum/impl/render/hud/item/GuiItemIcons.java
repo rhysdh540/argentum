@@ -19,6 +19,7 @@ public final class GuiItemIcons {
     private static boolean initialized;
     private static int readyTick;
     private static boolean baking;
+    private static boolean warned;
 
     private GuiItemIcons() {
     }
@@ -92,10 +93,13 @@ public final class GuiItemIcons {
                 100.0F + zOffset, 0xFFFFFFFF, 0xFFFFFFFF);
     }
 
-    /**
-     * Anything drawing over an icon either turns depth testing off first, in which case it depends on
-     * paint order and the pending icons have to go down now, or it uses a greater z and depth sorts it.
-     */
+    public static void warnIfPending() {
+        if (RECORDER.isEmpty() || warned) return;
+        warned = true;
+        Argentum.LOGGER.warn("GUI item icons were recorded but never flushed; they will draw late and misplaced. "
+                + "A screen is rendering items past every GuiItemIcons.flush() call site.", new Throwable());
+    }
+
     public static void flush() {
         if (baking || RECORDER.isEmpty()) return;
 
