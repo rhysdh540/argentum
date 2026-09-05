@@ -15,7 +15,7 @@
     "client": ["dev.rdh.argentum.impl.Argentum"],
     "modmenu": ["dev.rdh.argentum.impl.config.ModMenuCompat"]
   },
-  "dependencies": {
+  "depends": {
     "minecraft": "1.8.9",
     "lenis": "*",
     "osl": ">=0.20"
