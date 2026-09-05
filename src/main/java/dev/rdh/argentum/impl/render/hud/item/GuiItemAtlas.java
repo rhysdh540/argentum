@@ -233,10 +233,11 @@ public final class GuiItemAtlas {
                         == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
     }
 
-    public record Key(Object model, Object item, int damage) {
+    public record Key(Object model, Object item, int damage, int nbt) {
     }
 
     public static Key keyFor(Object model, ItemStack stack) {
-        return new Key(model, stack.getItem(), stack.getDamage());
+        int nbt = stack.hasNbt() ? stack.getNbt().hashCode() : 0;
+        return new Key(model, stack.getItem(), stack.getDamage(), nbt);
     }
 }

@@ -3,6 +3,7 @@ package dev.rdh.argentum.test;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.platform.Lighting;
+import net.minecraft.item.ArmorItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
@@ -16,6 +17,7 @@ public class GuiItemVisualTestScreen extends Screen {
     private static final int ORIGIN_Y = 12;
     private static final int BLOCK_COUNT = 48;
     private static final int ITEM_COUNT = 96;
+    private static final int[] DYES = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00};
 
     private final String variant = System.getProperty("argentum.itemTestVariant", "atlas");
     private final List<ItemStack> stacks = new ArrayList<>();
@@ -33,6 +35,12 @@ public class GuiItemVisualTestScreen extends Screen {
 
             // no enchanted stacks here: the glint scrolls on wall-clock time, so two separate client
             this.stacks.add(new ItemStack(item, 1, item.getMaxDamage() / 2));
+        }
+
+        for (int color : DYES) {
+            ItemStack stack = new ItemStack(Item.byId(298), 1, 0);
+            ((ArmorItem) stack.getItem()).setColor(stack, color);
+            this.stacks.add(stack);
         }
     }
 
