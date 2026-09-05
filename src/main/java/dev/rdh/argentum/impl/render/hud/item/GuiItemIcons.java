@@ -34,9 +34,8 @@ public final class GuiItemIcons {
         return ATLAS.isSupported() && currentTick() >= readyTick;
     }
 
-    // glint masks itself with GL_EQUAL against the depth the model wrote, which a flat icon has not
     public static boolean canBake(ItemStack item) {
-        return item != null && item.getItem() != null && !item.hasEnchantmentGlint();
+        return item != null && item.getItem() != null;
     }
 
     public static void invalidate() {
