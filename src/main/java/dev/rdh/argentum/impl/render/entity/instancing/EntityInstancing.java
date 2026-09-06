@@ -35,7 +35,7 @@ public final class EntityInstancing {
     private int instanceCount;
     private int drawCount;
     private int textureCount;
-    private String debugString = "Entity instancing: waiting";
+    private String inactiveReason = "waiting";
 
     public EntityInstancing(ModelInstancer backend) {
         this.backend = backend;
@@ -76,11 +76,11 @@ public final class EntityInstancing {
         this.drawCount = 0;
         this.textureCount = 0;
         if (!Argentum.CONFIG.entityInstancing) {
-            this.debugString = "Entity instancing: disabled by config";
+            this.inactiveReason = "disabled by config";
             return false;
         }
         if (!this.backend.beginBatch()) {
-            this.debugString = "Entity instancing: unsupported";
+            this.inactiveReason = "unsupported";
             return false;
         }
         return true;
@@ -166,9 +166,7 @@ public final class EntityInstancing {
         this.instanceCount += stats.instances();
         this.drawCount += stats.draws();
         this.textureCount += stats.textures();
-        this.debugString = "Entity instancing: %d entities (%d players) | %d parts | %d draws | %d textures".formatted(
-                this.entityCount, this.playerCount, this.instanceCount, this.drawCount, this.textureCount
-        );
+        this.inactiveReason = null;
     }
 
     public void renderNameTags() {
@@ -182,7 +180,13 @@ public final class EntityInstancing {
     }
 
     public String getDebugString() {
-        return this.debugString;
+        // only the debug overlay ever reads this, so it is not worth formatting every flush
+        if (this.inactiveReason != null) {
+            return "Entity instancing: " + this.inactiveReason;
+        }
+        return "Entity instancing: %d entities (%d players) | %d parts | %d draws | %d textures".formatted(
+                this.entityCount, this.playerCount, this.instanceCount, this.drawCount, this.textureCount
+        );
     }
 
     ModelInstancer backend() {
