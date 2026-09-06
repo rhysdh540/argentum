@@ -5,6 +5,7 @@ import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.client.resource.model.BakedModel;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtElement;
 
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL;
@@ -236,11 +237,10 @@ public final class GuiItemAtlas {
                         == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
     }
 
-    public record Key(BakedModel model, Item item, int damage, int nbt) {
+    public record Key(BakedModel model, Item item, int damage, NbtElement nbt) {
     }
 
     public static Key keyFor(BakedModel model, ItemStack stack) {
-        int nbt = stack.hasNbt() ? stack.getNbt().hashCode() : 0;
-        return new Key(model, stack.getItem(), stack.getDamage(), nbt);
+        return new Key(model, stack.getItem(), stack.getDamage(), stack.hasNbt() ? stack.getNbt().copy() : null);
     }
 }
