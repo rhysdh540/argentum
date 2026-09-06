@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.Window;
 import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.client.render.texture.TextureAtlas;
+import net.minecraft.client.resource.model.BakedModel;
 import net.minecraft.item.ItemStack;
 import org.lwjgl.opengl.GL11;
 
@@ -43,7 +44,7 @@ public final class GuiItemIcons {
         ATLAS.invalidate();
     }
 
-    public static int acquire(Object model, ItemStack item, Runnable bake) {
+    public static int acquire(BakedModel model, ItemStack item, Runnable bake) {
         return ATLAS.acquire(GuiItemAtlas.keyFor(model, item), currentTick(), iconPixels(), () -> {
             GlStateManager.pushMatrix();
             GlStateManager.matrixMode(GL11.GL_PROJECTION);

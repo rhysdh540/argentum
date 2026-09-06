@@ -2,7 +2,10 @@ package dev.rdh.argentum.impl.render.hud.item;
 
 import it.unimi.dsi.fastutil.objects.Object2IntLinkedOpenHashMap;
 import net.minecraft.client.render.platform.GlStateManager;
+import net.minecraft.client.resource.model.BakedModel;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -26,7 +29,7 @@ public final class GuiItemAtlas {
     private int framebuffer;
     private int depthBuffer;
 
-    private final Object2IntLinkedOpenHashMap<Object> slots = new Object2IntLinkedOpenHashMap<>();
+    private final Object2IntLinkedOpenHashMap<Key> slots = new Object2IntLinkedOpenHashMap<>();
     { this.slots.defaultReturnValue(NO_SLOT); }
 
     private final IntBuffer viewport = BufferUtils.createIntBuffer(16);
@@ -95,7 +98,7 @@ public final class GuiItemAtlas {
         return SLOT_SIZE;
     }
 
-    public int acquire(Object key, int tick, int pixels, Runnable render) {
+    public int acquire(Key key, int tick, int pixels, Runnable render) {
         if (!this.supported) return NO_SLOT;
         if (pixels != this.bakedPixels) {
             this.invalidate();
@@ -233,10 +236,10 @@ public final class GuiItemAtlas {
                         == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
     }
 
-    public record Key(Object model, Object item, int damage, int nbt) {
+    public record Key(BakedModel model, Item item, int damage, int nbt) {
     }
 
-    public static Key keyFor(Object model, ItemStack stack) {
+    public static Key keyFor(BakedModel model, ItemStack stack) {
         int nbt = stack.hasNbt() ? stack.getNbt().hashCode() : 0;
         return new Key(model, stack.getItem(), stack.getDamage(), nbt);
     }

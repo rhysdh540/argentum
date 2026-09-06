@@ -8,6 +8,7 @@ import dev.rdh.argentum.impl.render.hud.item.GuiItemIcons;
 
 import net.minecraft.client.render.entity.ItemRenderer;
 import net.minecraft.client.render.item.ItemModelShaper;
+import net.minecraft.client.resource.model.BakedModel;
 import net.minecraft.client.render.TextRenderer;
 import net.minecraft.client.render.platform.GlStateManager;
 import net.minecraft.item.ItemStack;
@@ -48,7 +49,7 @@ public abstract class GuiItemRendererMixin {
             return;
         }
 
-        Object model = this.modelShaper.getModel(item);
+        BakedModel model = this.modelShaper.getModel(item);
         int slot = GuiItemIcons.acquire(model, item, () -> original.call(item, 0, 0));
 
         if (slot < 0) {
