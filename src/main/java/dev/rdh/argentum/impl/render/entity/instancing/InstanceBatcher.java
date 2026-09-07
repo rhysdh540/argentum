@@ -128,9 +128,23 @@ final class InstanceBatcher {
                 blockAtlas.popFilter();
             }
         }
-        Stats translucent = this.renderPass(commandList, program, InstanceRenderPass.TRANSLUCENT);
-        draws += translucent.draws;
-        textureCount += translucent.textures;
+        if (this.has(InstanceRenderPass.TRANSLUCENT)) {
+            GlStateManager.disableBlend();
+            program.getInterface().setAlphaPass(InstanceShader.ALPHA_OPAQUE);
+            Stats opaque = this.renderPass(commandList, program, InstanceRenderPass.TRANSLUCENT);
+            draws += opaque.draws;
+            textureCount += opaque.textures;
+
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GlStateManager.depthMask(false);
+            program.getInterface().setAlphaPass(InstanceShader.ALPHA_TRANSLUCENT);
+            Stats translucent = this.renderPass(commandList, program, InstanceRenderPass.TRANSLUCENT);
+            draws += translucent.draws;
+            textureCount += translucent.textures;
+            GlStateManager.depthMask(true);
+            program.getInterface().setAlphaPass(InstanceShader.ALPHA_ALL);
+        }
         GlStateManager.blendFunc(1, 1);
         // Additive emissive overlays sit on already-drawn geometry; writing depth only makes their
         // (uncensored, non-culled) coplanar faces z-fight, so test against the base depth without writing.
